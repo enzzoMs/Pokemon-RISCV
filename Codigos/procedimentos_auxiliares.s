@@ -86,12 +86,12 @@ CALCULAR_ENDERECO:
 # ====================================================================================================== #
 
 TROCAR_FRAME:
-	# Procedimento que troca o frame que está sendo mostrado
+	# Procedimento que troca o frame que está sendo mostrado de 0 -> 1 e de 1 -> 0
 	
-	li t0, 0xFF200604
-	lb t1, (t0)
-	xori t1, t1, 0xFFFFFFFF
-	sb t1, (t0)
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	lb t1, (t0)			# t1 = valor armazenado em t0
+	xori t1, t1, 0xFFFFFFFF		# inverte o valor de t1
+	sb t1, (t0)			# armazena t1 no endereço de t0
 
 	ret
 

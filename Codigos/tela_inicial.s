@@ -15,6 +15,13 @@ CARREGAR_TELA_INICIAL:
 
 	call RENDERIZAR_ANIMACAO_FAIXA
 	
+	# Espera alguns milisegundos	
+	li a7, 32			# selecionando syscall sleep
+	li a0, 500			# sleep por 500 ms
+	ecall
+	
+	call RENDERIZAR_ANIMACAO_POKEMONS
+	
 	mv ra, tp	# ra recebe o endereco que foi salvo em tp
 	
 	ret
@@ -24,8 +31,10 @@ CARREGAR_TELA_INICIAL:
 
 RENDERIZAR_ANIMACAO_FAIXA:
 
+	mv gp, ra
+
 	# Antes de mostrar a tela inicial ocorre uma pequena animação onde as imagem do bulbasaur e 
-	# charizard são atravessadas por uma faixa branca
+	# charizard são atravessadas por uma faixa branca, esse procedimento é responsável por executá-la
 
 	# Imprimindo a tela de pré animação
 		la a0, pre_animacao_inicial	# carrega a imagem
@@ -34,7 +43,7 @@ RENDERIZAR_ANIMACAO_FAIXA:
 	
 	call TROCAR_FRAME 			# trocando o frame para o 1
 		
-		
+	# Espera alguns milisegundos			
 	li a7, 32			# selecionando syscall sleep
 	li a0, 1000			# sleep por 1 ms
 	ecall
@@ -62,6 +71,7 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		
 		
 	LOOP_RENDERIZAR_FAIXA:
+		# Espera alguns milisegundos	
 		li a7, 32			# selecionando syscall sleep
 		li a0, 1			# sleep por 1 ms
 		ecall
@@ -69,12 +79,12 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		# renderizando a faixa no bulbasaur
 		mv a1, a4			# a1 = a4 = endereco de onde colocar a faixa
 		la a0, animacao_faixa		# carrega a imagem da faixa	
-		call RENDERIZAR_FAIXA
+		call PRINT_FAIXA
 		
 		# renderizando a faixa no charizard
 		mv a1, a5			# a1 = a5 = endereco de onde colocar a faixa
 		la a0, animacao_faixa		# carrega a imagem da faixa	
-		call RENDERIZAR_FAIXA
+		call PRINT_FAIXA
 		
 		addi a4, a4, -320		# passando o endereco da faixa para a linha anterior
 		addi a5, a5, -320		# passando o endereco da faixa para a linha anterior
@@ -82,16 +92,18 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		
 		bne a6, zero, LOOP_RENDERIZAR_FAIXA	# verifica se a6 == 0 para terminar o loop
 			
+	mv ra, gp
+					
 	ret
 
 
 # ------------------------------------------------------------------------------------------------------ #
 
-RENDERIZAR_FAIXA:
+PRINT_FAIXA:
 
-	# Procedimento que imprime a faixa no bitmpa, a diferenca desse procedimento para o PRINT_IMG
-	# é que a faixa é impressa somente onde os bits não são pretos, de forma a aparecer o contorno
-	# do bulbasaur e charizard
+	# Procedimento auxiliar ao RENDERIZAR_ANIMACAO_FAIXA que imprime a faixa no bitmap, a diferença 
+	# desse procedimento para o PRINT_IMG é que a faixa é impressa somente onde os bits não são pretos, 
+	# de forma a aparecer o contorno do bulbasaur e charizard
 	
 	# Argumentos: 
 	# 	a0 = endereço da imgagem		
@@ -128,12 +140,120 @@ RENDERIZAR_FAIXA:
 			
 	ret
 
+# ------------------------------------------------------------------------------------------------------ #
+
+RENDERIZAR_ANIMACAO_POKEMONS:
+
+	# Depois de RENDERIZAR_ANIMACAO_FAIXA esse procedimento realiza também uma pequena animação onde
+	# o charizard e bulbasaur vão lentamente sendo mostrados na tela
+
+	# Calcula o endereço do começo da imagem do bulbasaur
+		li a1, 0xFF100000		# seleciona como argumento o frame 1
+		li a2, 3 			# coluna = 3
+		li a3, 115			# linha = 115
+		call CALCULAR_ENDERECO
+
+		mv a4, a0			# salva o retorno do procedimento chamado acima em a4
+
+	# Calcula o endereço do começo da imagem do charizard
+		li a1, 0xFF100000		# seleciona como argumento o frame 1
+		li a2, 206 			# coluna = 206
+		li a3, 99			# linha = 99
+		call CALCULAR_ENDERECO
+
+		mv a5, a0			# salva o retorno do procedimento chamado acima em a5
+
+
+	# Imprimindo bulba_0
+	la a0, bulba_0		# carregando a imagem bulba_0
+	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
+	call PRINT_IMG		
+		
+	# Imprimindo chari_0
+	la a0, chari_0		# carregando a imagem chari_0
+	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
+	call PRINT_IMG	
+	
+	# Espera alguns milisegundos	
+	li a7, 32		# selecionando syscall sleep
+	li a0, 1000		# sleep por 1 s
+	ecall
+	
+	# -------------------------------------------------------------------------------------------- #
+
+	# Imprimindo bulba_1
+	la a0, bulba_1		# carregando a imagem bulba_1
+	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
+	call PRINT_IMG		
+		
+	# Imprimindo chari_1
+	la a0, chari_1		# carregando a imagem chari_1
+	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
+	call PRINT_IMG	
+	
+	# Espera alguns milisegundos	
+	li a7, 32		# selecionando syscall sleep
+	li a0, 1000		# sleep por 1 s
+	ecall
+	
+	# -------------------------------------------------------------------------------------------- #
+
+	# Imprimindo bulba_2
+	la a0, bulba_2		# carregando a imagem bulba_2
+	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
+	call PRINT_IMG		
+		
+	# Imprimindo chari_2
+	la a0, chari_2		# carregando a imagem chari_2
+	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
+	call PRINT_IMG	
+	
+	# Espera alguns milisegundos	
+	li a7, 32		# selecionando syscall sleep
+	li a0, 1000		# sleep por 1 s
+	ecall
+	
+	# -------------------------------------------------------------------------------------------- #
+
+	# Imprimindo bulba_3
+	la a0, bulba_3		# carregando a imagem bulba_3
+	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
+	call PRINT_IMG		
+		
+	# Imprimindo chari_3
+	la a0, chari_3		# carregando a imagem chari_3
+	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
+	call PRINT_IMG	
+	
+	# Espera alguns milisegundos	
+	li a7, 32		# selecionando syscall sleep
+	li a0, 1000		# sleep por 1 s
+	ecall
+	
+	# -------------------------------------------------------------------------------------------- #
+
+
+				
+	la a0, tela_inicial	
+	li a1, 0xFF100000		
+	call PRINT_TELA	
+		
+	a: j a
 
 # ====================================================================================================== #
 
 .data
 	.include "../Imagens/tela_inicial/pre_animacao_inicial.data"
 	.include "../Imagens/tela_inicial/animacao_faixa.data"
+	.include "../Imagens/tela_inicial/bulba_0.data"
+	.include "../Imagens/tela_inicial/chari_0.data"	
+	.include "../Imagens/tela_inicial/bulba_1.data"
+	.include "../Imagens/tela_inicial/chari_1.data"	
+	.include "../Imagens/tela_inicial/bulba_2.data"
+	.include "../Imagens/tela_inicial/chari_2.data"	
+	.include "../Imagens/tela_inicial/bulba_3.data"	
+	.include "../Imagens/tela_inicial/chari_3.data"
+	.include "../Imagens/tela_inicial/tela_inicial.data"
 	
 	.include "procedimentos_auxiliares.s"
 	
