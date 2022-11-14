@@ -8,8 +8,17 @@
 # adquados para renderizar os elementos visuais.							 #
 #													 #
 # ====================================================================================================== #
+# Observações:											         #
+# 													 #
+# -> Este é o arquivo principal do jogo e através dele são chamados outros procedimentos para a execução #  
+# de determinadas funções. Caso esses procedimentos chamem outros procedimentos é usado a pilha e o      #
+# registrador sp (stack pointer) para guardar o endereço de retorno, de modo que os procedimentos possam #
+# voltar até esse arquivo.										 #
+# 													 #
+# ====================================================================================================== #
 
-call CARREGAR_TELA_INICIAL
+
+call CARREGAR_TELA_INICIAL		# Chama procedimento em tela_inicial.s
 
 
 

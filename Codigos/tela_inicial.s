@@ -11,7 +11,8 @@
 
 CARREGAR_TELA_INICIAL:
 
-	mv tp, ra	# salvando endereco de retorno em tp
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
 
 	call RENDERIZAR_ANIMACAO_FAIXA
 	
@@ -22,7 +23,14 @@ CARREGAR_TELA_INICIAL:
 	
 	call RENDERIZAR_ANIMACAO_POKEMONS
 	
-	mv ra, tp	# ra recebe o endereco que foi salvo em tp
+	# Imprimindo a tela inicial
+	la a0, tela_inicial		# carregando a imagem da tela inicial
+	li a1, 0xFF100000		# selecionando como argumento o frame 1
+	call PRINT_TELA
+	
+	
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret
 	
@@ -31,7 +39,8 @@ CARREGAR_TELA_INICIAL:
 
 RENDERIZAR_ANIMACAO_FAIXA:
 
-	mv gp, ra
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
 
 	# Antes de mostrar a tela inicial ocorre uma pequena animação onde as imagem do bulbasaur e 
 	# charizard são atravessadas por uma faixa branca, esse procedimento é responsável por executá-la
@@ -92,8 +101,9 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		
 		bne a6, zero, LOOP_RENDERIZAR_FAIXA	# verifica se a6 == 0 para terminar o loop
 			
-	mv ra, gp
-					
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+				
 	ret
 
 
@@ -143,6 +153,9 @@ PRINT_FAIXA:
 # ------------------------------------------------------------------------------------------------------ #
 
 RENDERIZAR_ANIMACAO_POKEMONS:
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
 
 	# Depois de RENDERIZAR_ANIMACAO_FAIXA esse procedimento realiza também uma pequena animação onde
 	# o charizard e bulbasaur vão lentamente sendo mostrados na tela
@@ -232,13 +245,10 @@ RENDERIZAR_ANIMACAO_POKEMONS:
 	
 	# -------------------------------------------------------------------------------------------- #
 
-
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
 				
-	la a0, tela_inicial	
-	li a1, 0xFF100000		
-	call PRINT_TELA	
-		
-	a: j a
+	ret
 
 # ====================================================================================================== #
 
