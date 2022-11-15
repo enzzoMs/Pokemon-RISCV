@@ -90,7 +90,7 @@ TROCAR_FRAME:
 	
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	lb t1, (t0)			# t1 = valor armazenado em t0
-	xori t1, t1, 0xFFFFFFFF		# inverte o valor de t1
+	xori t1, t1, 1			# inverte o valor de t1
 	sb t1, (t0)			# armazena t1 no endereço de t0
 
 	ret

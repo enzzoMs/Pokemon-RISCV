@@ -18,8 +18,7 @@
 # ====================================================================================================== #
 
 
-call CARREGAR_TELA_INICIAL		# Chama procedimento em tela_inicial.s
-
+call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
 
 
 loop : j loop	 # loop eterno 
