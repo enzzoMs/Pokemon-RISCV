@@ -12,7 +12,7 @@
 CARREGAR_TELA_INICIAL:
 
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
+	sw ra, 0(sp)		# empilha ra
 
 	call RENDERIZAR_ANIMACAO_FAIXA
 	
@@ -23,11 +23,58 @@ CARREGAR_TELA_INICIAL:
 	
 	call RENDERIZAR_ANIMACAO_POKEMONS
 	
-	# Imprimindo a tela inicial
+	# Imprimindo a tela inicial no frame 1
 	la a0, tela_inicial		# carregando a imagem da tela inicial
 	li a1, 0xFF100000		# selecionando como argumento o frame 1
 	call PRINT_TELA
+
+	# Imprimindo a tela inicial no frame 0
+	la a0, tela_inicial		# carregando a imagem da tela inicial
+	li a1, 0xFF000000		# selecionando como argumento o frame 0
+	call PRINT_TELA
 	
+	# Para o frame 0 a tela inicial não terá o texto "Aperte Enter", para isso é necessário substituir o
+	# texto por um retangulo preto:
+	
+	# Calcula o endereço do texto "Aperte Enter"
+	li a1, 0xFF000000		# seleciona como argumento o frame 0
+	li a2, 127 			# coluna = 127
+	li a3, 185			# linha = 185
+	call CALCULAR_ENDERECO
+	
+	li t0, 63		# t0 = largura da imagem / numero de colunas da imagem = 63
+	li t1, 19		# t1 = altura da imagem / numero de linhas da imagem = 19
+	
+	li t2, 0		# contador para o numero de linhas ja impressas
+	
+	REMOVE_TEXTO_LINHAS:
+		li t3, 0		# contador para o numero de colunas ja impressas
+		addi t4, a0, 0		# copia do endereço de a0 para usar no loop de colunas
+			
+		REMOVE_TEXTO_COLUNAS:
+			sb zero, 0(t4)				# bota um pixel preto no bitmap
+	
+			addi t3, t3, 1				# incrementando o numero de colunas impressas
+			addi t4, t4, 1				# vai para o próximo pixel do bitmap
+			bne t3, t0, REMOVE_TEXTO_COLUNAS	# reinicia o loop se t3 != t0
+			
+		addi t2, t2, 1				# incrementando o numero de linhas impressas
+		addi a0, a0, 320			# passa o endereço do bitmap para a proxima linha
+		bne t2, t1, REMOVE_TEXTO_LINHAS	        # reinicia o loop se t2 != t1
+	
+	# Alterna constantemente entre o frame 0 e o 1
+	
+	LOOP_FRAME_TELA_INICIAL:
+		# Espera alguns milisegundos	
+		li a7, 32			# selecionando syscall sleep
+		li a0, 450			# sleep por 450 ms
+		ecall
+		
+		call TROCAR_FRAME
+		
+		call VERIFICAR_TECLA			# verifica se alguma tecla foi apertada	
+		li t0, 10				# t0 = valor da tecla enter
+		bne a0, t0, LOOP_FRAME_TELA_INICIAL	# se a0 = t0 -> tecla Enter foi apertada
 	
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha

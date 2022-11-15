@@ -48,7 +48,7 @@ PRINT_IMG:
 	
 	PRINT_IMG_LINHAS:
 		li t3, 0		# contador para o numero de colunas ja impressas
-		addi t4, a1, 0		# copia do endereço de a2 para usar no loop de colunas
+		addi t4, a1, 0		# copia do endereço de a1 para usar no loop de colunas
 			
 		PRINT_IMG_COLUNAS:
 			lb t5, 0(a0)			# pega 1 pixel do .data e coloca em t5
@@ -70,10 +70,10 @@ PRINT_IMG:
 CALCULAR_ENDERECO:
 	# Procedimento que calcula um endereço no frame de escolha
 	# Argumentos: 
-	# 	a0 = retorno com o endereço
 	#	a1 = endereço do frame
 	# 	a2 = numero da coluna
 	# 	a3 = numero da linha
+	# a0 = retorno com o endereço
 	
 	li t0, 320			# t0 = 320
 	
@@ -95,3 +95,25 @@ TROCAR_FRAME:
 
 	ret
 
+# ====================================================================================================== #
+
+VERIFICAR_TECLA:
+	# Procedimento que verifica se alguma tecla foi apertada
+	# Retorna a0 com o valor da tecla ou a0 = 0 caso nenhuma tecla tenha sido apertada		
+	
+	li a0, 0 		# a0 = 0 
+	 
+	li t0, 0xFF200000	# carrega em t0 o endereço de controle do KDMMIO
+ 	lw t1, 0(t0)		# carrega em t1 o valor do endereço de t0
+   	andi t1, t1, 0x0001	# t1 = 0 = não tem tecla, t1 = 1 = tem tecla. 
+   				# realiza operação andi de forma a deixar em t0 somente o bit necessario para análise
+   	
+    	beq t1, zero, FIM_VERIFICAR_TECLA	# t1 = 0 = não tem tecla pressionada então vai para fim
+   	lw a0, 4(t0)				# le o valor da tecla no endereço 0xFF200004
+   		 	
+	FIM_VERIFICAR_TECLA:					
+		ret
+		
+		
+		
+		
