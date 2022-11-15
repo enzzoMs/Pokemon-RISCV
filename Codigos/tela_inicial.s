@@ -76,6 +76,73 @@ CARREGAR_TELA_INICIAL:
 		li t0, 10				# t0 = valor da tecla enter
 		bne a0, t0, LOOP_FRAME_TELA_INICIAL	# se a0 = t0 -> tecla Enter foi apertada
 	
+	
+	# Mostrando o frame 0		
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	sb zero, (t0)			# armazena 0 no endereço de t0
+
+	# Imprimindo a tela de controles no frame 1
+	la a0, tela_controles		# carregando a imagem em a0
+	li a1, 0xFF100000		# selecionando como argumento o frame 1
+	call PRINT_TELA
+	
+	# Na tela de controles tem uma pequena animação de uma seta vermelha oscilando na tela,
+	# para isso a tela_controles também será impressa no frame 0
+	
+	# Imprimindo a tela de controles no frame 0
+	la a0, tela_controles		# carregando a imagem em a0
+	li a1, 0xFF000000		# selecionando como argumento o frame 0
+	call PRINT_TELA
+	
+	# Porém, no frame 0 essa seta deverá estar um pouco mais para cima:
+	
+	# Calcula o endereço do inicio da seta
+	li a1, 0xFF000000		# seleciona como argumento o frame 0
+	mv a2, zero 			# coluna = 0
+	li a3, 220			# linha = 220
+	call CALCULAR_ENDERECO
+	# como retorno a0 = endereço da imagem da seta
+	
+	li t0, 320		# t0 = largura da imagem / numero de colunas da imagem = 320
+	li t1, 15		# t1 = altura da imagem / numero de linhas da imagem = 15
+	
+	li t2, 0		# contador para o numero de linhas ja impressas
+	
+	mv a1, a0		# a1 = endereço de onde a seta deve ser renderizada
+	addi a1, a1, -640	# sobe esse endereço duas linhas para cima (320 * 2)
+	
+	# Dessa forma, o loop abaixo imprime a mesma seta só que duas 2 linhas para cima no frame 0														
+	PRINT_SETA_LINHAS:
+		li t3, 0		# contador para o numero de colunas ja impressas
+		addi t4, a1, 0		# copia do endereço de a1 para usar no loop de colunas
+			
+		PRINT_SETA_COLUNAS:
+			lb t5, 0(a0)			# pega 1 pixel do .data e coloca em t5
+			sb t5, 0(t4)			# pega o pixel de t5 e coloca no bitmap
+	
+			addi t3, t3, 1			# incrementando o numero de colunas impressas
+			addi a0, a0, 1			# vai para o próximo pixel da imagem
+			addi t4, t4, 1			# vai para o próximo pixel do bitmap
+			bne t3, t0, PRINT_SETA_COLUNAS	# reinicia o loop se t3 != t0
+			
+		addi t2, t2, 1				# incrementando o numero de linhas impressas
+		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
+		bne t2, t1, PRINT_SETA_LINHAS	        # reinicia o loop se t2 != t1	
+	
+	
+	LOOP_TELA_CONTROLES:
+		# Espera alguns milisegundos	
+		li a7, 32			# selecionando syscall sleep
+		li a0, 450			# sleep por 450 ms
+		ecall
+		
+		call TROCAR_FRAME
+		
+		call VERIFICAR_TECLA			# verifica se alguma tecla foi apertada	
+		li t0, 10				# t0 = valor da tecla enter
+		bne a0, t0, LOOP_TELA_CONTROLES		# se a0 = t0 -> tecla Enter foi apertada
+	
+	
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -97,7 +164,10 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		li a1, 0xFF100000		# seleciona como argumento o frame 1
 		call PRINT_TELA	
 	
-	call TROCAR_FRAME 			# trocando o frame para o 1
+	# Mostrando o frame 1		
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	li t1, 1
+	sb t1, (t0)			# armazena 0 no endereço de t0
 		
 	# Espera alguns milisegundos			
 	li a7, 32			# selecionando syscall sleep
@@ -311,6 +381,7 @@ RENDERIZAR_ANIMACAO_POKEMONS:
 	.include "../Imagens/tela_inicial/bulba_3.data"	
 	.include "../Imagens/tela_inicial/chari_3.data"
 	.include "../Imagens/tela_inicial/tela_inicial.data"
+	.include "../Imagens/tela_inicial/tela_controles.data"
 	
 	.include "procedimentos_auxiliares.s"
 	
