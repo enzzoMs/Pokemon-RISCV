@@ -52,7 +52,6 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		li t0, 0xFF200604		# t0 = endereço para escolher frames 
 		li t1, 1
 		sb t1, (t0)			# armazena 0 no endereço de t0
-		#call TROCAR_FRAME
 		
 	# Espera alguns milisegundos			
 		li a7, 32			# selecionando syscall sleep
@@ -168,7 +167,7 @@ RENDERIZAR_ANIMACAO_POKEMONS:
 		li a3, 115			# linha = 115
 		call CALCULAR_ENDERECO
 
-		mv a4, a0			# salva o retorno do procedimento chamado acima em a4
+		mv t4, a0			# salva o retorno do procedimento chamado acima em t4
 
 	# Calcula o endereço do começo da imagem do charizard
 		li a1, 0xFF100000		# seleciona como argumento o frame 1
@@ -176,76 +175,53 @@ RENDERIZAR_ANIMACAO_POKEMONS:
 		li a3, 99			# linha = 99
 		call CALCULAR_ENDERECO
 
-		mv a5, a0			# salva o retorno do procedimento chamado acima em a5
+		mv t5, a0			# salva o retorno do procedimento chamado acima em t5
 
 
-	# Imprimindo bulba_0
-	la a0, bulba_0		# carregando a imagem bulba_0
-	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
-	call PRINT_IMG		
+	# O loop abaixo tem como base os arquivos bulbasaur_tela_inicial.data e charizard_tela_inicial.data, 
+	# verificando os .bmp correspondentes é possível perceber que as imagens foram colocadas de maneira 
+	# sequencial, nesse sentido, fica convencionado que o registrador t5 = endereço base das imagens do 
+	# bulbasaur e t6 = endereço base das imagens do charizard, de forma que quando uma imagem 
+	# termina de ser renderizada os registradores já vão apontar automaticamente para o endereço da 
+	# próxima imagem.
+
+	la a4, bulbasaur_tela_inicial	# carrega o endereço da imagem
+	addi a4, a4, 8			# pula para onde começa os pixels
+	 
+	la a5, charizard_tela_inicial	# carrega o endereço da imagem
+	addi a5, a5, 8			# pula para onde começa os pixels
+	
+	li t6, 4			# numero de loops
+	
+	LOOP_ANIMACAO_POKEMONS:
 		
-	# Imprimindo chari_0
-	la a0, chari_0		# carregando a imagem chari_0
-	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
-	call PRINT_IMG	
-	
-	# Espera alguns milisegundos	
-	li a7, 32		# selecionando syscall sleep
-	li a0, 1000		# sleep por 1 s
-	ecall
-	
-	# -------------------------------------------------------------------------------------------- #
-
-	# Imprimindo bulba_1
-	la a0, bulba_1		# carregando a imagem bulba_1
-	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
-	call PRINT_IMG		
+		# Imprimindo a imagem do bulbasaur
+			mv a0, a4		# a0 = endereço da imagem
+			mv a1, t4		# a1 = endereço de onde a imagem deve ser renderizada
+			li a2, 110 		# a2 = numero de colunas
+			li a3, 85		# a3 = numero de linhas
+			call PRINT_IMG
 		
-	# Imprimindo chari_1
-	la a0, chari_1		# carregando a imagem chari_1
-	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
-	call PRINT_IMG	
-	
-	# Espera alguns milisegundos	
-	li a7, 32		# selecionando syscall sleep
-	li a0, 1000		# sleep por 1 s
-	ecall
-	
-	# -------------------------------------------------------------------------------------------- #
-
-	# Imprimindo bulba_2
-	la a0, bulba_2		# carregando a imagem bulba_2
-	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
-	call PRINT_IMG		
+		mv a4, a0		# atualiza o endereço da imagem do bulbasur
 		
-	# Imprimindo chari_2
-	la a0, chari_2		# carregando a imagem chari_2
-	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
-	call PRINT_IMG	
-	
-	# Espera alguns milisegundos	
-	li a7, 32		# selecionando syscall sleep
-	li a0, 1000		# sleep por 1 s
-	ecall
-	
-	# -------------------------------------------------------------------------------------------- #
-
-	# Imprimindo bulba_3
-	la a0, bulba_3		# carregando a imagem bulba_3
-	mv a1, a4		# a1 = argumento com a posicao onde a imagem do bulbasur será impressa
-	call PRINT_IMG		
+		# Imprimindo a imagem do charizard
+			mv a0, a5		# a0 = endereço da imagem
+			mv a1, t5		# a1 = endereço de onde a imagem deve ser renderizada
+			li a2, 111 		# a2 = numero de colunas
+			li a3, 100		# a3 = numero de linhas
+			call PRINT_IMG
+			
+		mv a5, a0		# atualiza o endereço da imagem do charizard	
 		
-	# Imprimindo chari_3
-	la a0, chari_3		# carregando a imagem chari_3
-	mv a1, a5		# a5 = argumento com a posicao onde a imagem do charizard será impressa
-	call PRINT_IMG	
-	
-	# Espera alguns milisegundos	
-	li a7, 32		# selecionando syscall sleep
-	li a0, 1000		# sleep por 1 s
-	ecall
-	
-	# -------------------------------------------------------------------------------------------- #
+		# Espera alguns milisegundos	
+			li a7, 32		# selecionando syscall sleep
+			li a0, 1000		# sleep por 1 s
+			ecall
+			
+		addi t6, t6, -1				# decrementa a6
+		
+		bne t6, zero, LOOP_ANIMACAO_POKEMONS	# se t0 != 0 recomeça o loop
+			
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -348,38 +324,17 @@ MOSTRAR_TELA_CONTROLES:
 	
 	# Calcula o endereço do inicio da seta
 	li a1, 0xFF000000		# seleciona como argumento o frame 0
-	li a2, 296 			# coluna = 296
+	li a2, 0 			# coluna = 0
 	li a3, 220			# linha = 220
 	call CALCULAR_ENDERECO
 	# como retorno a0 = endereço da imagem da seta
 	
-	li t0, 18		# t0 = largura da seta / numero de colunas = 18
-	li t1, 15		# t1 = altura da seta / numero de linhas = 15
-	
-	li t2, 0		# contador para o numero de linhas ja impressas
-	
 	mv a1, a0		# a1 = endereço de onde a seta deve ser renderizada
 	addi a1, a1, -640	# sobe esse endereço 2 linhas para cima (320 * 2)
+	li a2, 320		# largura da seta / numero de colunas = 320
+	li a3, 15		# altura da seta / numero de linhas = 15
 	
-	# Dessa forma, o loop abaixo imprime a mesma seta só que duas 2 linhas para cima no frame 0														
-	PRINT_SETA_LINHAS:
-		li t3, 0		# contador para o numero de colunas ja impressas
-		mv t4, a1		# copia do endereço de a1 para usar no loop de colunas
-		mv t5, a0 		# copia do endereço de a0 para usar no loop de colunas
-		
-		PRINT_SETA_COLUNAS:
-			lb t6, 0(t5)			# pega 1 pixel da imagem e coloca em t6
-			sb t6, 0(t4)			# pega o pixel de t6 e coloca no bitmap
-	
-			addi t3, t3, 1			# incrementando o numero de colunas impressas
-			addi t5, t5, 1			# vai para o próximo pixel da imagem
-			addi t4, t4, 1			# vai para o próximo pixel do bitmap
-			bne t3, t0, PRINT_SETA_COLUNAS	# reinicia o loop se t3 != t0
-			
-		addi t2, t2, 1				# incrementando o numero de linhas impressas
-		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
-		addi a0, a0, 320			# passa o endereço da imagem para a proxima linha	
-		bne t2, t1, PRINT_SETA_LINHAS	        # reinicia o loop se t2 != t1	
+	call PRINT_IMG
 	
 	# O loop abaixo alterna constantemente entre o frame 0 e o 1 enquanto espera que o 
 	# usuario aperte ENTER
@@ -406,17 +361,9 @@ MOSTRAR_TELA_CONTROLES:
 .data
 	.include "../Imagens/tela_inicial/pre_animacao_inicial.data"
 	.include "../Imagens/tela_inicial/animacao_faixa.data"
-	.include "../Imagens/tela_inicial/bulba_0.data"
-	.include "../Imagens/tela_inicial/chari_0.data"	
-	.include "../Imagens/tela_inicial/bulba_1.data"
-	.include "../Imagens/tela_inicial/chari_1.data"	
-	.include "../Imagens/tela_inicial/bulba_2.data"
-	.include "../Imagens/tela_inicial/chari_2.data"	
-	.include "../Imagens/tela_inicial/bulba_3.data"	
-	.include "../Imagens/tela_inicial/chari_3.data"
+	.include "../Imagens/tela_inicial/bulbasaur_tela_inicial.data"
+	.include "../Imagens/tela_inicial/charizard_tela_inicial.data"	
 	.include "../Imagens/tela_inicial/tela_inicial.data"
 	.include "../Imagens/tela_inicial/tela_controles.data"
-	
-	.include "procedimentos_auxiliares.s"
 	
 	
