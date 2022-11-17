@@ -16,7 +16,7 @@ PRINT_TELA:
 	# 	a1 = endereço do frame
 	
 	li t0, 76800		# area total da imagem -> 320 x 240 = 76800 pixels
-	addi a0,a0,8		# pula para onde começa os pixels no .data
+	addi a0, a0, 8		# pula para onde começa os pixels no .data
 	li t1, 0		# contador de quantos pixels já foram impressos
 
 	LOOP_PRINT_IMG: 
@@ -38,30 +38,27 @@ PRINT_IMG:
 	# Argumentos: 
 	# 	a0 = endereço da imgagem		
 	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
+	# 	a2 = numero de colunas da imagem
+	#	a3 = numero de linhas da imagem
 	
-	lw t0, 0(a0)		# t0 = largura da imagem / numero de colunas da imagem
-	lw t1, 4(a0)		# t1 = altura da imagem / numero de linhas da imagem
-	
-	addi a0, a0, 8		# pula para onde começa os pixels no .data
-
-	li t2, 0		# contador para o numero de linhas ja impressas
+	li t0, 0		# contador para o numero de linhas ja impressas
 	
 	PRINT_IMG_LINHAS:
-		li t3, 0		# contador para o numero de colunas ja impressas
-		addi t4, a1, 0		# copia do endereço de a1 para usar no loop de colunas
+		li t1, 0		# contador para o numero de colunas ja impressas
+		addi t2, a1, 0		# copia do endereço de a1 para usar no loop de colunas
 			
 		PRINT_IMG_COLUNAS:
-			lb t5, 0(a0)			# pega 1 pixel do .data e coloca em t5
-			sb t5, 0(t4)			# pega o pixel de t5 e coloca no bitmap
+			lb t3, 0(a0)			# pega 1 pixel do .data e coloca em t3
+			sb t3, 0(t2)			# pega o pixel de t3 e coloca no bitmap
 	
-			addi t3, t3, 1			# incrementando o numero de colunas impressas
+			addi t1, t1, 1			# incrementando o numero de colunas impressas
 			addi a0, a0, 1			# vai para o próximo pixel da imagem
-			addi t4, t4, 1			# vai para o próximo pixel do bitmap
-			bne t3, t0, PRINT_IMG_COLUNAS	# reinicia o loop se t3 != t0
+			addi t2, t2, 1			# vai para o próximo pixel do bitmap
+			bne t1, a2, PRINT_IMG_COLUNAS	# reinicia o loop se t1 != t2
 			
-		addi t2, t2, 1				# incrementando o numero de linhas impressas
+		addi t0, t0, 1				# incrementando o numero de linhas impressas
 		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
-		bne t2, t1, PRINT_IMG_LINHAS	        # reinicia o loop se t2 != t1
+		bne t0, a3, PRINT_IMG_LINHAS	        # reinicia o loop se t0 != a3
 			
 	ret
 
