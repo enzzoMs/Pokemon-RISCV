@@ -111,6 +111,133 @@ VERIFICAR_TECLA:
 	FIM_VERIFICAR_TECLA:					
 		ret
 		
+# ====================================================================================================== #
+	
+PRINT_DIALOGOS:
+	# Procedimento que imprime uma quantidade variavel de caixas de dialogo em ambos os frames
+	# Os dialogos são sempre renderizados em uma área fixa da tela
+	# O número de dialogos é determinado pelo argumento a1.
+	# Caso seja mais de 1 dialogo, para o procedimento funcionar corretamente é necessário que 
+	# as imagens estejam em um mesmo arquivo (ver intro_dialogos.bmp para um exemplo)
+	
+	# Argumentos: 
+	# 	a0 = endereço da imagem dos dialogos		
+	# 	a1 = número de caixas de dialógos a serem renderizadas		
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+
+	mv a6, a0		# guarda o endereço de a0 em a6
+	mv t6, a1		# guarda o numero de a1 em t6	
+				
+	# Calcula o endereço de onde o dialogo vai ser renderizado no frame 0		
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		li a2, 6 			# coluna = 6
+		li a3, 172			# linha = 172
+		call CALCULAR_ENDERECO
+	
+	mv t4, a0	# salva o endereço retornado em t4
+
+	# Calcula o endereço de onde o dialogo vai ser renderizado no frame 1		
+		li a1, 0xFF100000		# seleciona como argumento o frame 1
+		# os valores de a2 (coluna) e a3 (linha) continuam os mesmos 
+		call CALCULAR_ENDERECO
 		
+	mv t5, a0	# salva o endereço retornado em t5
 		
+	li a2, 308	# numero de colunas de uma caixa de dialogo
+	li a3, 64	# numero de linhas de uma caixa de dialogo
+
 		
+	# O loop abaixo é responsável por renderizar uma caixa de diálogo em ambos os frames.
+	# Essas caixas são sempre mostradas em uma área fixa.  
+	# Esse loop tem como base o arquivo intro_dialogos.data, verificando o .bmp correspondente 
+	# é possível perceber que as imagens foram colocadas de maneira sequencial, nesse sentido, 
+	# fica convencionado que o registrador a6 = endereço base da imagem de forma que quando um diálogo 
+	# termina de ser renderizado a6 já vai apontar automaticamente para o endereço da próxima caixa 
+	# de diálogo.
+	 						
+	LOOP_PROXIMO_DIALOGO:
+	li a2, 308	# numero de colunas de uma caixa de dialogo
+	li a3, 64	# numero de linhas de uma caixa de dialogo
+		
+		mv a0, a6		# move para a0 o endereço da imagem
+		mv a1, t4		# move para a1 o endereço de onde o dialogo será renderizado (frame 0)
+		call PRINT_IMG
+	
+		mv a0, a6		# move para a0 o endereço da imagem
+		mv a1, t5		# move para a1 o endereço de onde o dialogo será renderizado (frame 1)
+		call PRINT_IMG
+	
+		mv a6, a0		# atualiza o endereço da imagem para o próximo dialogo
+	
+		call PRINT_SETA_DIALOGO
+	
+		LOOP_FRAMES_DIALOGO:
+		# Troca constantemente de frame até o usuário apertar ENTER para carregar o proximo dialogo
+		
+			# Espera alguns milisegundos	
+				li a7, 32			# selecionando syscall sleep
+				li a0, 450			# sleep por 450 ms
+				ecall
+		
+			call TROCAR_FRAME
+		
+			call VERIFICAR_TECLA			# verifica se alguma tecla foi apertada	
+			li t0, 10				# t0 = valor da tecla enter
+			bne a0, t0, LOOP_FRAMES_DIALOGO		# se a0 = t0 -> tecla Enter foi apertada
+	
+		addi t6, t6, -1					# decrementa o numero de loops
+		
+		bne t6, zero, LOOP_PROXIMO_DIALOGO		# se t6 != 0 reinicia o loop
+
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret
+			
+# ====================================================================================================== #
+
+PRINT_SETA_DIALOGO:
+	# Procedimento auxiliar a PRINT_DIALOGOS_INTRO
+	# Imprime setas nas caixas de dialogos em ambos os frames, sendo que no frame 1 a
+	# seta está levemente para cima	
+	# As setas sempre estão em posições fixas na tela
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+
+	# Calcula o endereço de onde a seta vai ser renderizada no frame 0		
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		li a2, 280 			# coluna = 284
+		li a3, 216			# linha = 216
+		call CALCULAR_ENDERECO
+	
+	# Imprime a seta no frame 0
+		mv a1, a0		# endereço onde a seta será renderizada
+		la a0, seta_dialogo	# carrega a imagem
+		lw a2, 0(a0)		# a1 = numero de colunas da imagem
+		lw a3, 4(a0)		# a2 = numero de linhas da imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data
+		call PRINT_IMG
+	
+	# Calcula o endereço de onde a seta vai ser renderizada no frame 1		
+		li a1, 0xFF100000		# seleciona como argumento o frame 1
+		li a2, 280 			# coluna = 284
+		li a3, 214			# linha 214
+		call CALCULAR_ENDERECO
+
+	# Imprime a seta no frame 1
+		mv a1, a0		# endereço onde a seta será renderizada
+		la a0, seta_dialogo	# carrega a imagem
+		lw a2, 0(a0)		# a1 = numero de colunas da imagem
+		lw a3, 4(a0)		# a2 = numero de linhas da imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data
+		call PRINT_IMG
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret
+																											
