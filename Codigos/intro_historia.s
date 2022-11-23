@@ -76,6 +76,50 @@ INICIALIZAR_INTRO_HISTORIA:
 		li a6, 1		# seleciona como argumento o numero de dialogos a serem renderizados
 		call PRINT_DIALOGOS	
 				
+		
+	# Imprime a imagem do BLUE em ambos os frames										
+		# Calcula o endereço de onde renderizar a imagem do Blue no frame 0
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		li a2, 124 			# numero da coluna
+		li a3, 34			# numero da linha
+		call CALCULAR_ENDERECO
+		
+		mv t4, a0			# salva o endereço retornado em t4
+		
+		li t0, 0x00100000	# soma t0 com t4 de forma que o endereço de t4 passa para o 
+		add a1, t4, t0		# endereço correspondente no frame 1		
+		
+		# Imprimindo a imagem do Blue no frame 1
+		la a0, intro_blue	# carrega a imagem
+		# a1 já possui o endereço de onde renderizar a imagem
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED			
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG
+
+		# Imprimindo a imagem do Blue no frame 0	
+		la a0, intro_blue	# carrega a imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		mv a1, t4		# passa para a1 o endereço de onde renderizar a imagem
+		# a2 (numero de linhas) e a3 (numero de colunas) já possuem os valores corretos					
+		call PRINT_IMG	
+					
+	# Renderiza 3 caixas de dialogo	
+	# através da chamada do procedimento PRINT_DIALOGOS acima, a5 já possui o endereço
+	# do próximo diálogo
+		li a6, 3		# seleciona como argumento o numero de dialogos a serem renderizados
+		call PRINT_DIALOGOS					
+				
+	li a6, 1			# com argumento a6 = 1 renderiza a imagem completa do RED
+	call RENDERIZAR_RED		
+		
+	# Renderiza 3 caixas de dialogo	
+	# através da chamada do procedimento PRINT_DIALOGOS acima, a5 já possui o endereço
+	# do próximo diálogo
+		li a6, 3		# seleciona como argumento o numero de dialogos a serem renderizados
+		call PRINT_DIALOGOS				
+				
+				
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -249,4 +293,5 @@ RENDERIZAR_RED:
 	.include "../Imagens/intro_historia/intro_dialogos.data"
 	.include "../Imagens/intro_historia/prof_carvalho_intro_animacao.data"
 	.include "../Imagens/intro_historia/intro_red.data"
+	.include "../Imagens/intro_historia/intro_blue.data"
 	.include "../Imagens/outros/seta_dialogo.data"
