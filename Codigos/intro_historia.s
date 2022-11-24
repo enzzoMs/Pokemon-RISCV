@@ -4,7 +4,7 @@
 # 						INTRO HISTORIA				                 #
 # ------------------------------------------------------------------------------------------------------ #
 # 													 #
-# Código responsável por renderizar a história introdutória do jogo.			                 # 
+# Código responsável por renderizar a história introdutória do jogo com todas as suas animações.         # 
 #													 #
 # ====================================================================================================== #
 
@@ -119,7 +119,8 @@ INICIALIZAR_INTRO_HISTORIA:
 		li a6, 3		# seleciona como argumento o numero de dialogos a serem renderizados
 		call PRINT_DIALOGOS				
 				
-				
+	call RENDERIZAR_ANIMACAO_FINAL_INTRO
+										
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -179,7 +180,7 @@ RENDERIZAR_ANIMACAO_PROF:
 		
 		# Espera alguns milisegundos	
 			li a7, 32			# selecionando syscall sleep
-			li a0, 430			# sleep por 430 ms
+			li a0, 500			# sleep por 500 ms
 			ecall
 	
 		mv a0, t0		# volta o endereço de t0 para a0
@@ -279,13 +280,85 @@ RENDERIZAR_RED:
 		mv a1, t5		# move para a1 o endereço de onde renderizar a imagem no frame 1
 		# o valor de a2 (numero de linhas) e a3 (numero de colunas) continua o mesmo
 		call PRINT_IMG
-							
-					
+									
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret				
+
+# ====================================================================================================== #					
+
+RENDERIZAR_ANIMACAO_FINAL_INTRO:
+	# Procedimento que imprime uma serie de imagens na tela referentes a animação final da intro,
+	# nessa animação várias imagens do Red aparecem, sendo uma menor do que a outra.
+	# O procedimento usa os arquivos intro_final_red.data e intro_final_red_animação.data, sendo este
+	# último usado na animação em si, com as imagens colocadas de maneira sequencial tal como no procedimento
+	# RENDERIZAR_ANIMACAO_PROF 
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra	
+	
+	# Mostrando o frame 0		
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	sb zero, (t0)			# armazena 0 no endereço de t0
+																														
+	# Imprimindo a intro_final_red no frame 0
+		la a0, intro_final_red 		# carregando a imagem em a0
+		li a1, 0xFF000000		# selecionando como argumento o frame 0
+		call PRINT_TELA																																																												
+																																																																																										
+	# Espera alguns milisegundos	
+		li a7, 32			# selecionando syscall sleep
+		li a0, 1000			# sleep por 1 s
+		ecall																																																																																																																								
 					
+	# Calcula o endereço de onde renderizar as imagens do Red no frame 0
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		li a2, 124 			# numero da coluna
+		li a3, 34			# numero da linha
+		call CALCULAR_ENDERECO
+	
+	mv t4, a0			# guarda o endereço em t4	
+		
+	la a0, intro_final_red_animacao		# carrega a imagem da animação
+	addi a0, a0, 8				# pula para onde começa os pixels no .data	
+	li a2, 73				# numero de colunas de uma imagem do RED
+	li a3, 129				# numero de linhas de uma imagem do RED
+	
+	mul t5, a2, a3		# t5 = a2 * a3 = colunas * linhas = area total de uma imagem do RED
+	
+	li t6, 7		# t6 = numero de loops a serem executados = numero de imagens do RED
+	
+	LOOP_RENDERIZAR_RED:
+		# a0 já possui o endereço da imagem
+		mv a1, t4		# move para a1 o endereço no bitmap onde a imagem será impressa
+		# a2 e a3 já possuem o numero de linhas e colunas da imagem
+		call PRINT_IMG
+		
+		mv t0, a0		# guarda o endereço de a0 em t0
+		
+		# Espera alguns milisegundos	
+			li a7, 32			# selecionando syscall sleep
+			li a0, 600			# sleep por 600 ms
+			ecall
+	
+		mv a0, t0		# volta o endereço de t0 para a0
+
+		addi t6, t6, -1				# decrementa t6
+	
+		bne t6, zero, LOOP_RENDERIZAR_RED	# reinicia o loop se t6 != 0
+	
+						
+	# Espera alguns milisegundos	
+	li a7, 32			# selecionando syscall sleep
+	li a0, 2000			# sleep por 2 s
+	ecall	
+																
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret				
+																																																																																																																																																																																																																																																																																																																																																																						
 # ====================================================================================================== #					
  
 .data
@@ -294,4 +367,6 @@ RENDERIZAR_RED:
 	.include "../Imagens/intro_historia/prof_carvalho_intro_animacao.data"
 	.include "../Imagens/intro_historia/intro_red.data"
 	.include "../Imagens/intro_historia/intro_blue.data"
+	.include "../Imagens/intro_historia/intro_final_red.data"
+	.include "../Imagens/intro_historia/intro_final_red_animacao.data"
 	.include "../Imagens/outros/seta_dialogo.data"
