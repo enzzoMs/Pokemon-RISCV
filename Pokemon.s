@@ -22,7 +22,9 @@ call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
 
 call INICIALIZAR_INTRO_HISTORIA		# Chama o procedimento em intro_historia.s
 
-
+call RENDERIZAR_QUARTO_RED		# chama o procedimento em areas.s
+		
+		
 loop : j loop	 # loop eterno 
 
 # ====================================================================================================== #
@@ -30,4 +32,5 @@ loop : j loop	 # loop eterno
 .data
 	.include "Codigos/tela_inicial.s"
 	.include "Codigos/intro_historia.s"
+	.include "Codigos/areas.s"	
 	.include "Codigos/procedimentos_auxiliares.s"
