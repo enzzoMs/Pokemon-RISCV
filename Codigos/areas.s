@@ -43,11 +43,13 @@ RENDERIZAR_QUARTO_RED:
 		mv a1, a0		# move o endereço retornado para a1
 		
 		# Imprimindo a imagem do RED virado para cima no frame 0
-		la a0, red_cima		# carrega a imagem
-		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		la a0, red_cima		# carrega a imagem				
 		# a1 já possui o endereço de onde renderizar o RED
-		call PRINT_SPRITE
-						
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+			
 	j FIM_RENDERIZAR_AREA
 
 

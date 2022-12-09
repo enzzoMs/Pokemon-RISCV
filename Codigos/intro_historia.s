@@ -351,7 +351,7 @@ RENDERIZAR_ANIMACAO_FINAL_INTRO:
 						
 	# Espera alguns milisegundos	
 	li a7, 32			# selecionando syscall sleep
-	li a0, 2000			# sleep por 2 s
+	li a0, 1000			# sleep por 1 s
 	ecall	
 																
 	lw ra, (sp)		# desempilha ra

@@ -63,50 +63,6 @@ PRINT_IMG:
 	ret
 
 # ====================================================================================================== #
-
-PRINT_SPRITE:
-	# Esse procedimento funciona de maneira similar ao PRINT_IMG, a diferença é que possui algumas 
-	# alterações para a renderização dos sprites de personagens na tela.
-	# Para entender esse procedimento é ncessário perceber que alguns sprites, como os do RED que podem
-	# ser encontrados em "../Imagens/red", possuem um fundo rosa/magenta, com base nisso, esse procedimento
-	# imprime todos os pixels dessa imagem exceto os que tem cor rosa, com o objetivo de imprimir SOMENTE
-	# o sprite do personagem, sem alterar o resto da tela. 
-	# Todos os sprites de personagens tem o mesmo tamanho: 26 (colunas) x 32 (linhas)
-	# Argumentos: 
-	# 	a0 = endereço da imagem		
-	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
-	
-	li t0, 0		# contador para o numero de linhas ja impressas
-	li t1, 143		# valor da cor (rosa/magenta) do fundo dos sprites
-	
-	li t5, 26		# numero de colunas de um sprite = 26
-	li t6, 32		# numero de linhas de um sprite = 32
-	
-	PRINT_SPRITE_LINHAS:
-		li t2, 0		# contador para o numero de colunas ja impressas
-		addi t3, a1, 0		# copia do endereço de a1 para usar no loop de colunas
-			
-		PRINT_SPRITE_COLUNAS:
-			lbu t4, 0(a0)			# pega 1 pixel do .data e coloca em t3
-			
-			# Só renderiza o pixel se a cor dele nao for rosa
-			beq t4, t1, NAO_COLOCAR_PIXEL_SPRITE
-				sb t4, 0(t3)			# pega o pixel de t3 e coloca no bitmap
-	
-			NAO_COLOCAR_PIXEL_SPRITE:
-	
-			addi t2, t2, 1				# incrementando o numero de colunas impressas
-			addi a0, a0, 1				# vai para o próximo pixel da imagem
-			addi t3, t3, 1				# vai para o próximo pixel do bitmap
-			bne t2, t5, PRINT_SPRITE_COLUNAS	# reinicia o loop se t1 != t2
-			
-		addi t0, t0, 1				# incrementando o numero de linhas impressas
-		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
-		bne t0, t6, PRINT_SPRITE_LINHAS	        # reinicia o loop se t0 != a3
-			
-	ret
-
-# ====================================================================================================== #
 				
 CALCULAR_ENDERECO:
 	# Procedimento que calcula um endereço no frame de escolha ou em uma imagem

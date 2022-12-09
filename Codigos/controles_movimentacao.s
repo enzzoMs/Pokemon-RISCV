@@ -121,7 +121,7 @@ MOVIMENTACAO_TECLA_D:
 			
 			li s2, 1	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para a direita
-	
+										
 	FIM_MOVIMENTACAO_D:
 													
 	lw ra, (sp)		# desempilha ra
@@ -161,9 +161,11 @@ MUDAR_ORIENTACAO_PERSONAGEM:
 		
 		# Imprimindo a imagem do RED virado para a direita no frame 0
 		mv a0, a4		# carrega a imagem a partir do argumento a4
-		addi a0, a0, 8		# pula para onde começa os pixels no .data
-		# a1 já possui o endereço de onde renderizar o RED	
-		call PRINT_SPRITE
+		# a1 já possui o endereço de onde renderizar o RED
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG
 		
 		li s2, 1		# atualiza o valor de s2
 		
