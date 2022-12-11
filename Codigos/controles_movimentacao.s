@@ -91,12 +91,84 @@ MOVIMENTACAO_TECLA_S:
 	
 	# Primeiro verifica se o personagem está virado para baixo
 		li t0, 3
-		beq s2, t0, FIM_MOVIMENTACAO_S
+		beq s2, t0, INICIO_MOVIMENTACAO_S
 			la a4, red_baixo	# carrega como argumento o sprite do RED virada para baixo		
 			call MUDAR_ORIENTACAO_PERSONAGEM
 			
 			li s2, 3	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para baixo
+	
+			j FIM_MOVIMENTACAO_S
+							
+	INICIO_MOVIMENTACAO_S:
+	
+	li t3, 26		# número de pixels que o personagem vai se deslocar, ou seja,
+				# o número de loops a serem executados abaixo
+	
+	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		mv a2, s0 			# numero da coluna do RED = s0
+		mv a3, s1			# numero da linha do RED = s1
+		call CALCULAR_ENDERECO	
+		
+		mv t4, a0		# salva o endereço retornado em t4
+		
+		
+		la a0, red_baixo		# o loop de movimentação começa imprimindo a imagem do RED 
+						# virado para baixo normalmente	
+						
+		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+		# de acordo com o valor de s4
+		
+		la t5, red_baixo_passo_direito
+		
+		beq s4, zero, LOOP_MOVIMENTACAO_S		
+			la t5, red_baixo_passo_esquerdo
+	
+														
+	LOOP_MOVIMENTACAO_S:
+		# Primeiro renderiza o sprite do RED
+			# a0 já possui o endereço da imagem a ser renderizar
+			mv a1, t4		# passa para a1 o endereço de onde renderizar o sprite
+			mv a2, s3		# passa para a2 o endereço da área atual
+			lw a3, 0(a0)		# numero de colunas do sprite
+			lw a4, 4(a0)		# numero de linhas do sprite
+			call PRINT_SPRITE
+		
+		# Limpa a tela, ou seja, remove o sprite antigo do RED
+			addi a0, t4, -320	# passa para a0 o endereço de onde limpar a tela, ou seja,
+						# uma linha atrás de onde o RED foi renderizado 
+			mv a1, s3		# passa para a1 o endereço da área atual
+			li a2, 26		# numero de colunas a serem limpas
+			li a3, 1		# numero de linhas a serem limpas
+			call LIMPAR_TELA
+
+		addi t4, t4, 320	# move o endereço de onde renderizar o RED uma linha para frente
+																																																																								
+		addi t3, t3, -1		# decrementa o número de loops restantes
+		
+		# Espera alguns milisegundos	
+		li a7, 32			# selecionando syscall sleep
+		li a0, 1			# sleep por 1 ms
+		ecall
+		
+		# Determina qual é o próximo sprite do RED a ser renderizado,
+		# de modo que a animação siga o seguinte padrão:
+		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
+		
+		la a0, red_baixo
+		li t0, 22
+		bgt t3, t0, LOOP_MOVIMENTACAO_S
+		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
+		li t0, 4
+		bgt t3, t0, LOOP_MOVIMENTACAO_S
+		la a0, red_baixo
+		bne t3, zero, LOOP_MOVIMENTACAO_S
+		
+	addi s1, s1, 25		# atualiza a linha atual do personagem pelo número de loops executados	
+	
+	not s4, s4		# inverte o valor de s4, ou seja, se o RED deu um passo esquerdo o próximo
+				# será direito e vice-versa
 	
 	FIM_MOVIMENTACAO_S:
 													
@@ -173,7 +245,7 @@ MOVIMENTACAO_TECLA_D:
 		
 		# Espera alguns milisegundos	
 		li a7, 32			# selecionando syscall sleep
-		li a0, 1			# sleep por 500 ms
+		li a0, 1			# sleep por 1 ms
 		ecall
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
@@ -300,5 +372,7 @@ LIMPAR_TELA:
 	.include "../Imagens/red/red_direita_passo_esquerdo.data"
 	.include "../Imagens/red/red_direita_passo_direito.data"
 	.include "../Imagens/red/red_cima.data"
-	.include "../Imagens/red/red_baixo.data"	
+	.include "../Imagens/red/red_baixo.data"
+	.include "../Imagens/red/red_baixo_passo_esquerdo.data"
+	.include "../Imagens/red/red_baixo_passo_direito.data"	
 	.include "../Imagens/red/red_esquerda.data"
