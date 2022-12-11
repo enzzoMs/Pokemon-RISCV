@@ -21,7 +21,10 @@
 #		[ 2 ] = virado para cima 								 #
 #		[ 3 ] = virado para baixo								 #
 #	s3 = guarda o endereço base da imagem da área atual onde o personagem está  			 #	
-#													 #											 #
+#	s4 = determina como será o próximo passo do RED durante as animações de movimento, de modo que   #
+#		[ 0 ] = próximo passo será dado com o pé esquerdo					 #
+#		[ Qualquer outro valor] = próximo passo será dado com o pé direito			 #
+#													 #											 
 # ====================================================================================================== #
 # Observações:											         #
 # 													 #
@@ -45,8 +48,6 @@ LOOP_PRINCIPAL_JOGO:
 	
 	j  LOOP_PRINCIPAL_JOGO
 				
-								
-loop : j loop	 # loop eterno 
 
 # ====================================================================================================== #
 

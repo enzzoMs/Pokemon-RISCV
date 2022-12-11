@@ -115,13 +115,85 @@ MOVIMENTACAO_TECLA_D:
 	
 	# Primeiro verifica se o personagem está virado para a direita
 		li t0, 1
-		beq s2, t0, FIM_MOVIMENTACAO_D
+		beq s2, t0, INICIO_MOVIMENTACAO_D
 			la a4, red_direita	# carrega como argumento o sprite do RED virada para a direita		
 			call MUDAR_ORIENTACAO_PERSONAGEM
 			
 			li s2, 1	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para a direita
-										
+			
+			j FIM_MOVIMENTACAO_D
+							
+	INICIO_MOVIMENTACAO_D:
+	
+	li t3, 26		# número de pixels que o personagem vai se deslocar, ou seja,
+				# o número de loops a serem executados abaixo
+	
+	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		mv a2, s0 			# numero da coluna do RED = s0
+		mv a3, s1			# numero da linha do RED = s1
+		call CALCULAR_ENDERECO	
+		
+		mv t4, a0		# salva o endereço retornado em t4
+		
+		
+		la a0, red_direita		# o loop de movimentação começa imprimindo a imagem do RED 
+						# virado para a direita normalmente	
+						
+		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+		# de acordo com o valor de s4
+		
+		la t5, red_direita_passo_direito
+		
+		beq s4, zero, LOOP_MOVIMENTACAO_D		
+			la t5, red_direita_passo_esquerdo
+	
+														
+	LOOP_MOVIMENTACAO_D:
+		# Primeiro renderiza o sprite do RED
+			# a0 já possui o endereço da imagem a ser renderizar
+			mv a1, t4		# passa para a1 o endereço de onde renderizar o sprite
+			mv a2, s3		# passa para a2 o endereço da área atual
+			lw a3, 0(a0)		# numero de colunas do sprite
+			lw a4, 4(a0)		# numero de linhas do sprite
+			call PRINT_SPRITE
+		
+		# Limpa a tela, ou seja, remove o sprite antigo do RED
+			addi a0, t4, -1		# passa para a0 o endereço de onde limpar a tela, ou seja,
+						# um pixel atrás de onde o RED foi renderizado 
+			mv a1, s3		# passa para a1 o endereço da área atual
+			li a2, 1		# numero de colunas a serem limpas
+			li a3, 32		# numero de linhas a serem limpas
+			call LIMPAR_TELA
+
+		addi t4, t4, 1		# move o endereço de onde renderizar o RED um pixel para frente
+																																																																								
+		addi t3, t3, -1		# decrementa o número de loops restantes
+		
+		# Espera alguns milisegundos	
+		li a7, 32			# selecionando syscall sleep
+		li a0, 1			# sleep por 500 ms
+		ecall
+		
+		# Determina qual é o próximo sprite do RED a ser renderizado,
+		# de modo que a animação siga o seguinte padrão:
+		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
+		
+		la a0, red_direita
+		li t0, 22
+		bgt t3, t0, LOOP_MOVIMENTACAO_D
+		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
+		li t0, 4
+		bgt t3, t0, LOOP_MOVIMENTACAO_D
+		la a0, red_direita
+		bne t3, zero, LOOP_MOVIMENTACAO_D
+		
+	addi s0, s0, 25		# atualiza a coluna atual do personagem pelo número de loops executados	
+	
+	not s4, s4		# inverte o valor de s4, ou seja, se o RED deu um passo esquerdo o próximo
+				# será direito e vice-versa
+				
 	FIM_MOVIMENTACAO_D:
 													
 	lw ra, (sp)		# desempilha ra
@@ -165,10 +237,7 @@ MUDAR_ORIENTACAO_PERSONAGEM:
 		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
 		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
-		call PRINT_IMG
-		
-		li s2, 1		# atualiza o valor de s2
-		
+		call PRINT_IMG	
 			
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -176,14 +245,14 @@ MUDAR_ORIENTACAO_PERSONAGEM:
 	ret	
 	
 # ====================================================================================================== #										
-	
+
+								
 LIMPAR_TELA:
-	# Procedimento que "limpa a tela", ou seja, remove o sprite de um personagem da tela (frame 0) e o 
-	# substitui pela imagem adequada de uma área
+	# Procedimento que "limpa a tela", ou seja, remove o sprite de um personagem ou objeto da tela 
+	# e o substitui pela imagem adequada de uma área
 	# Argumentos:
-	#	a0 = endereço, no frame 0, de onde renderizar a imagem e remover o sprite
-	#		também pode ser entendido como o endereço onde o sprite está
-	# 	a1 = endereço da área onde o personagem está	
+	#	a0 = endereço, no frame 0, de onde renderizar a imagem e limpar a tela
+	# 	a1 = endereço base da imagem da área que será renderizada para limpar a tela
 	#	a2 = numero de colunas do sprite a ser removido
 	# 	a3 = numero de linhas do sprite a ser removido
 	
@@ -191,34 +260,34 @@ LIMPAR_TELA:
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
 	
+	addi a1, a1, 8		# pula para onde começa os pixels no .data da imagem da área
+	
 	li t0, 0xFF000000	# t0 = endereço base do frame 0
-	sub t0, a0, t0		# a0 (endereço de onde o sprite está no frame 0) - 
-				# t0 (endereço base do frame 0) = quantos pixels é necessário pular
-				# na imagem da área (a1) para encontrar onde o sprite está
-	
-	addi a1, a1, 8		# pula para onde começa os pixels no .data
-	add a1, a1, t0		# pula para o endereço da imagem onde o sprite está
-	
-	li t0, 0		# contador para o numero de linhas ja impressas
-	
+	sub t0, a0, t0		# a0 (endereço de onde limpar a tela ) - t0 (endereço base do frame 0) = 
+				# quantos pixels é necessário pular na imagem da área (a1) para encontrar 
+				# onde a sub imagem que será usada na limpeza 
+
+	add a1, a1, t0		# pula para o endereço da sub imagem da área que será usada na limpeza
+		
+		
 	LIMPA_TELA_LINHAS:
-		li t1, 0		# contador para o numero de colunas ja impressas
-		addi t2, a0, 0		# copia do endereço de t4 para usar no loop de colunas
-		addi t3, a1, 0		# copia do endereço de a4 para usar no loop de colunas
+		mv t0, a2		# copia do valor de a2 para o loop de colunas
 			
 		LIMPA_TELA_COLUNAS:
-			lb t4, 0(t3)			# pega 1 pixel do .data e coloca em t4
-			sb t4, 0(t2)			# pega o pixel de t4 e coloca no bitmap
+			lb t1, 0(a1)		# pega 1 pixel do .data da sub imagem da área e coloca em t1
+			sb t1, 0(a0)		# pega o pixel de t1 e coloca no bitmap
 	
-			addi t1, t1, 1			# incrementando o numero de colunas impressas
-			addi t3, t3, 1			# vai para o próximo pixel da imagem
-			addi t2, t2, 1			# vai para o próximo pixel do bitmap
-			bne t1, a2, LIMPA_TELA_COLUNAS	# reinicia o loop se t1 != t2
+			addi t0, t0, -1			# decrementando o numero de colunas restantes
+			addi a1, a1, 1			# vai para o próximo pixel da sub imagem da área
+			addi a0, a0, 1			# vai para o próximo pixel do bitmap
+			bne t0, zero, LIMPA_TELA_COLUNAS	# reinicia o loop se t0 != 0
 			
-		addi t0, t0, 1				# incrementando o numero de linhas impressas
-		addi a0, a0, 320			# passa o endereço do bitmap para a proxima linha
-		addi a1, a1, 320			# passa o endereço da imagem para a proxima linha
-		bne t0, a3, LIMPA_TELA_LINHAS	        # reinicia o loop se t0 != a3
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
+		sub a0, a0, a2			# volta o endereço do bitmap pelo número de colunas impressas
+		addi a0, a0, 320		# passa o endereço do bitmap para a proxima linha
+		sub a1, a1, a2			# volta o endereço da imagem da área pelo número de colunas impressas
+		addi a1, a1, 320		# passa o endereço da imagem para a proxima linha
+		bne a3, zero, LIMPA_TELA_LINHAS	       # reinicia o loop se a3 != 0
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -228,6 +297,8 @@ LIMPAR_TELA:
 # ====================================================================================================== #									
 .data
 	.include "../Imagens/red/red_direita.data"
+	.include "../Imagens/red/red_direita_passo_esquerdo.data"
+	.include "../Imagens/red/red_direita_passo_direito.data"
 	.include "../Imagens/red/red_cima.data"
 	.include "../Imagens/red/red_baixo.data"	
 	.include "../Imagens/red/red_esquerda.data"
