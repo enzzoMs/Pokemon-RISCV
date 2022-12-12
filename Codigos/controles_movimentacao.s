@@ -50,8 +50,6 @@ MOVIMENTACAO_TECLA_W:
 			
 			li s2, 2	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para cima
-	
-			j FIM_MOVIMENTACAO_W
 							
 	INICIO_MOVIMENTACAO_W:
 	
@@ -148,8 +146,6 @@ MOVIMENTACAO_TECLA_A:
 			
 			li s2, 0	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para a esquerda
-					
-			j FIM_MOVIMENTACAO_A
 							
 	INICIO_MOVIMENTACAO_A:
 	
@@ -247,8 +243,6 @@ MOVIMENTACAO_TECLA_S:
 			
 			li s2, 3	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para baixo
-	
-			j FIM_MOVIMENTACAO_S
 							
 	INICIO_MOVIMENTACAO_S:
 	
@@ -343,8 +337,6 @@ MOVIMENTACAO_TECLA_D:
 			
 			li s2, 1	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para a direita
-			
-			j FIM_MOVIMENTACAO_D
 							
 	INICIO_MOVIMENTACAO_D:
 	
