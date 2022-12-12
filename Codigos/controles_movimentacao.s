@@ -87,7 +87,8 @@ MOVIMENTACAO_TECLA_W:
 			call PRINT_SPRITE
 		
 		# Limpa a tela, ou seja, remove o sprite antigo do RED
-			addi a0, t4, 10240	# passa para a0 o endereço de onde limpar a tela, ou seja,
+			li t0, 10240
+			add a0, t4, t0		# passa para a0 o endereço de onde limpar a tela, ou seja,
 						# uma linha para baixo de onde o RED terminou de ser renderizado
 						# para encontrar esse lugar é só adicionar a altura do
 						# sprite do RED (32) vezes o tamanho de uma linha (320)
