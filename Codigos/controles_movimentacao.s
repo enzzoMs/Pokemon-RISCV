@@ -52,8 +52,28 @@ MOVIMENTACAO_TECLA_W:
 					# para cima
 							
 	INICIO_MOVIMENTACAO_W:
+
+	# Agora é preciso verificar as 2 posições acima na matriz de movimentação da área em relação 
+	# ao personagem (s4). Uma posição diretamente acima do personagem e outra na diagonal direita
+	# Caso a matriz indique que existe uma posição válida ali o personagem pode se mover.
 	
-	li t3, 26		# número de pixels que o personagem vai se deslocar, ou seja,
+	# è necessário verificar especificamente essas 2 posições porque o personagem 
+	# ocupa na verdade 2 posições da matriz, e o endereço de s4 indica somente 
+	# a posição onde o personagem começa	
+				
+	lb t0, -18(s4)		# lê a posição da matriz que está uma linha atrás de s4 (18 é o tamanho de
+				# uma linha da matriz) 
+	lb t1, -17(s4)		# lê a posição da matriz que está uma linha atrás de s4 (18 é o tamanho de
+				# uma linha da matriz) e uma posição a frente, ou seja, na diagonal de s4						
+	
+	and t0, t0, t1		# realiza o AND entre t0 e t1 para fazer a comparação abaixo
+					
+	li t1, 51		# 51 é código da cor que representa que a posição está livre																																			
+	bne t0, t1, FIM_MOVIMENTACAO_W	# se a posição não está livre pula para o final do procedimento
+	
+	# Se a posição for válida então começa os procedimentos de movimentação 
+		
+	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 	
 	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
@@ -69,11 +89,11 @@ MOVIMENTACAO_TECLA_W:
 						# virado para cima normalmente	
 						
 		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s4
+		# de acordo com o valor de s5
 		
 		la t5, red_cima_passo_direito
 		
-		beq s4, zero, LOOP_MOVIMENTACAO_W		
+		beq s5, zero, LOOP_MOVIMENTACAO_W		
 			la t5, red_cima_passo_esquerdo
 	
 														
@@ -112,7 +132,7 @@ MOVIMENTACAO_TECLA_W:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
 		la a0, red_cima
-		li t0, 22
+		li t0, 16
 		bgt t3, t0, LOOP_MOVIMENTACAO_W
 		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
 		li t0, 4
@@ -120,11 +140,14 @@ MOVIMENTACAO_TECLA_W:
 		la a0, red_cima
 		bne t3, zero, LOOP_MOVIMENTACAO_W
 		
-	addi s1, s1, -25	# atualiza a linha atual do personagem pelo número de loops executados	
+	addi s1, s1, -20	# atualiza a linha atual do personagem pelo número de loops executados	
 	
-	not s4, s4		# inverte o valor de s4, ou seja, se o RED deu um passo esquerdo o próximo
+	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
 				# será direito e vice-versa
-					
+
+	addi s4, s4, -18	# atualiza o valor de s4 para a linha anterior na matriz de movimentação,
+				# 18 é o tamanho de uma linha da matriz 
+											
 	FIM_MOVIMENTACAO_W:
 													
 	lw ra, (sp)		# desempilha ra
@@ -149,8 +172,19 @@ MOVIMENTACAO_TECLA_A:
 					# para a esquerda
 							
 	INICIO_MOVIMENTACAO_A:
+
+	# Agora é preciso verificar a posição anteiror na matriz de movimentação da área em relação 
+	# ao personagem (s4). 
+	# Caso a matriz indique que existe uma posição válida ali o personagem pode se mover.
 	
-	li t3, 26		# número de pixels que o personagem vai se deslocar, ou seja,
+	lb t0, -1(s4)		
+	
+	li t1, 7		# 7 é código da cor que representa que a posição não está livre																																			
+	beq t0, t1, FIM_MOVIMENTACAO_A	# se a posição não está livre pula para o final do procedimento
+	
+	# Se a posição for válida então começa os procedimentos de movimentação 
+				
+	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 	
 	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
@@ -166,11 +200,11 @@ MOVIMENTACAO_TECLA_A:
 						# virado para a esquerda normalmente	
 						
 		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s4
+		# de acordo com o valor de s5
 		
 		la t5, red_esquerda_passo_direito
 		
-		beq s4, zero, LOOP_MOVIMENTACAO_A		
+		beq s5, zero, LOOP_MOVIMENTACAO_A		
 			la t5, red_esquerda_passo_esquerdo
 	
 														
@@ -208,7 +242,7 @@ MOVIMENTACAO_TECLA_A:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
 		la a0, red_esquerda
-		li t0, 22
+		li t0, 16
 		bgt t3, t0, LOOP_MOVIMENTACAO_A
 		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
 		li t0, 4
@@ -216,11 +250,13 @@ MOVIMENTACAO_TECLA_A:
 		la a0, red_esquerda
 		bne t3, zero, LOOP_MOVIMENTACAO_A
 		
-	addi s0, s0, -25	# atualiza a coluna atual do personagem pelo número de loops executados	
+	addi s0, s0, -20	# atualiza a coluna atual do personagem pelo número de loops executados	
 	
-	not s4, s4		# inverte o valor de s4, ou seja, se o RED deu um passo esquerdo o próximo
+	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
 				# será direito e vice-versa
-				
+		
+	addi s4, s4, -1		# atualiza o valor de s4 para o endereço anterior da matriz 
+					
 	FIM_MOVIMENTACAO_A:
 													
 	lw ra, (sp)		# desempilha ra
@@ -247,7 +283,27 @@ MOVIMENTACAO_TECLA_S:
 							
 	INICIO_MOVIMENTACAO_S:
 	
-	li t3, 26		# número de pixels que o personagem vai se deslocar, ou seja,
+	# Agora é preciso verificar as 2 posições abaixo na matriz de movimentação da área em relação 
+	# ao personagem (s4). Uma posição diretamente abaixo do personagem e outra na diagonal direita
+	# Caso a matriz indique que existe uma posição válida ali o personagem pode se mover.
+	
+	# è necessário verificar especificamente essas 2 posições porque o personagem 
+	# ocupa na verdade 2 posições da matriz, e o endereço de s4 indica somente 
+	# a posição onde o personagem começa	
+				
+	lb t0, 18(s4)		# lê a posição da matriz que está uma linha abaixo de s4 (18 é o tamanho de
+				# uma linha da matriz) 
+	lb t1, 19(s4)		# lê a posição da matriz que está uma linha abaixo de s4 (18 é o tamanho de
+				# uma linha da matriz) e uma posição a frente, ou seja, na diagonal de s4						
+	
+	and t0, t0, t1		# realiza o AND entre t0 e t1 para fazer a comparação abaixo
+					
+	li t1, 51		# 51 é código da cor que representa que a posição está livre																																			
+	bne t0, t1, FIM_MOVIMENTACAO_S	# se a posição não está livre pula para o final do procedimento
+	
+	# Se a posição for válida então começa os procedimentos de movimentação 
+	
+	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 	
 	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
@@ -263,11 +319,11 @@ MOVIMENTACAO_TECLA_S:
 						# virado para baixo normalmente	
 						
 		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s4
+		# de acordo com o valor de s5
 		
 		la t5, red_baixo_passo_direito
 		
-		beq s4, zero, LOOP_MOVIMENTACAO_S		
+		beq s5, zero, LOOP_MOVIMENTACAO_S		
 			la t5, red_baixo_passo_esquerdo
 	
 														
@@ -302,7 +358,7 @@ MOVIMENTACAO_TECLA_S:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
 		la a0, red_baixo
-		li t0, 22
+		li t0, 16
 		bgt t3, t0, LOOP_MOVIMENTACAO_S
 		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
 		li t0, 4
@@ -310,11 +366,14 @@ MOVIMENTACAO_TECLA_S:
 		la a0, red_baixo
 		bne t3, zero, LOOP_MOVIMENTACAO_S
 		
-	addi s1, s1, 25		# atualiza a linha atual do personagem pelo número de loops executados	
+	addi s1, s1, 20		# atualiza a linha atual do personagem pelo número de loops executados	
 	
-	not s4, s4		# inverte o valor de s4, ou seja, se o RED deu um passo esquerdo o próximo
+	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
 				# será direito e vice-versa
-	
+
+	addi s4, s4, 18		# atualiza o valor de s4 para a linha abaixo na matriz de movimentação,
+				# 18 é o tamanho de uma linha da matriz 
+					
 	FIM_MOVIMENTACAO_S:
 													
 	lw ra, (sp)		# desempilha ra
@@ -338,10 +397,24 @@ MOVIMENTACAO_TECLA_D:
 			
 			li s2, 1	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para a direita
-							
+
+																																						
 	INICIO_MOVIMENTACAO_D:
 	
-	li t3, 26		# número de pixels que o personagem vai se deslocar, ou seja,
+	# Agora é preciso verificar a 2a posição da matriz de movimentação da área em relação ao personagem (s4). 
+	# Caso a matriz indique que existe uma posição válida ali o personagem pode se mover.
+	
+	lb t0, 2(s4)		# è necessário verificar especificamente a 2a posição porque o personagem 
+				# ocupa na verdade 2 posições da matriz, e o endereço de s4 indica somente 
+				# a posição onde o personagem começa, então é necessário pular mais uma posição
+				# adicional para encontrar uma posição livre 				
+		
+	li t1, 7		# 7 é código da cor que representa que a posição não está livre																																			
+	beq t0, t1, FIM_MOVIMENTACAO_D	# se a posição não está livre pula para o final do procedimento
+	
+	# Se a posição for válida então começa os procedimentos de movimentação 
+	
+	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 	
 	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
@@ -357,11 +430,11 @@ MOVIMENTACAO_TECLA_D:
 						# virado para a direita normalmente	
 						
 		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s4
+		# de acordo com o valor de s5
 		
 		la t5, red_direita_passo_direito
 		
-		beq s4, zero, LOOP_MOVIMENTACAO_D		
+		beq s5, zero, LOOP_MOVIMENTACAO_D		
 			la t5, red_direita_passo_esquerdo
 	
 														
@@ -396,7 +469,7 @@ MOVIMENTACAO_TECLA_D:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
 		la a0, red_direita
-		li t0, 22
+		li t0, 16
 		bgt t3, t0, LOOP_MOVIMENTACAO_D
 		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
 		li t0, 4
@@ -404,11 +477,13 @@ MOVIMENTACAO_TECLA_D:
 		la a0, red_direita
 		bne t3, zero, LOOP_MOVIMENTACAO_D
 		
-	addi s0, s0, 25		# atualiza a coluna atual do personagem pelo número de loops executados	
+	addi s0, s0, 20		# atualiza a coluna atual do personagem pelo número de loops executados	
 	
-	not s4, s4		# inverte o valor de s4, ou seja, se o RED deu um passo esquerdo o próximo
+	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
 				# será direito e vice-versa
-				
+	
+	addi s4, s4, 1		# atualiza o valor de s4 para o proximo endereço da matriz 
+							
 	FIM_MOVIMENTACAO_D:
 													
 	lw ra, (sp)		# desempilha ra

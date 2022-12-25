@@ -1,3 +1,4 @@
+
 .text
 
 # ====================================================================================================== # 
@@ -20,8 +21,10 @@
 #		[ 1 ] = virado para a direita								 #
 #		[ 2 ] = virado para cima 								 #
 #		[ 3 ] = virado para baixo								 #
-#	s3 = guarda o endereço base da imagem da área atual onde o personagem está  			 #	
-#	s4 = determina como será o próximo passo do RED durante as animações de movimento, de modo que   #
+#	s3 = guarda o endereço base da imagem da área atual onde o personagem está  			 #
+#	s4 = guarda o endereço da posição atual do personagem na matriz de movimentação da área em que	 #
+#		ele está										 #
+#	s5 = determina como será o próximo passo do RED durante as animações de movimento, de modo que   #
 #		[ 0 ] = próximo passo será dado com o pé esquerdo					 #
 #		[ Qualquer outro valor] = próximo passo será dado com o pé direito			 #
 #													 #											 
@@ -33,12 +36,22 @@
 # registrador sp (stack pointer) para guardar o endereço de retorno, de modo que os procedimentos possam #
 # voltar até esse arquivo.										 #
 # 													 #
+# -> Para a movimentação do personagem é utilizado uma matriz para cada área do jogo.			 #
+# Cada área é dividida em quadrados de 20 x 20 pixels, de forma que cada elemento dessas matrizes	 #
+# representa um desses quadrados. Durante os procedimentos de movimentação a matriz da área		 #
+# é consultada e dependendo do valor do elemento referente a próxima posição do personagem é determinado #
+# se o jogador pode ou não se mover para lá. Por exemplo, elementos da matriz com a cor 7 indicam que    #
+# o quadrado 20 x 20 correspondente está ocupado, então o personagem não pode ser mover para lá.	 #
+# Cada procedimento de movimentação, seja para cima, baixo, esquerda ou direita, move o personagem por   #
+# exatamente 20 pixels, ou seja, o personagem passa de uma posição da matriz para outra, sendo que o	 #
+# registrador s3 vai acompanhar a posição do personagem nessa matriz.  					 #
+# 													 #
 # ====================================================================================================== #
 
 
 call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
 
-call INICIALIZAR_INTRO_HISTORIA	# Chama o procedimento em intro_historia.s
+call INICIALIZAR_INTRO_HISTORIA		# Chama o procedimento em intro_historia.s
 
 call RENDERIZAR_QUARTO_RED		# chama o procedimento em areas.s
 		

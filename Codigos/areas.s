@@ -23,16 +23,25 @@ RENDERIZAR_QUARTO_RED:
 		call PRINT_TELA
 	
 	# Atualizando os valores de s0 (coluna do personagem) e s1 (linha do personagem)
-		li s0, 147
-		li s1, 163
+		li s0, 7
+		li s1, 48
 
 	# Atualizando o valor de s2 (orientação do personagem)
 		li s2, 2	# inicialmente virado para cima
 		
 	# Atualizando o valor de s3 (endereço da area atual)
-		la s3, casa_red_quarto		# inicialmente virado para cima
-			
-
+		la s3, casa_red_quarto		
+				
+	# Atualizando o valor de s4 (posição atual na matriz de movimentação da área)
+		la t0, matriz_casa_red_quarto	
+		addi t0, t0, 8
+	
+		addi s4, t0, 72	# o personagem começa na linha 10 e coluna 8 da matriz
+					# então é somado o endereço base da matriz (t0) a 
+		addi s4, s4, 1		# 10 (número da linha) * 18 (tamanho de uma linha da matriz) 
+					# e a 8 (número da coluna) 
+				
+						
 	# Agora é necessário renderizar o sprite do RED onde ele deve estar
 		# Calcula o endereço de onde renderizar a imagem do RED no frame 0
 		li a1, 0xFF000000		# seleciona como argumento o frame 0
@@ -69,3 +78,4 @@ FIM_RENDERIZAR_AREA:
  
 .data
 	.include "../Imagens/areas/casa_red_quarto.data"
+	.include "../Imagens/areas/matriz_casa_red_quarto.data"
