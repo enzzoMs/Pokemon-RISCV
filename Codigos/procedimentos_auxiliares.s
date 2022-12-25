@@ -181,7 +181,24 @@ VERIFICAR_TECLA:
 		ret
 		
 # ====================================================================================================== #
+
+SLEEP:	
+	# Procedimento que fica em loop, parando a execução do programa, por alguns milissegundos
+	# Argumentos:
+	# 	a0 = durancao em ms do sleep
 	
+	csrr t0, time	# le o tempo atual do sistema
+	add t0, t0, a0	# adiciona a t0 a durancao do sleep
+	
+	LOOP_SLEEP:
+		csrr t1, time			# le o tempo do sistema
+		sltu t1, t1, t0			# t1 recebe 1 se (t1 < t0) e 0 caso contrário
+		bne t1, zero, LOOP_SLEEP 	# se o tempo de t1 != 0 reinicia o loop
+		
+	ret
+				
+# ====================================================================================================== #
+		
 PRINT_DIALOGOS:
 	# Procedimento que imprime uma quantidade variavel de caixas de dialogo em ambos os frames
 	# Os dialogos são sempre renderizados em uma área fixa da tela

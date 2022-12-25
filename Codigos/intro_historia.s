@@ -11,12 +11,7 @@
 
 INICIALIZAR_INTRO_HISTORIA:
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-
-	# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
-		li a0, 1000			# sleep por 1 s
-		ecall
+	sw ra, (sp)		# empilha ra	
 		
 	# Imprimindo a intro_prof_carvalho no frame 0
 		la a0, intro_prof_carvalho			# carregando a imagem em a0
@@ -29,9 +24,8 @@ INICIALIZAR_INTRO_HISTORIA:
 		call PRINT_TELA
 	
 	# Espera alguns milisegundos	
-		li a7, 32		# selecionando syscall sleep
-		li a0, 1000		# sleep por 1 s
-		ecall
+		li a0, 500		# sleep por 500 ms
+		call SLEEP		# chama o procedimento SLEEP		
 	
 	# Renderiza 4 caixas de dialogo	
 		la a5, intro_dialogos	# carrega o endereço da imagem 
@@ -176,14 +170,13 @@ RENDERIZAR_ANIMACAO_PROF:
 		# a2 e a3 já possuem o numero de linhas e colunas da imagem
 		call PRINT_IMG
 		
-		mv t0, a0		# guarda o endereço de a0 em t0
+		mv t2, a0		# guarda o endereço de a0 em t0
 		
 		# Espera alguns milisegundos	
-			li a7, 32			# selecionando syscall sleep
 			li a0, 500			# sleep por 500 ms
-			ecall
+			call SLEEP			# chama o procedimento SLEEP		
 	
-		mv a0, t0		# volta o endereço de t0 para a0
+		mv a0, t2		# volta o endereço de t0 para a0
 	
 		# Verifica se o argumento a6 == 0, nesse caso o procedimento renderiza as imagens na 
 		# ordem inversa do mostrado no prof_carvalho_intro_animacao, portanto o endereço de a0
@@ -308,9 +301,8 @@ RENDERIZAR_ANIMACAO_FINAL_INTRO:
 		call PRINT_TELA																																																												
 																																																																																										
 	# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
 		li a0, 1000			# sleep por 1 s
-		ecall																																																																																																																								
+		call SLEEP			# chama o procedimento SLEEP		
 					
 	# Calcula o endereço de onde renderizar as imagens do Red no frame 0
 		li a1, 0xFF000000		# seleciona como argumento o frame 0
@@ -335,14 +327,13 @@ RENDERIZAR_ANIMACAO_FINAL_INTRO:
 		# a2 e a3 já possuem o numero de linhas e colunas da imagem
 		call PRINT_IMG
 		
-		mv t0, a0		# guarda o endereço de a0 em t0
+		mv t2, a0		# guarda o endereço de a0 em t0
 		
 		# Espera alguns milisegundos	
-			li a7, 32			# selecionando syscall sleep
 			li a0, 600			# sleep por 600 ms
-			ecall
+			call SLEEP			# chama o procedimento SLEEP		
 	
-		mv a0, t0		# volta o endereço de t0 para a0
+		mv a0, t2		# volta o endereço de t0 para a0
 
 		addi t6, t6, -1				# decrementa t6
 	
@@ -350,9 +341,8 @@ RENDERIZAR_ANIMACAO_FINAL_INTRO:
 	
 						
 	# Espera alguns milisegundos	
-	li a7, 32			# selecionando syscall sleep
-	li a0, 1000			# sleep por 1 s
-	ecall	
+		li a0, 1000			# sleep por 1 s
+		call SLEEP			# chama o procedimento SLEEP		
 																
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha

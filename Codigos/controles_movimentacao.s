@@ -123,9 +123,8 @@ MOVIMENTACAO_TECLA_W:
 		addi t3, t3, -1		# decrementa o número de loops restantes
 		
 		# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
-		li a0, 1			# sleep por 1 ms
-		ecall
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:
@@ -233,9 +232,8 @@ MOVIMENTACAO_TECLA_A:
 		addi t3, t3, -1		# decrementa o número de loops restantes
 		
 		# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
-		li a0, 1			# sleep por 1 ms
-		ecall
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:
@@ -349,9 +347,8 @@ MOVIMENTACAO_TECLA_S:
 		addi t3, t3, -1		# decrementa o número de loops restantes
 		
 		# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
-		li a0, 1			# sleep por 1 ms
-		ecall
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:
@@ -460,9 +457,8 @@ MOVIMENTACAO_TECLA_D:
 		addi t3, t3, -1		# decrementa o número de loops restantes
 		
 		# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
-		li a0, 1			# sleep por 1 ms
-		ecall
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:

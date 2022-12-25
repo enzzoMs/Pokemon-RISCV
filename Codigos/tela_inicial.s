@@ -17,9 +17,8 @@ INICIALIZAR_TELA_INICIAL:
 	call RENDERIZAR_ANIMACAO_FAIXA
 	
 	# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
 		li a0, 500			# sleep por 500 ms
-		ecall
+		call SLEEP			# chama o procedimento SLEEP		
 	
 	call RENDERIZAR_ANIMACAO_POKEMONS
 	
@@ -54,9 +53,8 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		sb t1, (t0)			# armazena 0 no endereço de t0
 		
 	# Espera alguns milisegundos			
-		li a7, 32			# selecionando syscall sleep
 		li a0, 1000			# sleep por 1 ms
-		ecall
+		call SLEEP			# chama o procedimento SLEEP		
 		
 		
 	# Calcula o endereço do final da imagem do bulbasaur
@@ -82,9 +80,8 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		
 	LOOP_RENDERIZAR_FAIXA:
 		# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
-		li a0, 1			# sleep por 1 ms
-		ecall
+		li a0, 20			# sleep por 20 ms
+		call SLEEP			# chama o procedimento SLEEP		
 	
 		# renderizando a faixa no bulbasaur
 		mv a1, a4			# a1 = a4 = endereco de onde colocar a faixa
@@ -92,7 +89,7 @@ RENDERIZAR_ANIMACAO_FAIXA:
 		call PRINT_FAIXA
 		
 		# renderizando a faixa no charizard
-		mv a1, a5			# a1 = a5 = endereco de onde colocar a faixa
+		mv a1, a5			# a1 = a5 = endereco de onde colocasr a faixa
 		la a0, animacao_faixa		# carrega a imagem da faixa	
 		call PRINT_FAIXA
 		
@@ -214,9 +211,8 @@ RENDERIZAR_ANIMACAO_POKEMONS:
 		mv a5, a0		# atualiza o endereço da imagem do charizard	
 		
 		# Espera alguns milisegundos	
-			li a7, 32		# selecionando syscall sleep
 			li a0, 1000		# sleep por 1 s
-			ecall
+			call SLEEP			# chama o procedimento SLEEP		
 			
 		addi t6, t6, -1				# decrementa a6
 		
@@ -281,9 +277,8 @@ MOSTRAR_TELA_INICIAL:
 	
 	LOOP_FRAME_TELA_INICIAL:
 		# Espera alguns milisegundos	
-		li a7, 32			# selecionando syscall sleep
 		li a0, 450			# sleep por 450 ms
-		ecall
+		call SLEEP			# chama o procedimento SLEEP		
 		
 		call TROCAR_FRAME
 		
@@ -341,9 +336,8 @@ MOSTRAR_TELA_CONTROLES:
 		
 	LOOP_TELA_CONTROLES:
 		# Espera alguns milisegundos	
-			li a7, 32			# selecionando syscall sleep
 			li a0, 450			# sleep por 450 ms
-			ecall
+			call SLEEP			# chama o procedimento SLEEP		
 		
 		call TROCAR_FRAME
 		
