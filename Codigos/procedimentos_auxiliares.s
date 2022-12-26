@@ -34,7 +34,11 @@ PRINT_TELA:
 # ====================================================================================================== #
 
 PRINT_IMG:
-	# Procedimento que imprime imagens de tamanho variado, menores que 320 x 240, no frame de escolha
+	# Procedimento que imprime imagens de tamanho variado, menores que 320 x 240, no frame de escolha.
+	# Esse procedimento também é equipado para lidar com imagens que contém pixels de cor transparente
+	# (0xC7), nesse caso PRINT_IMG vai verificar se algum pixel tem essa cor, e os que tiverem não
+	# serão renderizados na tela. Isso precisa ser feito ao invés de simplesmente renderizar os
+	# os pixels transparentes por conta de alguns bugs visuais, sobretudo no RARS. 
 	# Argumentos: 
 	# 	a0 = endereço da imgagem		
 	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
@@ -42,18 +46,24 @@ PRINT_IMG:
 	#	a3 = numero de linhas da imagem
 	
 	li t0, 0		# contador para o numero de linhas ja impressas
+	li t1, 0xC7		# t1 tem o valor da cor de um pixel transparente
 	
 	PRINT_IMG_LINHAS:
-		li t1, 0		# contador para o numero de colunas ja impressas
+		li t2, 0		# contador para o numero de colunas ja impressas
 			
 		PRINT_IMG_COLUNAS:
-			lb t2, 0(a0)			# pega 1 pixel do .data e coloca em t3
-			sb t2, 0(a1)			# pega o pixel de t3 e coloca no bitmap
+			lbu t3, 0(a0)			# pega 1 pixel do .data e coloca em t3
+			
+			# Se o valor do pixel do .data (t3) for 0xC7 (pixel transparente), 
+			# o pixel não é armazenado no bitmap, e por consequência não é renderizado na tela
+			beq t3, t1, NAO_ARMAZENAR_PIXEL
+				sb t3, 0(a1)			# pega o pixel de t3 e coloca no bitmap
 	
-			addi t1, t1, 1			# incrementando o numero de colunas impressas
+			NAO_ARMAZENAR_PIXEL:
+			addi t2, t2, 1			# incrementando o numero de colunas impressas
 			addi a0, a0, 1			# vai para o próximo pixel da imagem
 			addi a1, a1, 1			# vai para o próximo pixel do bitmap
-			bne t1, a2, PRINT_IMG_COLUNAS	# reinicia o loop se t1 != t2
+			bne t2, a2, PRINT_IMG_COLUNAS	# reinicia o loop se t2 != a2
 			
 		addi t0, t0, 1			# incrementando o numero de linhas impressas
 		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
@@ -63,76 +73,90 @@ PRINT_IMG:
 	ret
 
 # ====================================================================================================== #
+	
+PRINT_AREA:
+	# Procedimento que imprime uma imagem de 320 x 240 no frame de escolha
+	# A diferença desse procedimento para o PRINT_TELA é que a imagem de cada área do jogo é maior do 
+	# que 320 x 240, de modo que PRINT_AREA está equipado para lidar com isso, renderizando apenas
+	# uma parte dessas imagens
+	# Argumentos:
+	# 	a0 = endereço de inicio da subsecção da imagem da área		
+	# 	a1 = endereço base do frame (0 ou 1) onde renderizar a imagem
+	# 	a2 = numero de colunas da imagem da área, ou seja, o tamanho de uma linha da imagem
+				
+	li t0, 240		# contador para o numero de linhas a serem impressas
+	
+	PRINT_AREA_LINHAS:
+		li t1, 320		# contador para o numero de colunas a serem impressas
+			
+		PRINT_AREA_COLUNAS:
+			lb t2, 0(a0)			# pega 1 pixel do .data e coloca em t2
+			sb t2, 0(a1)			# pega o pixel de t2 e coloca no bitmap
+	
+			addi a0, a0, 1			# vai para o próximo pixel da imagem
+			addi a1, a1, 1			# vai para o próximo pixel do bitmap
+			
+			addi t1, t1, -1			# decrementando o numero de colunas restantes
+			bne t1, zero, PRINT_AREA_COLUNAS	# reinicia o loop se t1 != 0
+			
+		addi a0, a0, -320		# volta o endeço da imagem pelo numero de colunas impressas
+		add a0, a0, a2			# passa o endereço da imagem para a proxima linha
 
-PRINT_SPRITE:
-	# Esse procedimento funciona de maneira similar ao PRINT_IMG, a diferença é que possui algumas 
-	# alterações específicas para a renderização dos sprites de personagens na tela.
-	# Para entender esse procedimento é ncessário perceber que alguns sprites, como os do RED que podem
-	# ser encontrados em "../Imagens/red", possuem um fundo rosa, com base nisso, o que esse procedimento
-	# faz é imprimir um sprite na tela, porém ao invés de imprimir esses pixels rosas ele imprime os 
-	# pixels correspondentes de uma área, ou seja, podemos pensar que esse procedimento imprime um
-	# sprite emulando uma espécie de transparência.
-	# Essa obordagem foi utilizada porque usar somente pixels com a cor transparente (0xC7) 
-	# não estava funcionando tão bem assim nas animações de movimentação. O uso desse procedimento
-	# elimina a maior parte (mas não toda) da necessidade de fazer algum tipo de "limpeza" na tela para 
-	# remover os sprites antigos, resolvendo grande parte desses problemas. 
-	# Esse procedimento é usado nas animações de movimentação, para simplesmente imprimir o sprite de
-	# um personagem / objeto na tela sem se preocupar em limpar a tela depois pode ser usado também
-	# o procedimento PRINT_IMG
-	# O procedimento parte do pressuposto que todos os sprites de personagens tem o mesmo tamanho: 
-	# 26 (colunas) x 32 (linhas)
-	# Argumentos: 
-	# 	a0 = endereço base da imagem do sprite		
-	# 	a1 = endereço de onde, no frame escolhido, o sprite deve ser renderizado
-	#	a2 = endereço base da área onde o sprite será renderizado
-	#	a3 = número de colunas do sprite
-	#	a4 = número de linhas do sprite	
+		addi t0, t0, -1			# decrementando o numero de linhas restantes
+		bne t0, zero, PRINT_AREA_LINHAS	# reinicia o loop se t0 != 0
+			
+	ret	
+
+# ====================================================================================================== #
+								
+LIMPAR_TELA:
+	# Procedimento que "limpa a tela", ou seja, remove o sprite de um personagem ou objeto da tela 
+	# e o substitui pela imagem adequada de uma área
+	# Argumentos:
+	#	a0 = endereço, no frame 0, de onde renderizar a imagem e limpar a tela
+	# 	a1 = endereço base da imagem da área que será renderizada para limpar a tela
+	#	a2 = numero de colunas do sprite a ser removido
+	# 	a3 = numero de linhas do sprite a ser removido
 	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
 	
-	addi a2, a2, 8		# pula para onde começa os pixels no .data da imagem da área
+	addi a1, a1, 8		# pula para onde começa os pixels no .data da imagem da área
 	
 	li t0, 0xFF000000	# t0 = endereço base do frame 0
-	sub t0, a1, t0		# a1 (endereço de onde renderizar o sprite) - t0 (endereço base do frame 0) = 
-				# quantos pixels é necessário pular na imagem da área (a2) para encontrar 
-				# onde a sub imagem que será usada no procedimento 
+	sub t0, a0, t0		# a0 (endereço de onde limpar a tela ) - t0 (endereço base do frame 0) = 
+				# quantos pixels é necessário pular na imagem da área (a1) para encontrar 
+				# onde a sub imagem que será usada na limpeza 
 
-	add a2, a2, t0		# pula para o endereço da sub imagem da área que será usada no procedimento 
-	
-	li t0, 0xC7		# t1 = valor da cor do pixel transparente
+	add a1, a1, t0		# pula para o endereço da sub imagem da área que será usada na limpeza
 		
-	addi a0, a0, 8		# pula para onde começa os pixels no .data do sprite
+		
+	LIMPA_TELA_LINHAS:
+		mv t0, a2		# copia do valor de a2 para o loop de colunas
+			
+		LIMPA_TELA_COLUNAS:
+			lb t1, 0(a1)		# pega 1 pixel do .data da sub imagem da área e coloca em t1
+			sb t1, 0(a0)		# pega o pixel de t1 e coloca no bitmap
 	
-	PRINT_SPRITE_LINHAS:
-		mv t1, a3		# t1 = copia de a3 para usar no loop de colunas
+			addi t0, t0, -1			# decrementando o numero de colunas restantes
+			addi a1, a1, 1			# vai para o próximo pixel da sub imagem da área
+			addi a0, a0, 1			# vai para o próximo pixel do bitmap
+			bne t0, zero, LIMPA_TELA_COLUNAS	# reinicia o loop se t0 != 0
 			
-		PRINT_SPRITE_COLUNAS:
-			lbu t2, 0(a0)			# pega 1 pixel do .data e coloca em t2
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
+		sub a0, a0, a2			# volta o endereço do bitmap pelo número de colunas impressas
+		addi a0, a0, 320		# passa o endereço do bitmap para a proxima linha
+		sub a1, a1, a2			# volta o endereço da imagem da área pelo número de colunas impressas
+		addi a1, a1, 320		# passa o endereço da imagem para a proxima linha
+		bne a3, zero, LIMPA_TELA_LINHAS	       # reinicia o loop se a3 != 0
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
 	
-			# se o pixel em t2 for o transparente então ele vai ser substituido pelo
-			# pixel correspondente na imagem da área passada no argumento a2
-			bne t2, t0, ARMAZENAR_PIXEL_SPRITE		
-				lb t2, 0(a2)	# pega 1 pixel do .data da imagem da área e coloca em t2
+	ret	
 	
-			ARMAZENAR_PIXEL_SPRITE:
-			sb t2, 0(a1)		# pega 1 pixel do .data escolhido e coloca no bitmap
-			
-			addi t1, t1, -1				# decrementando o numero de colunas impressas
-			addi a0, a0, 1				# vai para o próximo pixel da imagem do sprite
-			addi a2, a2, 1				# vai para o próximo pixel da imagem da área
-			addi a1, a1, 1				# vai para o próximo pixel do bitmap
-			bne t1, zero, PRINT_SPRITE_COLUNAS	# reinicia o loop se t1 != 0
-			
-		addi a4, a4, -1			# decrementando o numero de linhas impressas
-		sub a1, a1, a3			# volta o endereço do bitmap pelo número de colunas impressas
-		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
-		sub a2, a2, a3			# volta o endereço da área pelo número de colunas impressas
-		addi a2, a2, 320		# passa o endereço da área para a proxima linha
-		bne a4, zero, PRINT_SPRITE_LINHAS	# reinicia o loop se t0 != 0
-			
-	ret
-			
 # ====================================================================================================== #
-																	
+																																		
 CALCULAR_ENDERECO:
 	# Procedimento que calcula um endereço no frame de escolha ou em uma imagem
 	# Argumentos: 

@@ -4,8 +4,22 @@
 # 				        CONTROLES E MOVIMENTAÇÃO				         #
 # ------------------------------------------------------------------------------------------------------ #
 # 													 #
-# Código responsável por renderizar a história introdutória do jogo com todas as suas animações.         # 
+# Código responsável por coordenar os procedimentos de animação do personagem de acordo com as teclas	 #
+# W, A, S ou D											         # 
 #													 #
+# Nos procedimentos de movimentação o que se "move" na verdade é a tela, o personagem sempre fica fixo   #
+# no centro na posição apontada por s0.									 #															 
+#													 #
+# Para a movimentação do personagem é utilizado uma matriz para cada área do jogo.			 #
+# Cada área é dividida em quadrados de 20 x 20 pixels, de forma que cada elemento dessas matrizes	 #
+# representa um desses quadrados. Durante os procedimentos de movimentação a matriz da área		 #
+# é consultada e dependendo do valor do elemento referente a próxima posição do personagem é determinado #
+# se o jogador pode ou não se mover para lá. Por exemplo, elementos da matriz com a cor 7 indicam que    #
+# o quadrado 20 x 20 correspondente está ocupado, então o personagem não pode ser mover para lá.	 #
+# Cada procedimento de movimentação, seja para cima, baixo, esquerda ou direita, move a tela por  	 #
+# exatamente 20 pixels, ou seja, o personagem passa de uma posição da matriz para outra, sendo que o	 #
+# registrador s3 vai acompanhar a posição do personagem nessa matriz.  					 #
+# 													 #
 # ====================================================================================================== #
 
 VERIFICAR_TECLA_MOVIMENTACAO:
@@ -44,11 +58,11 @@ MOVIMENTACAO_TECLA_W:
 	
 	# Primeiro verifica se o personagem está virado para cima
 		li t0, 2
-		beq s2, t0, INICIO_MOVIMENTACAO_W
+		beq s1, t0, INICIO_MOVIMENTACAO_W
 			la a4, red_cima		# carrega como argumento o sprite do RED virada para cima		
 			call MUDAR_ORIENTACAO_PERSONAGEM
 			
-			li s2, 2	# atualiza o valor de s2 dizendo que agora o RED está virado 
+			li s1, 2	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para cima
 							
 	INICIO_MOVIMENTACAO_W:
@@ -59,93 +73,120 @@ MOVIMENTACAO_TECLA_W:
 	
 	# è necessário verificar especificamente essas 2 posições porque o personagem 
 	# ocupa na verdade 2 posições da matriz, e o endereço de s4 indica somente 
-	# a posição onde o personagem começa	
-				
-	lb t0, -18(s4)		# lê a posição da matriz que está uma linha atrás de s4 (18 é o tamanho de
-				# uma linha da matriz) 
-	lb t1, -17(s4)		# lê a posição da matriz que está uma linha atrás de s4 (18 é o tamanho de
-				# uma linha da matriz) e uma posição a frente, ou seja, na diagonal de s4						
+	# a posição onde o personagem começa						
+									
+	sub t0, s4, s5		# t0 recebe o endereço da posição da matriz que está uma linha acima de s4 
+				# (s5 é o tamanho de uma linha da matriz) 	
+						
+	lb t1, 0(t0)		# lê a posição da matriz que está uma linha acima de s4 
 	
-	and t0, t0, t1		# realiza o AND entre t0 e t1 para fazer a comparação abaixo
-					
+	lb t2, 1(t0)		# lê a posição da matriz que está uma linha acima de s4 (t0) e uma posição a 
+				# frente, ou seja, na diagonal de s4						
+	
+	and t0, t1, t2		# realiza o AND entre t1 e t2 para fazer a comparação abaixo
+	
 	li t1, 51		# 51 é código da cor que representa que a posição está livre																																			
 	bne t0, t1, FIM_MOVIMENTACAO_W	# se a posição não está livre pula para o final do procedimento
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
-		
-	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
-				# o número de loops a serem executados abaixo
 	
-	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
-		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		mv a2, s0 			# numero da coluna do RED = s0
-		mv a3, s1			# numero da linha do RED = s1
-		call CALCULAR_ENDERECO	
+	li t4, 10		# número de pixels que a tela vai se deslocar, ou seja,
+				# o número de loops a serem executados abaixo
+				# Na verdade a tela se desloca 20 pixels, mas em cada iteração
+				# do loop abaixo a tela é deslocada 2 pixels (1 vez para o frame 1
+				# e 1 vez para o frame 0)
+				
+	la t5, red_cima		# t5 vai guardar o endereço da próxima imagem do RED
+				# o loop de movimentação começa imprimindo a imagem do RED 
+				# virado para cima normalmente
+					
+	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+	# de acordo com o valor de s6
 		
-		mv t4, a0		# salva o endereço retornado em t4
-		
-		
-		la a0, red_cima			# o loop de movimentação começa imprimindo a imagem do RED 
-						# virado para cima normalmente	
-						
-		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s5
-		
-		la t5, red_cima_passo_direito
-		
-		beq s5, zero, LOOP_MOVIMENTACAO_W		
-			la t5, red_cima_passo_esquerdo
+	la t6, red_cima_passo_direito
+							
+	beq s6, zero, LOOP_MOVIMENTACAO_W		
+		la t6, red_cima_passo_esquerdo
 	
 														
 	LOOP_MOVIMENTACAO_W:
-		# Primeiro renderiza o sprite do RED
-			# a0 já possui o endereço da imagem a ser renderizar
-			mv a1, t4		# passa para a1 o endereço de onde renderizar o sprite
-			mv a2, s3		# passa para a2 o endereço da área atual
-			lw a3, 0(a0)		# numero de colunas do sprite
-			lw a4, 4(a0)		# numero de linhas do sprite
-			call PRINT_SPRITE
-		
-		# Limpa a tela, ou seja, remove o sprite antigo do RED
-			li t0, 10240
-			add a0, t4, t0		# passa para a0 o endereço de onde limpar a tela, ou seja,
-						# uma linha para baixo de onde o RED terminou de ser renderizado
-						# para encontrar esse lugar é só adicionar a altura do
-						# sprite do RED (32) vezes o tamanho de uma linha (320)
-						# 32 * 320 = 10240 
-			mv a1, s3		# passa para a1 o endereço da área atual
-			li a2, 26		# numero de colunas a serem limpas
-			li a3, 1		# numero de linhas a serem limpas
-			call LIMPAR_TELA
+		sub s2, s2, s3		# atualiza o endereço de s2 para a linha anterior
+					# da subsecção da imagem da área atual (s3 tem o tamanho
+					# de uma linha da imagem da área atual)
+						
+		# Imprimindo as imagens da área e do RED no frame 1			
+			# Imprime a imagem da subsecção da área no frame 1
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF100000	# selecionando como argumento o frame 1
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
 
-		addi t4, t4, -320	# move o endereço de onde renderizar o RED uma linha para trás
-																																																																								
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
+			# Imprime o sprite do RED no frame 1
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			
+			li t0, 0x00100000	# passa o endereço de a1 para o equivalente no frame 1
+			add a1, a1, t0
+					
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+					
 		# Espera alguns milisegundos	
 		li a0, 18			# sleep por 18 ms
-		call SLEEP			# chama o procedimento SLEEP		
+		call SLEEP			# chama o procedimento SLEEP	
+			
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+							
+		sub s2, s2, s3		# atualiza o endereço de s2 para a linha anterior
+					# da subsecção da imagem da área atual (s3 tem o tamanho
+					# de uma linha da imagem da área atual)
+					
+		# Imprimindo as imagens da área e do RED no frame 0					
+			# Imprime a imagem da subseção da área no frame 0
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF000000	# selecionando como argumento o frame 0
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
+
+
+			# Imprime o sprite do RED no frame 0
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+	
+		# Espera alguns milisegundos	
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP	
+		
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 0
+		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
-		la a0, red_cima
-		li t0, 16
-		bgt t3, t0, LOOP_MOVIMENTACAO_W
-		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
-		li t0, 4
-		bgt t3, t0, LOOP_MOVIMENTACAO_W
-		la a0, red_cima
-		bne t3, zero, LOOP_MOVIMENTACAO_W
+		addi t4, t4, -1		# decrementa o número de loops restantes
 		
-	addi s1, s1, -20	# atualiza a linha atual do personagem pelo número de loops executados	
-	
-	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
+		# t5 vai guardar o endereço da próxima imagem do RED		
+		la t5, red_cima
+		li t0, 8
+		bgt t4, t0, LOOP_MOVIMENTACAO_W
+		mv t5, t6				# t6 tem o endereço da imagem do RED dando um passo
+		li t0, 2
+		bgt t4, t0, LOOP_MOVIMENTACAO_W
+		la t5, red_cima
+		bne t4, zero, LOOP_MOVIMENTACAO_W
+		
+	sub s4, s4, s5		# atualiza o valor de s4 para o endereço 1 linha acima da atual na matriz 
+				# (s5 tem o tamanho de uma linha da matriz)		
+						
+	xori s6, s6, 1		# inverte o valor de s6, ou seja, se o RED deu um passo esquerdo o próximo
 				# será direito e vice-versa
-
-	addi s4, s4, -18	# atualiza o valor de s4 para a linha anterior na matriz de movimentação,
-				# 18 é o tamanho de uma linha da matriz 
 											
 	FIM_MOVIMENTACAO_W:
 													
@@ -163,15 +204,14 @@ MOVIMENTACAO_TECLA_A:
 	# de uma instrução de branch
 	
 	# Primeiro verifica se o personagem está virado para a esquerda
-		beq s2, zero, INICIO_MOVIMENTACAO_A
+		beq s1, zero, INICIO_MOVIMENTACAO_A
 			la a4, red_esquerda	# carrega como argumento o sprite do RED virada para a esquerda		
 			call MUDAR_ORIENTACAO_PERSONAGEM
 			
-			li s2, 0	# atualiza o valor de s2 dizendo que agora o RED está virado 
+			li s1, 0	# atualiza o valor de s2 dizendo que agora o RED está virado 
 					# para a esquerda
 							
 	INICIO_MOVIMENTACAO_A:
-
 	# Agora é preciso verificar a posição anteiror na matriz de movimentação da área em relação 
 	# ao personagem (s4). 
 	# Caso a matriz indique que existe uma posição válida ali o personagem pode se mover.
@@ -182,79 +222,101 @@ MOVIMENTACAO_TECLA_A:
 	beq t0, t1, FIM_MOVIMENTACAO_A	# se a posição não está livre pula para o final do procedimento
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
-				
-	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
-				# o número de loops a serem executados abaixo
 	
-	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
-		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		mv a2, s0 			# numero da coluna do RED = s0
-		mv a3, s1			# numero da linha do RED = s1
-		call CALCULAR_ENDERECO	
+	li t4, 10		# número de pixels que a tela vai se deslocar, ou seja,
+				# o número de loops a serem executados abaixo
+				# Na verdade a tela se desloca 20 pixels, mas em cada iteração
+				# do loop abaixo a tela é deslocada 2 pixels (1 vez para o frame 1
+				# e 1 vez para o frame 0)
 		
-		mv t4, a0		# salva o endereço retornado em t4
+	la t5, red_esquerda		# t5 vai guardar o endereço da próxima imagem do RED
+					# o loop de movimentação começa imprimindo a imagem do RED 
+					# virado para a esquerda normalmente
+					
+	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+	# de acordo com o valor de s6
 		
-		
-		la a0, red_esquerda		# o loop de movimentação começa imprimindo a imagem do RED 
-						# virado para a esquerda normalmente	
-						
-		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s5
-		
-		la t5, red_esquerda_passo_direito
-		
-		beq s5, zero, LOOP_MOVIMENTACAO_A		
-			la t5, red_esquerda_passo_esquerdo
+	la t6, red_esquerda_passo_direito
+							
+	beq s6, zero, LOOP_MOVIMENTACAO_A		
+		la t6, red_esquerda_passo_esquerdo
 	
 														
 	LOOP_MOVIMENTACAO_A:
-		# Primeiro renderiza o sprite do RED
-			# a0 já possui o endereço da imagem a ser renderizar
-			mv a1, t4		# passa para a1 o endereço de onde renderizar o sprite
-			mv a2, s3		# passa para a2 o endereço da área atual
-			lw a3, 0(a0)		# numero de colunas do sprite
-			lw a4, 4(a0)		# numero de linhas do sprite
-			call PRINT_SPRITE
-		
-		# Limpa a tela, ou seja, remove o sprite antigo do RED
-			addi a0, t4, 26		# passa para a0 o endereço de onde limpar a tela, ou seja,
-						# um pixel para frente de onde o RED terminou de 
-						# ser renderizado
-						# para encontrar esse lugar é só somar a largura do
-						# sprite do RED ->  26 
-			mv a1, s3		# passa para a1 o endereço da área atual
-			li a2, 1		# numero de colunas a serem limpas
-			li a3, 32		# numero de linhas a serem limpas
-			call LIMPAR_TELA
+		addi s2, s2, -1		# atualiza o endereço de s2 para a coluna anterior
+ 					# da subseção da imagem da área atual
+						
+		# Imprimindo as imagens da área e do RED no frame 1			
+			# Imprime a imagem da subseção da área no frame 1
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF100000	# selecionando como argumento o frame 1
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
 
-		addi t4, t4, -1		# move o endereço de onde renderizar o RED um pixel para trás
-																																																																								
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
+			# Imprime o sprite do RED no frame 1
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			
+			li t0, 0x00100000	# passa o endereço de a1 para o equivalente no frame 1
+			add a1, a1, t0
+					
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+					
 		# Espera alguns milisegundos	
 		li a0, 18			# sleep por 18 ms
-		call SLEEP			# chama o procedimento SLEEP		
+		call SLEEP			# chama o procedimento SLEEP	
+			
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+							
+		addi s2, s2, -1		# atualiza o endereço de s2 para a coluna anterior
+ 					# da subseção da imagem da área atual
+					
+		# Imprimindo as imagens da área e do RED no frame 0					
+			# Imprime a imagem da subseção da área no frame 0
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF000000	# selecionando como argumento o frame 0
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
+
+			# Imprime o sprite do RED no frame 0
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+	
+		# Espera alguns milisegundos	
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP	
+		
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 0
+		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
-		la a0, red_esquerda
-		li t0, 16
-		bgt t3, t0, LOOP_MOVIMENTACAO_A
-		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
-		li t0, 4
-		bgt t3, t0, LOOP_MOVIMENTACAO_A
-		la a0, red_esquerda
-		bne t3, zero, LOOP_MOVIMENTACAO_A
+		addi t4, t4, -1		# decrementa o número de loops restantes
 		
-	addi s0, s0, -20	# atualiza a coluna atual do personagem pelo número de loops executados	
-	
-	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
-				# será direito e vice-versa
+		# t5 vai guardar o endereço da próxima imagem do RED		
+		la t5, red_esquerda
+		li t0, 8
+		bgt t4, t0, LOOP_MOVIMENTACAO_A
+		mv t5, t6				# t6 tem o endereço da imagem do RED dando um passo
+		li t0, 2
+		bgt t4, t0, LOOP_MOVIMENTACAO_A
+		la t5, red_esquerda
+		bne t4, zero, LOOP_MOVIMENTACAO_A
 		
 	addi s4, s4, -1		# atualiza o valor de s4 para o endereço anterior da matriz 
-					
+						
+	xori s6, s6, 1		# inverte o valor de s6, ou seja, se o RED deu um passo esquerdo o próximo
+				# será direito e vice-versa
+									
 	FIM_MOVIMENTACAO_A:
 													
 	lw ra, (sp)		# desempilha ra
@@ -272,11 +334,11 @@ MOVIMENTACAO_TECLA_S:
 	
 	# Primeiro verifica se o personagem está virado para baixo
 		li t0, 3
-		beq s2, t0, INICIO_MOVIMENTACAO_S
+		beq s1, t0, INICIO_MOVIMENTACAO_S
 			la a4, red_baixo	# carrega como argumento o sprite do RED virada para baixo		
 			call MUDAR_ORIENTACAO_PERSONAGEM
 			
-			li s2, 3	# atualiza o valor de s2 dizendo que agora o RED está virado 
+			li s1, 3	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para baixo
 							
 	INICIO_MOVIMENTACAO_S:
@@ -288,94 +350,124 @@ MOVIMENTACAO_TECLA_S:
 	# è necessário verificar especificamente essas 2 posições porque o personagem 
 	# ocupa na verdade 2 posições da matriz, e o endereço de s4 indica somente 
 	# a posição onde o personagem começa	
-				
-	lb t0, 18(s4)		# lê a posição da matriz que está uma linha abaixo de s4 (18 é o tamanho de
-				# uma linha da matriz) 
-	lb t1, 19(s4)		# lê a posição da matriz que está uma linha abaixo de s4 (18 é o tamanho de
-				# uma linha da matriz) e uma posição a frente, ou seja, na diagonal de s4						
 	
-	and t0, t0, t1		# realiza o AND entre t0 e t1 para fazer a comparação abaixo
+	add t0, s4, s5		# t0 recebe o endereço da posição da matriz que está uma linha abaixo de s4 
+				# (s5 é o tamanho de uma linha da matriz) 	
+						
+	lb t1, 0(t0)		# lê a posição da matriz que está uma linha abaixo de s4 
+	
+	lb t2, 1(t0)		# lê a posição da matriz que está uma linha abaixo de s4 (t0) e uma posição a 
+				# frente, ou seja, na diagonal de s4						
+	
+	and t0, t1, t2		# realiza o AND entre t1 e t2 para fazer a comparação abaixo
 					
 	li t1, 51		# 51 é código da cor que representa que a posição está livre																																			
 	bne t0, t1, FIM_MOVIMENTACAO_S	# se a posição não está livre pula para o final do procedimento
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
 	
-	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
+	li t4, 10		# número de pixels que a tela vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
-	
-	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
-		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		mv a2, s0 			# numero da coluna do RED = s0
-		mv a3, s1			# numero da linha do RED = s1
-		call CALCULAR_ENDERECO	
+				# Na verdade a tela se desloca 20 pixels, mas em cada iteração
+				# do loop abaixo a tela é deslocada 2 pixels (1 vez para o frame 1
+				# e 1 vez para o frame 0)
+				
+	la t5, red_baixo		# t5 vai guardar o endereço da próxima imagem do RED
+					# o loop de movimentação começa imprimindo a imagem do RED 
+					# virado para a direita normalmente
+					
+	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+	# de acordo com o valor de s6
 		
-		mv t4, a0		# salva o endereço retornado em t4
-		
-		
-		la a0, red_baixo		# o loop de movimentação começa imprimindo a imagem do RED 
-						# virado para baixo normalmente	
-						
-		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s5
-		
-		la t5, red_baixo_passo_direito
-		
-		beq s5, zero, LOOP_MOVIMENTACAO_S		
-			la t5, red_baixo_passo_esquerdo
-	
-														
-	LOOP_MOVIMENTACAO_S:
-		# Primeiro renderiza o sprite do RED
-			# a0 já possui o endereço da imagem a ser renderizar
-			mv a1, t4		# passa para a1 o endereço de onde renderizar o sprite
-			mv a2, s3		# passa para a2 o endereço da área atual
-			lw a3, 0(a0)		# numero de colunas do sprite
-			lw a4, 4(a0)		# numero de linhas do sprite
-			call PRINT_SPRITE
-		
-		# Limpa a tela, ou seja, remove o sprite antigo do RED
-			addi a0, t4, -320	# passa para a0 o endereço de onde limpar a tela, ou seja,
-						# uma linha atrás de onde o RED foi renderizado 
-			mv a1, s3		# passa para a1 o endereço da área atual
-			li a2, 26		# numero de colunas a serem limpas
-			li a3, 1		# numero de linhas a serem limpas
-			call LIMPAR_TELA
+	la t6, red_baixo_passo_direito
+							
+	beq s6, zero, LOOP_MOVIMENTACAO_S		
+		la t6, red_baixo_passo_esquerdo
 
-		addi t4, t4, 320	# move o endereço de onde renderizar o RED uma linha para frente
-																																																																								
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
+	LOOP_MOVIMENTACAO_S:
+		add s2, s2, s3		# atualiza o endereço de s2 para a próxima linha
+					# da subsecção da imagem da área atual (s3 tem o tamanho
+					# de uma linha da imagem da área atual)
+						
+		# Imprimindo as imagens da área e do RED no frame 1			
+			# Imprime a imagem da subsecção da área no frame 1
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF100000	# selecionando como argumento o frame 1
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
+
+			# Imprime o sprite do RED no frame 1
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			
+			li t0, 0x00100000	# passa o endereço de a1 para o equivalente no frame 1
+			add a1, a1, t0
+					
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+					
 		# Espera alguns milisegundos	
 		li a0, 18			# sleep por 18 ms
-		call SLEEP			# chama o procedimento SLEEP		
+		call SLEEP			# chama o procedimento SLEEP	
+			
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+							
+		add s2, s2, s3		# atualiza o endereço de s2 para a próxima linha
+					# da subsecção da imagem da área atual (s3 tem o tamanho
+					# de uma linha da imagem da área atual)
+					
+		# Imprimindo as imagens da área e do RED no frame 0					
+			# Imprime a imagem da subseção da área no frame 0
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF000000	# selecionando como argumento o frame 0
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
+
+
+			# Imprime o sprite do RED no frame 0
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+	
+		# Espera alguns milisegundos	
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP	
+		
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 0
+		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
-		la a0, red_baixo
-		li t0, 16
-		bgt t3, t0, LOOP_MOVIMENTACAO_S
-		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
-		li t0, 4
-		bgt t3, t0, LOOP_MOVIMENTACAO_S
-		la a0, red_baixo
-		bne t3, zero, LOOP_MOVIMENTACAO_S
+		addi t4, t4, -1		# decrementa o número de loops restantes
 		
-	addi s1, s1, 20		# atualiza a linha atual do personagem pelo número de loops executados	
+		# t5 vai guardar o endereço da próxima imagem do RED		
+		la t5, red_baixo
+		li t0, 8
+		bgt t4, t0, LOOP_MOVIMENTACAO_S
+		mv t5, t6				# t6 tem o endereço da imagem do RED dando um passo
+		li t0, 2
+		bgt t4, t0, LOOP_MOVIMENTACAO_S
+		la t5, red_baixo
+		bne t4, zero, LOOP_MOVIMENTACAO_S
 	
-	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
+	add s4, s4, s5		# atualiza o valor de s4 para o endereço 1 linha abaixo do atual na matriz 
+				# (s5 tem o tamanho de uma linha da matriz)		
+						
+	xori s6, s6, 1		# inverte o valor de s6, ou seja, se o RED deu um passo esquerdo o próximo
 				# será direito e vice-versa
-
-	addi s4, s4, 18		# atualiza o valor de s4 para a linha abaixo na matriz de movimentação,
-				# 18 é o tamanho de uma linha da matriz 
-					
+							
 	FIM_MOVIMENTACAO_S:
-													
+
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
-	
+
 	ret	
 
 # ====================================================================================================== #
@@ -388,17 +480,15 @@ MOVIMENTACAO_TECLA_D:
 	
 	# Primeiro verifica se o personagem está virado para a direita
 		li t0, 1
-		beq s2, t0, INICIO_MOVIMENTACAO_D
+		beq s1, t0, INICIO_MOVIMENTACAO_D
 			la a4, red_direita	# carrega como argumento o sprite do RED virada para a direita		
 			call MUDAR_ORIENTACAO_PERSONAGEM
-			
-			li s2, 1	# atualiza o valor de s2 dizendo que agora o RED está virado 
-					# para a direita
 
-																																						
-	INICIO_MOVIMENTACAO_D:
-	
-	# Agora é preciso verificar a 2a posição da matriz de movimentação da área em relação ao personagem (s4). 
+			li s1, 1	# atualiza o valor de s1 dizendo que agora o RED está virado 
+					# para a direita
+					
+	INICIO_MOVIMENTACAO_D:																																				
+	# Primeiro é preciso verificar a 2a posição da matriz de movimentação da área em relação ao personagem (s4). 
 	# Caso a matriz indique que existe uma posição válida ali o personagem pode se mover.
 	
 	lb t0, 2(s4)		# è necessário verificar especificamente a 2a posição porque o personagem 
@@ -411,74 +501,99 @@ MOVIMENTACAO_TECLA_D:
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
 	
-	li t3, 21		# número de pixels que o personagem vai se deslocar, ou seja,
+	li t4, 10		# número de pixels que a tela vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
-	
-	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
-		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		mv a2, s0 			# numero da coluna do RED = s0
-		mv a3, s1			# numero da linha do RED = s1
-		call CALCULAR_ENDERECO	
+				# Na verdade a tela se desloca 20 pixels, mas em cada iteração
+				# do loop abaixo a tela é deslocada 2 pixels (1 vez para o frame 1
+				# e 1 vez para o frame 0)
 		
-		mv t4, a0		# salva o endereço retornado em t4
+	la t5, red_direita		# t5 vai guardar o endereço da próxima imagem do RED
+					# o loop de movimentação começa imprimindo a imagem do RED 
+					# virado para a direita normalmente
+					
+	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+	# de acordo com o valor de s6
 		
-		
-		la a0, red_direita		# o loop de movimentação começa imprimindo a imagem do RED 
-						# virado para a direita normalmente	
-						
-		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-		# de acordo com o valor de s5
-		
-		la t5, red_direita_passo_direito
-		
-		beq s5, zero, LOOP_MOVIMENTACAO_D		
-			la t5, red_direita_passo_esquerdo
-	
-														
+	la t6, red_direita_passo_direito
+							
+	beq s6, zero, LOOP_MOVIMENTACAO_D		
+		la t6, red_direita_passo_esquerdo
+																											
 	LOOP_MOVIMENTACAO_D:
-		# Primeiro renderiza o sprite do RED
-			# a0 já possui o endereço da imagem a ser renderizar
-			mv a1, t4		# passa para a1 o endereço de onde renderizar o sprite
-			mv a2, s3		# passa para a2 o endereço da área atual
-			lw a3, 0(a0)		# numero de colunas do sprite
-			lw a4, 4(a0)		# numero de linhas do sprite
-			call PRINT_SPRITE
-		
-		# Limpa a tela, ou seja, remove o sprite antigo do RED
-			addi a0, t4, -1		# passa para a0 o endereço de onde limpar a tela, ou seja,
-						# um pixel atrás de onde o RED foi renderizado 
-			mv a1, s3		# passa para a1 o endereço da área atual
-			li a2, 1		# numero de colunas a serem limpas
-			li a3, 32		# numero de linhas a serem limpas
-			call LIMPAR_TELA
+		addi s2, s2, 1		# atualiza o endereço de s2 para a próxima coluna
+					# da subseção da imagem da área atual
+						
+		# Imprimindo as imagens da área e do RED no frame 1			
+			# Imprime a imagem da subseção da área no frame 1
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF100000	# selecionando como argumento o frame 1
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
 
-		addi t4, t4, 1		# move o endereço de onde renderizar o RED um pixel para frente
-																																																																								
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
+			# Imprime o sprite do RED no frame 1
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			
+			li t0, 0x00100000	# passa o endereço de a1 para o equivalente no frame 1
+			add a1, a1, t0
+					
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+					
 		# Espera alguns milisegundos	
 		li a0, 18			# sleep por 18 ms
-		call SLEEP			# chama o procedimento SLEEP		
+		call SLEEP			# chama o procedimento SLEEP	
+			
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+							
+		addi s2, s2, 1		# atualiza o endereço de s2 para a próxima coluna
+					# da subseção da imagem da área atual
+					
+		# Imprimindo as imagens da área e do RED no frame 0					
+			# Imprime a imagem da subseção da área no frame 0
+			mv a0, s2		# s2 tem o endereço da subsecção da área
+			li a1, 0xFF000000	# selecionando como argumento o frame 0
+			mv a2, s3		# s3 = tamanho de uma linha da imagem dessa área
+			call PRINT_AREA		
+
+
+			# Imprime o sprite do RED no frame 0
+			mv a0, t5		# t5 tem o endereço da próxima imagem do RED
+			mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0
+			lw a2, 0(a0)		# numero de colunas do sprite
+			lw a3, 4(a0)		# numero de linhas do sprite
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG
+	
+		# Espera alguns milisegundos	
+		li a0, 18			# sleep por 18 ms
+		call SLEEP			# chama o procedimento SLEEP	
+		
+		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 0
+		
 		
 		# Determina qual é o próximo sprite do RED a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:
 		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
 		
-		la a0, red_direita
-		li t0, 16
-		bgt t3, t0, LOOP_MOVIMENTACAO_D
-		mv a0, t5				# t5 tem o endereço da imagem do RED dando um passo
-		li t0, 4
-		bgt t3, t0, LOOP_MOVIMENTACAO_D
-		la a0, red_direita
-		bne t3, zero, LOOP_MOVIMENTACAO_D
+		addi t4, t4, -1		# decrementa o número de loops restantes
 		
-	addi s0, s0, 20		# atualiza a coluna atual do personagem pelo número de loops executados	
-	
-	not s5, s5		# inverte o valor de s5, ou seja, se o RED deu um passo esquerdo o próximo
-				# será direito e vice-versa
+		# t5 vai guardar o endereço da próxima imagem do RED		
+		la t5, red_direita
+		li t0, 8
+		bgt t4, t0, LOOP_MOVIMENTACAO_D
+		mv t5, t6				# t6 tem o endereço da imagem do RED dando um passo
+		li t0, 2
+		bgt t4, t0, LOOP_MOVIMENTACAO_D
+		la t5, red_direita
+		bne t4, zero, LOOP_MOVIMENTACAO_D
 	
 	addi s4, s4, 1		# atualiza o valor de s4 para o proximo endereço da matriz 
+						
+	xori s6, s6, 1		# inverte o valor de s6, ou seja, se o RED deu um passo esquerdo o próximo
+				# será direito e vice-versa
 							
 	FIM_MOVIMENTACAO_D:
 													
@@ -492,94 +607,37 @@ MOVIMENTACAO_TECLA_D:
 MUDAR_ORIENTACAO_PERSONAGEM:
 	# Procedimento que muda a orientação do personagem a depender do argumento, ou seja,
 	# imprime o sprite do RED em uma determinada orientação.
-	# OBS: O procedimento não altera o valor de s2, apenas imprime o sprite em uma orientação
+	# OBS: O procedimento não altera o valor de s1, apenas imprime o sprite em uma orientação
 	# Argumentos:
 	# 	 a4 = endereço da imagem do RED na orientação desejada
 	
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
 	
-	# Calcula o endereço de onde renderizar a imagem do RED no frame 0
-		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		mv a2, s0 			# numero da coluna do RED = s0
-		mv a3, s1			# numero da linha do RED = s1
-		call CALCULAR_ENDERECO
-	
-	mv t5, a0		# guarda temporariamente o endereço retornado em t5
-		
-	# Antes de renderizar o novo sprite do RED é necessário limpar a tela, removendo
-	# o antigo sprite
-		# a0 já possui o endereço de onde limpar a tela
-		mv a1, s3 		# carregando a imagem da area atual salvo em s3
-		li a2, 26		# numero de colunas do sprite a serem removidas
-		li a3, 32		# numero de linhas do sprite a serem removidas
-		call LIMPAR_TELA
-		
-		mv a1, t5		# move para a1 o endereço guardado em t5
-		
-		# Imprimindo a imagem do RED virado para a direita no frame 0
-		mv a0, a4		# carrega a imagem a partir do argumento a4
-		# a1 já possui o endereço de onde renderizar o RED
-		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
-		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+	call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+			
+	# Imprime a imagem da subsecção da área no frame 0
+		mv a0, s2		# s2 tem o endereço da subsecção da área
+		li a1, 0xFF000000	# selecionando como argumento o frame 0
+		li a2, 600		# 600 = tamanho de uma linha da imagem dessa área
+		call PRINT_AREA		
+
+		# Imprime o sprite do RED no frame 0
+		mv a0, a4		# a4 tem o endereço da imagem do RED na orientação desejada
+		mv a1, s0		# s0 tem o endereço de onde o RED fica na tela no frame 0		
+		lw a2, 0(a0)		# numero de colunas do sprite
+		lw a3, 4(a0)		# numero de linhas do sprite
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
-		call PRINT_IMG	
-			
+		call PRINT_IMG
+						
+	call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 0
+	
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret	
-	
-# ====================================================================================================== #										
 
-								
-LIMPAR_TELA:
-	# Procedimento que "limpa a tela", ou seja, remove o sprite de um personagem ou objeto da tela 
-	# e o substitui pela imagem adequada de uma área
-	# Argumentos:
-	#	a0 = endereço, no frame 0, de onde renderizar a imagem e limpar a tela
-	# 	a1 = endereço base da imagem da área que será renderizada para limpar a tela
-	#	a2 = numero de colunas do sprite a ser removido
-	# 	a3 = numero de linhas do sprite a ser removido
+	ret
 	
 	
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-	
-	addi a1, a1, 8		# pula para onde começa os pixels no .data da imagem da área
-	
-	li t0, 0xFF000000	# t0 = endereço base do frame 0
-	sub t0, a0, t0		# a0 (endereço de onde limpar a tela ) - t0 (endereço base do frame 0) = 
-				# quantos pixels é necessário pular na imagem da área (a1) para encontrar 
-				# onde a sub imagem que será usada na limpeza 
-
-	add a1, a1, t0		# pula para o endereço da sub imagem da área que será usada na limpeza
-		
-		
-	LIMPA_TELA_LINHAS:
-		mv t0, a2		# copia do valor de a2 para o loop de colunas
-			
-		LIMPA_TELA_COLUNAS:
-			lb t1, 0(a1)		# pega 1 pixel do .data da sub imagem da área e coloca em t1
-			sb t1, 0(a0)		# pega o pixel de t1 e coloca no bitmap
-	
-			addi t0, t0, -1			# decrementando o numero de colunas restantes
-			addi a1, a1, 1			# vai para o próximo pixel da sub imagem da área
-			addi a0, a0, 1			# vai para o próximo pixel do bitmap
-			bne t0, zero, LIMPA_TELA_COLUNAS	# reinicia o loop se t0 != 0
-			
-		addi a3, a3, -1			# decrementando o numero de linhas restantes
-		sub a0, a0, a2			# volta o endereço do bitmap pelo número de colunas impressas
-		addi a0, a0, 320		# passa o endereço do bitmap para a proxima linha
-		sub a1, a1, a2			# volta o endereço da imagem da área pelo número de colunas impressas
-		addi a1, a1, 320		# passa o endereço da imagem para a proxima linha
-		bne a3, zero, LIMPA_TELA_LINHAS	       # reinicia o loop se a3 != 0
-
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret	
-
 # ====================================================================================================== #									
 .data
 	.include "../Imagens/red/red_direita.data"
