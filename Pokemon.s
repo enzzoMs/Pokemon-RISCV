@@ -49,13 +49,22 @@
 	
 	mv s0, a0		# move para s0 o valor retornado pelo procedimento chamado acima
 
+# Inicializando menus, história e área iniciais 
 
 call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
 
 call INICIALIZAR_INTRO_HISTORIA		# Chama o procedimento em intro_historia.s
 
-call RENDERIZAR_QUARTO_RED		# chama o procedimento em areas.s
+li a0, 0xE0	# a0 recebe 0xE0, ou 1110_0000 em binário, de acordo com a conveção para a codificação
+		# de transições de áreas (ver detalhes em areas.s)
+		# Dessa forma a0 codifica: 
+		# 1(indicativo de transição de área)11(sem nenhuma animação de transição) +
+		# 000(para o quarto do RED)00(Entrando por lugar nenhum) 
 		
+call RENDERIZAR_AREA		# chama o procedimento em areas.s
+		
+
+# Loop principal de gameplay do jogo
 
 LOOP_PRINCIPAL_JOGO:
 	call VERIFICAR_TECLA_MOVIMENTACAO
