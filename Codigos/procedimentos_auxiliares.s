@@ -40,7 +40,7 @@ PRINT_IMG:
 	# serão renderizados na tela. Isso precisa ser feito ao invés de simplesmente renderizar os
 	# os pixels transparentes por conta de alguns bugs visuais, sobretudo no RARS. 
 	# Argumentos: 
-	# 	a0 = endereço da imgagem		
+	# 	a0 = endereço da imagem		
 	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
 	# 	a2 = numero de colunas da imagem
 	#	a3 = numero de linhas da imagem
@@ -75,84 +75,40 @@ PRINT_IMG:
 # ====================================================================================================== #
 	
 PRINT_AREA:
-	# Procedimento que imprime uma imagem de 320 x 240 no frame de escolha
-	# A diferença desse procedimento para o PRINT_TELA é que a imagem de cada área do jogo é maior do 
-	# que 320 x 240, de modo que PRINT_AREA está equipado para lidar com isso, renderizando apenas
-	# uma parte dessas imagens
+	# Procedimento que imprime uma imagem de tamanho variado de uma área no frame de escolha
+	# A diferença desse procedimento para o PRINT_TELA é que esse procedimento é próprio para a 
+	# renderização de áreas do jogo. A imagem de cada área do jogo é maior do que 320 x 240, de modo 
+	# que PRINT_AREA está equipado para lidar com isso, renderizando apenas uma parte dessas imagens
 	# Argumentos:
 	# 	a0 = endereço de inicio da subsecção da imagem da área		
-	# 	a1 = endereço base do frame (0 ou 1) onde renderizar a imagem
-	# 	a2 = numero de colunas da imagem da área, ou seja, o tamanho de uma linha da imagem
+	# 	a1 = endereço no frame (0 ou 1) de onde renderizar a imagem
+	#	a2 = número de linhas da sub imagem a ser impressa
+	#	a3 = número de colunas da sub imagem a ser impressa
+	# 	a4 = numero de colunas da imagem COMPLETA da área, ou seja, o tamanho de uma linha da imagem
 				
-	li t0, 240		# contador para o numero de linhas a serem impressas
-	
+				
 	PRINT_AREA_LINHAS:
-		li t1, 320		# contador para o numero de colunas a serem impressas
+		mv t0, a3		# copia de a3 apra usar no loop de colunas
 			
 		PRINT_AREA_COLUNAS:
-			lb t2, 0(a0)			# pega 1 pixel do .data e coloca em t2
-			sb t2, 0(a1)			# pega o pixel de t2 e coloca no bitmap
+			lb t1, 0(a0)			# pega 1 pixel do .data e coloca em t1
+			sb t1, 0(a1)			# pega o pixel de t1 e coloca no bitmap
 	
 			addi a0, a0, 1			# vai para o próximo pixel da imagem
 			addi a1, a1, 1			# vai para o próximo pixel do bitmap
 			
-			addi t1, t1, -1			# decrementando o numero de colunas restantes
-			bne t1, zero, PRINT_AREA_COLUNAS	# reinicia o loop se t1 != 0
-			
-		addi a0, a0, -320		# volta o endeço da imagem pelo numero de colunas impressas
-		add a0, a0, a2			# passa o endereço da imagem para a proxima linha
-
-		addi t0, t0, -1			# decrementando o numero de linhas restantes
-		bne t0, zero, PRINT_AREA_LINHAS	# reinicia o loop se t0 != 0
-			
-	ret	
-
-# ====================================================================================================== #
-								
-LIMPAR_TELA:
-	# Procedimento que "limpa a tela", ou seja, remove o sprite de um personagem ou objeto da tela 
-	# e o substitui pela imagem adequada de uma área
-	# Argumentos:
-	#	a0 = endereço, no frame 0, de onde renderizar a imagem e limpar a tela
-	# 	a1 = endereço base da imagem da área que será renderizada para limpar a tela
-	#	a2 = numero de colunas do sprite a ser removido
-	# 	a3 = numero de linhas do sprite a ser removido
-	
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-	
-	addi a1, a1, 8		# pula para onde começa os pixels no .data da imagem da área
-	
-	li t0, 0xFF000000	# t0 = endereço base do frame 0
-	sub t0, a0, t0		# a0 (endereço de onde limpar a tela ) - t0 (endereço base do frame 0) = 
-				# quantos pixels é necessário pular na imagem da área (a1) para encontrar 
-				# onde a sub imagem que será usada na limpeza 
-
-	add a1, a1, t0		# pula para o endereço da sub imagem da área que será usada na limpeza
-		
-		
-	LIMPA_TELA_LINHAS:
-		mv t0, a2		# copia do valor de a2 para o loop de colunas
-			
-		LIMPA_TELA_COLUNAS:
-			lb t1, 0(a1)		# pega 1 pixel do .data da sub imagem da área e coloca em t1
-			sb t1, 0(a0)		# pega o pixel de t1 e coloca no bitmap
-	
 			addi t0, t0, -1			# decrementando o numero de colunas restantes
-			addi a1, a1, 1			# vai para o próximo pixel da sub imagem da área
-			addi a0, a0, 1			# vai para o próximo pixel do bitmap
-			bne t0, zero, LIMPA_TELA_COLUNAS	# reinicia o loop se t0 != 0
+			bne t0, zero, PRINT_AREA_COLUNAS	# reinicia o loop se t0 != 0
 			
-		addi a3, a3, -1			# decrementando o numero de linhas restantes
-		sub a0, a0, a2			# volta o endereço do bitmap pelo número de colunas impressas
-		addi a0, a0, 320		# passa o endereço do bitmap para a proxima linha
-		sub a1, a1, a2			# volta o endereço da imagem da área pelo número de colunas impressas
-		addi a1, a1, 320		# passa o endereço da imagem para a proxima linha
-		bne a3, zero, LIMPA_TELA_LINHAS	       # reinicia o loop se a3 != 0
+		sub a0, a0, a3		# volta o endeço da imagem pelo numero de colunas impressas
+		add a0, a0, a4		# passa o endereço da imagem para a proxima linha
+				
+		sub a1, a1, a3			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
 
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
+		addi a2, a2, -1			# decrementando o numero de linhas restantes
+		bne a2, zero, PRINT_AREA_LINHAS	# reinicia o loop se a2 != 0
+			
 	ret	
 	
 # ====================================================================================================== #
