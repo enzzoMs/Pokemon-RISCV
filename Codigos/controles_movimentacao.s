@@ -11,13 +11,13 @@
 # no centro na posição apontada por s0.									 #															 
 #													 #
 # Para a movimentação do personagem é utilizado uma matriz para cada área do jogo.			 #
-# Cada área é dividida em quadrados de 20 x 20 pixels, de forma que cada elemento dessas matrizes	 #
+# Cada área é dividida em quadrados de 14 x 14 pixels, de forma que cada elemento dessas matrizes	 #
 # representa um desses quadrados. Durante os procedimentos de movimentação a matriz da área		 #
 # é consultada e dependendo do valor do elemento referente a próxima posição do personagem é determinado #
 # se o jogador pode ou não se mover para lá. Por exemplo, elementos da matriz com a cor 7 indicam que    #
-# o quadrado 20 x 20 correspondente está ocupado, então o personagem não pode ser mover para lá.	 #
+# o quadrado 14 x 14 correspondente está ocupado, então o personagem não pode ser mover para lá.	 #
 # Cada procedimento de movimentação, seja para cima, baixo, esquerda ou direita, move a tela por  	 #
-# exatamente 20 pixels, ou seja, o personagem passa de uma posição da matriz para outra, sendo que o	 #
+# exatamente 14 pixels, ou seja, o personagem passa de uma posição da matriz para outra, sendo que o	 #
 # registrador s3 vai acompanhar a posição do personagem nessa matriz.  					 #
 # 													 #
 # ====================================================================================================== #
@@ -78,12 +78,7 @@ MOVIMENTACAO_TECLA_W:
 	sub t0, s4, s5		# t0 recebe o endereço da posição da matriz que está uma linha acima de s4 
 				# (s5 é o tamanho de uma linha da matriz) 	
 						
-	lbu  t1, 0(t0)		# lê a posição da matriz que está uma linha acima de s4 
-	
-	lbu t2, 1(t0)		# lê a posição da matriz que está uma linha acima de s4 (t0) e uma posição a 
-				# frente, ou seja, na diagonal de s4						
-	
-	and t0, t1, t2		# realiza o AND entre t1 e t2 para fazer a comparação abaixo
+	lbu  t0, 0(t0)		# lê a posição da matriz que está uma linha acima de s4 
 	
 	# Primerio verifica se t0 == t1, ou seja, de acordo com o convencionado em areas.s, verifica se t0
 	# se trata de uma posição em que ocorre a transição para uma área
@@ -105,7 +100,7 @@ MOVIMENTACAO_TECLA_W:
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
 	
-	li t4, 20		# número de pixels que a tela vai se deslocar, ou seja,
+	li t4, 14		# número de pixels que a tela vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 				
 	la t2, red_cima		# t2 vai guardar o endereço da próxima imagem do RED
@@ -153,7 +148,7 @@ MOVIMENTACAO_TECLA_W:
 			call PRINT_IMG
 					
 		# Espera alguns milisegundos	
-		li a0, 18			# sleep por 18 ms
+		li a0, 20			# sleep 20 ms
 		call SLEEP			# chama o procedimento SLEEP	
 			
 		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1					
@@ -170,10 +165,10 @@ MOVIMENTACAO_TECLA_W:
 		
 		# t2 vai guardar o endereço da próxima imagem do RED		
 		la t2, red_cima
-		li t0, 16
+		li t0, 13
 		bgt t4, t0, LOOP_MOVIMENTACAO_W
 		mv t2, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 5
+		li t0, 1
 		bgt t4, t0, LOOP_MOVIMENTACAO_W
 		la t2, red_cima
 		bne t4, zero, LOOP_MOVIMENTACAO_W
@@ -232,7 +227,7 @@ MOVIMENTACAO_TECLA_A:
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
 	
-	li t4, 20		# número de pixels que a tela vai se deslocar, ou seja,
+	li t4, 14		# número de pixels que a tela vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 		
 	la t2, red_esquerda		# t2 vai guardar o endereço da próxima imagem do RED
@@ -279,7 +274,7 @@ MOVIMENTACAO_TECLA_A:
 			call PRINT_IMG
 					
 		# Espera alguns milisegundos	
-		li a0, 18			# sleep por 18 ms
+		li a0, 20			# sleep 20 ms
 		call SLEEP			# chama o procedimento SLEEP	
 			
 		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
@@ -296,10 +291,10 @@ MOVIMENTACAO_TECLA_A:
 		
 		# t2 vai guardar o endereço da próxima imagem do RED		
 		la t2, red_esquerda
-		li t0, 16
+		li t0, 13
 		bgt t4, t0, LOOP_MOVIMENTACAO_A
 		mv t2, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 5
+		li t0, 1
 		bgt t4, t0, LOOP_MOVIMENTACAO_A
 		la t2, red_esquerda
 		bne t4, zero, LOOP_MOVIMENTACAO_A
@@ -346,12 +341,7 @@ MOVIMENTACAO_TECLA_S:
 	add t0, s4, s5		# t0 recebe o endereço da posição da matriz que está uma linha abaixo de s4 
 				# (s5 é o tamanho de uma linha da matriz) 	
 						
-	lbu t1, 0(t0)		# lê a posição da matriz que está uma linha abaixo de s4 
-	
-	lbu t2, 1(t0)		# lê a posição da matriz que está uma linha abaixo de s4 (t0) e uma posição a 
-				# frente, ou seja, na diagonal de s4						
-	
-	and t0, t1, t2		# realiza o AND entre t1 e t2 para fazer a comparação abaixo
+	lbu t0, 0(t0)		# lê a posição da matriz que está uma linha abaixo de s4 
 	
 	# Primerio verifica se t0 == t1, ou seja, de acordo com o convencionado em areas.s, verifica se t0
 	# se trata de uma posição em que ocorre a transição para uma área
@@ -372,7 +362,7 @@ MOVIMENTACAO_TECLA_S:
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
 	
-	li t4, 20		# número de pixels que a tela vai se deslocar, ou seja,
+	li t4, 14		# número de pixels que a tela vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 		
 				
@@ -420,7 +410,7 @@ MOVIMENTACAO_TECLA_S:
 			call PRINT_IMG
 					
 		# Espera alguns milisegundos	
-		li a0, 18			# sleep por 18 ms
+		li a0, 20			# sleep 20 ms
 		call SLEEP			# chama o procedimento SLEEP	
 			
 		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
@@ -437,10 +427,10 @@ MOVIMENTACAO_TECLA_S:
 		
 		# t2 ai guardar o endereço da próxima imagem do RED		
 		la t2, red_baixo
-		li t0, 16
+		li t0, 13
 		bgt t4, t0, LOOP_MOVIMENTACAO_S
 		mv t2, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 5
+		li t0, 1
 		bgt t4, t0, LOOP_MOVIMENTACAO_S
 		la t2, red_baixo
 		bne t4, zero, LOOP_MOVIMENTACAO_S
@@ -476,13 +466,10 @@ MOVIMENTACAO_TECLA_D:
 					# para a direita
 					
 	VERIFICAR_MATRIZ_D:																																				
-	# Primeiro é preciso verificar a 2a posição da matriz de movimentação da área em relação ao personagem (s4). 
+	# Primeiro é preciso verificar a proxima posição da matriz de movimentação da área em relação ao personagem (s4). 
 	# Caso a matriz indique que existe uma posição válida ali o personagem pode se mover.
 	
-	lbu t0, 2(s4)		# è necessário verificar especificamente a 2a posição porque o personagem 
-				# ocupa na verdade 2 posições da matriz, e o endereço de s4 indica somente 
-				# a posição onde o personagem começa, então é necessário pular mais uma posição
-				# adicional para encontrar uma posição livre 				
+	lbu t0, 1(s4)		# verificar proxima posição na matriz			
 	
 	# Primerio verifica se t0 < t1, ou seja, de acordo com o convencionado em areas.s, verifica se t0
 	# se trata de uma posição em que ocorre a transição para uma área
@@ -503,7 +490,7 @@ MOVIMENTACAO_TECLA_D:
 	
 	# Se a posição for válida então começa os procedimentos de movimentação 
 	
-	li t4, 20		# número de pixels que a tela vai se deslocar, ou seja,
+	li t4, 14		# número de pixels que a tela vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 		
 	la t2, red_direita		# t2 vai guardar o endereço da próxima imagem do RED
@@ -549,7 +536,7 @@ MOVIMENTACAO_TECLA_D:
 			call PRINT_IMG
 					
 		# Espera alguns milisegundos	
-		li a0, 18			# sleep por 18 ms
+		li a0, 20			# sleep 20 ms
 		call SLEEP			# chama o procedimento SLEEP	
 			
 		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
@@ -566,10 +553,10 @@ MOVIMENTACAO_TECLA_D:
 		
 		# t5 vai guardar o endereço da próxima imagem do RED		
 		la t2, red_direita
-		li t0, 16
+		li t0, 13
 		bgt t4, t0, LOOP_MOVIMENTACAO_D
 		mv t2, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 5
+		li t0, 1
 		bgt t4, t0, LOOP_MOVIMENTACAO_D
 		la t2, red_direita
 		bne t4, zero, LOOP_MOVIMENTACAO_D
@@ -604,9 +591,9 @@ MUDAR_ORIENTACAO_PERSONAGEM:
 	# sub imagem da área no lugar onde o RED está
 		# Para encontrar essa sub área é possível usar s2 (endereço de inicio da sub área atual)
 		li t0, 108	# o sprite do RED sempre está a 108 linhas de s2
-		mul t0, s3, t0	# t0 recebe s3 (tamanho de uma linha da imagem da área) x 108
+		mul t0, s3, t0	# t0 recebe s3 (tamanho de uma linha da imagem da área) x 106
 		
-		addi t0, t0, 148	# de modo similar o sprite do RED sempre está a 148 colunas de diferença
+		addi t0, t0, 153	# de modo similar o sprite do RED sempre está a 153 colunas de diferença
 					# de s2
 		
 		add t0, t0, s2		# fazendo essa soma t0 recebe o endereço de onde o sprite do RED está
@@ -616,8 +603,8 @@ MUDAR_ORIENTACAO_PERSONAGEM:
 		mv a0, t0		# t0 tem o endereço da sub imagem que será usada na limpeza da tela
 		mv a1, s0		# s0 tem o endereço onde vai acontecer a limpeza, nesse caso o 
 					# endereço de onde o sprite do RED está 
-		li a2, 32		# numero de linhas de um sprite do RED
-		li a3, 26		# numero de colunas de um sprite do RED
+		li a2, 19		# numero de linhas de um sprite do RED
+		li a3, 14		# numero de colunas de um sprite do RED
 		mv a4, s3		# s3 = tamanho de uma linha da imagem dessa área
 		call PRINT_AREA		
 		

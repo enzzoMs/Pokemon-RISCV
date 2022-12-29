@@ -128,12 +128,9 @@ RENDERIZAR_QUARTO_RED:
 		
 		lw s3, 0(s2)			# s3 recebe o tamanho de uma linha da imagem da área
 		
-		addi s2, s2, 7			# pula para onde começa os pixels no .data
+		addi s2, s2, 8			# pula para onde começa os pixels no .data
 		
-		li t0, 24000			# 40 linhas * 600 (tamanho de uma linha da imagem da área)  
-						# = 24.000, assim, move o endereço de s2 em algumas 
-		add s2, s2, t0			# posições, de modo que s2 tem o endereço da subsecção onde o
-						# personagem vai estar	
+		# Obs: o endereço base de s2 já é o endereço da subsecção onde onde o personagem vai estar	
 						
 		# Atualizando o valor de s4 (posição atual na matriz de movimentação da área) e 
 		# s5 (tamanho de linha na matriz)	
@@ -143,9 +140,9 @@ RENDERIZAR_QUARTO_RED:
 				
 		addi t0, t0, 8
 	
-		addi s4, t0, 72		# o personagem começa na linha 4 e coluna 1 da matriz
+		addi s4, t0, 42		# o personagem começa na linha 3 e coluna 1 da matriz
 					# então é somado o endereço base da matriz (t0) a 
-		addi s4, s4, 1		# 4 (número da linha) * 18 (tamanho de uma linha da matriz) 
+		addi s4, s4, 1		# 3 (número da linha) * 14 (tamanho de uma linha da matriz) 
 					# e a 1 (número da coluna) 
 											
 	# Imprimindo as imagens da área e o sprite inicial do RED no frame 0					
@@ -226,10 +223,8 @@ RENDERIZAR_SALA_RED:
 		
 		addi s2, s2, 7			# pula para onde começa os pixels no .data
 		
-		li t0, 24240			# 40 linhas * 600 (tamanho de uma linha da imagem da área) + 
-						# 240 colunas = 24.240, assim, move o endereço de s2 em algumas 
-		add s2, s2, t0			# posições, de modo que s2 tem o endereço da subsecção onde o
-						# personagem vai estar			
+		addi s2, s2, 141	# move o endereço de s2 em 140 colunas posições, 
+					# de modo que s2 tem o endereço da subsecção onde o personagem vai estar			
 						
 		# Atualizando o valor de s4 (posição atual na matriz de movimentação da área) e 
 		# s5 (tamanho de linha na matriz)	
@@ -239,10 +234,10 @@ RENDERIZAR_SALA_RED:
 				
 		addi t0, t0, 8
 	
-		addi s4, t0, 72		# o personagem começa na linha 4 e coluna 13 da matriz
+		addi s4, t0, 45		# o personagem começa na linha 3 e coluna 11 da matriz
 					# então é somado o endereço base da matriz (t0) a 
-		addi s4, s4, 13		# 4 (número da linha) * 18 (tamanho de uma linha da matriz) 
-					# e a 13 (número da coluna) 
+		addi s4, s4, 11		# 3 (número da linha) * 15 (tamanho de uma linha da matriz) 
+					# e a 11 (número da coluna) 
 											
 	# Imprimindo as imagens da área e o sprite inicial do RED no frame 0					
 		# Imprimindo a casa_red_sala no frame 0
@@ -313,21 +308,7 @@ TRANSICAO_DESCENDO_ESCADAS:
 	
 	# Diferente da movimentação nesse procedimento quem se move tanto é o RED quanto a tela
 	
-	# De inicio é tomado proveito de uma parte do procedimento de movimentação da tecla A
-	# para mover o RED mais uma posição para a esquerda
-	
-	# Para chamar esse procedimento é necessário empilhar ra para garantir que o retorno seja em
-	# INICIO_DESCER_ESCADAS
-	
-	addi sp, sp, -4			# cria espaço para 1 word na pilha
-	la t0, INICIO_DESCER_ESCADAS
-	sw t0, (sp)			# empilha o endereço de t0
-	
-	call INICIO_MOVIMENTACAO_A
-															
-	INICIO_DESCER_ESCADAS: 	
-	
-	# Agora é necessário imprimir uma nova imagem completa da subsecção da área atual no frame 1
+	# É necessário imprimir uma nova imagem completa da subsecção da área atual no frame 1
 	# Isso deve acontecer por conta dos procedimentos de movimentação que sempre deixam o frame 1
 	# diferente (geralmente com 1 pixel de diferença) do frame 0
 	
@@ -339,14 +320,15 @@ TRANSICAO_DESCENDO_ESCADAS:
 			mv a4, s3		# s3 = tamanho de uma linha da imagem dessa área
 			call PRINT_AREA		
 	
+	
 	# Agora renderiza o RED dando um passo esquerdo no frame 1
 		# Imprime o sprite do RED no frame 
 			la a0, red_esquerda_passo_esquerdo	# carrega a imagem em a0
 			
 			mv a1, s0		# decide qual será o endereço onde a imagem será impressa,
-			addi a1, a1, -5		# nesse caso o sprite será renderizado onde o RED está (s0)
-			addi a1, a1, 960	# porém cinco colunas para a esquerda (-5) e 4 linhas para 
-						# baixo (4 * 320 = 960)
+			addi a1, a1, -7		# nesse caso o sprite será renderizado onde o RED está (s0)
+			addi a1, a1, 640	# porém 7 colunas para a esquerda (-7) e 2 linhas para 
+						# baixo (2 * 320 = 640)
 						
 			li t0, 0x00100000	# além disso, a imagem será impressa no frame 1, portanto
 			add a1, a1, t0		# passa o endereço de a1 para o seu equivalente no frame 1
@@ -359,9 +341,9 @@ TRANSICAO_DESCENDO_ESCADAS:
 		call TROCAR_FRAME	# inverte o frame sendo mostrado, ou seja, mostra o frame 1
 				
 		# Espera alguns milisegundos	
-		li a0, 160			# sleep por 160 ms
+		li a0, 260			# sleep por 260 ms
 		call SLEEP			# chama o procedimento SLEEP
-	
+		
 	# Agora renderiza o RED dando um passo esquerdo no frame 0
 		# Antes é necessário "limpar" uma parte da tela, ou seja, remover o antigo sprite do RED. 
 		# Para não ter que imprimir uma tela inteira (320 x 240) só será impresso uma sub imagem da 
@@ -370,8 +352,8 @@ TRANSICAO_DESCENDO_ESCADAS:
 		# Essa sub imagem se trata da imagem da área extamente onde o sprite do RED está
 		
 		li t0, 108		# para encontrar essa sub imagem podemos usar o fato de que o endereço
-		mul t0, t0, s3 		# em s2 está a exatamente 108 linhas e 148 colunas colunas de distância 
-		addi t0, t0, 148	# de onde o personagem está (s0)
+		mul t0, t0, s3 		# em s2 está a exatamente 108 linhas e 153 colunas colunas de distância 
+		addi t0, t0, 153	# de onde o personagem está (s0)
 					# assim, t0 recebe a quantidade de pixels que precisam ser pulados
 		add a0, t0, s2		# em s2 para encontrar o endereço de inicio dessa sub imagem
 		
@@ -389,9 +371,9 @@ TRANSICAO_DESCENDO_ESCADAS:
 			la a0, red_esquerda_passo_direito 	# carrega a imagem em a0		 
 			
 			mv a1, s0		# decide qual será o endereço onde a imagem será impressa,
-			addi a1, a1, -14	# nesse caso o sprite será renderizado onde o RED está (s0)
-			addi a1, a1, 1920	# porém 14 colunas para a esquerda (-14) e 6 linhas para 
-						# baixo (6 * 320 = 1920)
+			addi a1, a1, -16	# nesse caso o sprite será renderizado onde o RED está (s0)
+			addi a1, a1, 960	# porém 16 colunas para a esquerda (-16) e 5 linhas para 
+						# baixo (3 * 320 = 960)
 						
 			lw a2, 0(a0)		# numero de colunas do sprite
 			lw a3, 4(a0)		# numero de linhas do sprite
@@ -401,7 +383,7 @@ TRANSICAO_DESCENDO_ESCADAS:
 		call TROCAR_FRAME	# inverte o frame sendo mostrado, ou seja, mostra o frame 0
 		
 		# Espera alguns milisegundos	
-		li a0, 160			# sleep por 160 ms
+		li a0, 260			# sleep por 260 ms
 		call SLEEP			# chama o procedimento SLEEP
 
 	j ESCOLHER_PROXIMA_AREA

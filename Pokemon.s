@@ -43,7 +43,7 @@
 	# O sprite do personagem sempre fica numa posição fixa na tela, o endereço dessa posição é 
 	# armazenado em s0
 	li a1, 0xFF000000		# seleciona como argumento o frame 0
-	li a2, 148 			# numero da coluna do RED = 148
+	li a2, 153 			# numero da coluna do RED = 153
 	li a3, 108			# numero da linha do RED = 108
 	call CALCULAR_ENDERECO
 	
