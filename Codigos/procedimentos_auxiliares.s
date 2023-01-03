@@ -45,74 +45,179 @@ PRINT_IMG:
 	# 	a2 = numero de colunas da imagem
 	#	a3 = numero de linhas da imagem
 	
-	li t0, 0		# contador para o numero de linhas ja impressas
-	li t1, 0xC7		# t1 tem o valor da cor de um pixel transparente
+	li t0, 0xC7		# t0 tem o valor da cor de um pixel transparente
 	
 	PRINT_IMG_LINHAS:
-		li t2, 0		# contador para o numero de colunas ja impressas
+		mv t1, a2		# copia do numero de a2 para usar no loop de colunas
 			
 		PRINT_IMG_COLUNAS:
-			lbu t3, 0(a0)			# pega 1 pixel do .data e coloca em t3
+			lbu t2, 0(a0)			# pega 1 pixel do .data e coloca em t2
 			
-			# Se o valor do pixel do .data (t3) for 0xC7 (pixel transparente), 
+			# Se o valor do pixel do .data (t2) for 0xC7 (pixel transparente), 
 			# o pixel não é armazenado no bitmap, e por consequência não é renderizado na tela
-			beq t3, t1, NAO_ARMAZENAR_PIXEL
-				sb t3, 0(a1)			# pega o pixel de t3 e coloca no bitmap
+			beq t2, t0, NAO_ARMAZENAR_PIXEL
+				sb t2, 0(a1)			# pega o pixel de t2 e coloca no bitmap
 	
 			NAO_ARMAZENAR_PIXEL:
-			addi t2, t2, 1			# incrementando o numero de colunas impressas
+			addi t1, t1, -1			# decrementa o numero de colunas restantes
 			addi a0, a0, 1			# vai para o próximo pixel da imagem
 			addi a1, a1, 1			# vai para o próximo pixel do bitmap
-			bne t2, a2, PRINT_IMG_COLUNAS	# reinicia o loop se t2 != a2
+			bne t1, zero, PRINT_IMG_COLUNAS	# reinicia o loop se t1 != 0
 			
-		addi t0, t0, 1			# incrementando o numero de linhas impressas
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
 		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
 		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
-		bne t0, a3, PRINT_IMG_LINHAS	# reinicia o loop se t0 != a3
+		bne a3, zero, PRINT_IMG_LINHAS	# reinicia o loop se a3 != 0
 			
 	ret
 
 # ====================================================================================================== #
 	
 PRINT_AREA:
-	# Procedimento que imprime uma imagem de tamanho variado de uma área no frame de escolha
-	# A diferença desse procedimento para o PRINT_TELA é que esse procedimento é próprio para a 
-	# renderização de áreas do jogo. A imagem de cada área do jogo é maior do que 320 x 240, de modo 
-	# que PRINT_AREA está equipado para lidar com isso, renderizando apenas uma parte dessas imagens
+	# Procedimento auxiliar que tem por objetivo usar uma matriz de tiles para imprimir uma imagem
+	# de uma área 
+	# As imagens podem ter tamanho variado, sempre medido pelo numero de tiles impressos
+	# Cada área do jogo é dividida em quadrados de 16 x 16, cada um desses quadrados únicos configura 
+	# um tile diferente. Esses tiles são organizados em uma imagem própria de modo que cada 
+	# tile fica um em baixo do outro (ver "../Imagens/areas/tiles_casa_red.bmp" para um exemplo).
+	# Cada tile recebe um número diferente que representa a posição do tile nessa imagem, 
+	# dessa forma, as imagens das áreas podem simplesmente ser codificadas como uma matriz
+	# em que cada elemento representa o número de um tile, com isso, renderizar a imagem de uma
+	# área se trata apenas de analisar a matriz e encontrar os tiles correspondentes.
+	# Como cada tile tem 16 x 16 eles recebem números de modo que o tile na posição 1
+	# está a (16 * 16) * 1 pixels do ínicio da imagem, o tile na posição 5 está a 
+	# (16 * 16) * 5 pixels do incio, e assim por diante, facilitando o processo de "traduzir" os números
+	# da matriz para o tile correspondente 
+	# O procedimento sempre parte do pressuposto que a matriz de tiles que está sendo passada
+	# no argumento a5 é a mesma matriz que está em s2, e portanto, o procedimento usa o valor de s3
+	# Além disso, é esperado que a matriz faça referência aos tiles que estão na imagem de 
+	# s4 (endereço base da imagem contendo os tiles da área atual)
 	# Argumentos:
-	# 	a0 = endereço de inicio da subsecção da imagem da área		
-	# 	a1 = endereço no frame (0 ou 1) de onde renderizar a imagem
-	#	a2 = número de linhas da sub imagem a ser impressa
-	#	a3 = número de colunas da sub imagem a ser impressa
-	# 	a4 = numero de colunas da imagem COMPLETA da área, ou seja, o tamanho de uma linha da imagem
-				
-				
+	# 	a4 = endereço, na matriz de tiles, de onde começam os tiles a serem impressos
+	#	a5 = endereço no frame 0 ou 1 de onde os tiles vão começar a ser impressos
+	# 	a6 = número de colunas de tiles a serem impressas
+	# 	a7 = número de linhas de tiles a serem impressas
+					
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra
+																
+	li t4, 256	# t4 recebe 16 * 16 = 256, ou seja, a área de um tile							
+	
+	# o loop abaixo vai imprimir a6 x a7 tiles
+																														
 	PRINT_AREA_LINHAS:
-		mv t0, a3		# copia de a3 apra usar no loop de colunas
-			
-		PRINT_AREA_COLUNAS:
-			lb t1, 0(a0)			# pega 1 pixel do .data e coloca em t1
-			sb t1, 0(a1)			# pega o pixel de t1 e coloca no bitmap
-	
-			addi a0, a0, 1			# vai para o próximo pixel da imagem
-			addi a1, a1, 1			# vai para o próximo pixel do bitmap
-			
-			addi t0, t0, -1			# decrementando o numero de colunas restantes
-			bne t0, zero, PRINT_AREA_COLUNAS	# reinicia o loop se t0 != 0
-			
-		sub a0, a0, a3		# volta o endeço da imagem pelo numero de colunas impressas
-		add a0, a0, a4		# passa o endereço da imagem para a proxima linha
+		mv t5, a6		# copia de a6 para usar no loop de colunas
+		mv t6, a5		# copia de a5 para usar no loop de colunas
 				
-		sub a1, a1, a3			# volta o endeço do bitmap pelo numero de colunas impressas
-		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
-
-		addi a2, a2, -1			# decrementando o numero de linhas restantes
-		bne a2, zero, PRINT_AREA_LINHAS	# reinicia o loop se a2 != 0
+		PRINT_AREA_COLUNAS:
+			lb t0, 0(a4)	# pega 1 elemento da matriz de tiles e coloca em t0
+		
+			mul t0, t0, t4	# como dito na descrição do procedimento t0 (número do tile) * (16 * 16)
+					# retorna quantos pixels esse tile está do começo da imagem
 			
-	ret	
+			add a0, s4, t0	# a0 recebe o endereço do tile a ser impresso
+			mv a1, t6	# a1 recebe o endereço de onde imprimir o tile
+			li a2, 16	# a2 = numero de colunas de um tile
+			li a3, 16	# a3 = numero de linhas de um tile
+			call PRINT_IMG
 	
-# ====================================================================================================== #
-																																		
+			addi a4, a4, 1		# vai para o próximo elemento da matriz de tiles
+			addi t6, t6, 16		# pula 16 colunas no bitmap já que o tile impresso tem
+						# 16 colunas de tamanho 
+			
+			addi t5, t5, -1			# decrementando o numero de colunas de tiles restantes
+			bne t5, zero, PRINT_AREA_COLUNAS	# reinicia o loop se t5 != 0
+			
+		sub a4, a4, a6		# volta o endeço da matriz de tiles pelo numero de colunas impressas
+		add a4, a4, s3		# passa o endereço da matriz para a proxima linha (s3 tem o tamanho
+					# de uma linha na matriz)
+	
+		li t0, 5120		# t0 recebe 16 (número de linhas impressas)  * 320 (tamanho de uma linha
+					# do bitmap)
+		add a5, a5, t0		# passa o endereço do bitmap para a endereço dos próximos tiles
+
+		addi a7, a7, -1			# decrementando o numero de linhas restantes
+		bne a7, zero, PRINT_AREA_LINHAS	# reinicia o loop se t5 != 0
+			
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret
+
+# ====================================================================================================== #	
+
+LIMPAR_TILE:
+	# Procedimento que tem como objetivo "limpar" um tile que esteja na tela.
+	# Durante o funcionamento do programa as vezes alguns sprites, sobretudo do personagem, serão impressos
+	# na tela, esse procededimento tem como objetivo limpar esses sprites da tela imprimindo novamente 
+	# os tiles 
+	# Como esse procedimento limpa um tile que esteja na tela ele parte de alguns pressupostos:
+	# 	- o tile a ser limpo pertence a matriz indicada por s2, e está dentro
+	#	da subsecção de 20 x 15 tiles que está sendo mostrada na tela
+	#	- o tile correspondente pertence a imagem de s4
+	# Argumentos:
+	#	a4 = endereço, na matriz de tiles, do tile a ser limpo 
+	#	a5 = endereço base do frame 0 ou 1 onde o tile será impresso
+	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+	
+	# Primeiro é preciso encontrar o endereço de onde imprimir o tile, para isso 
+	# é necessário saber o número da coluna e linha desse tile na tela
+	
+	sub t0, a4, s2	# s2 (inicio da subseção 20 x 15 na matriz de tiles na tela) - a4 (tile a ser limpo)
+			# retorna a quantos elementos s2 está de a4 na matriz de tiles
+	
+	div t1, t0, s3	# dividindo t0 por s3 (tamanho de uma linha na matriz de tiles) retorna o número da 
+			# linha de a4 com relação a s2
+	
+	rem t0, t0, s3	# o resto da divisão de t0 por s3 (tamanho de uma linha na matriz de tiles) retorna 
+			# o número da coluna de a4 com relação a s2
+	
+	# Como s2 é o inicio da subseção de 20 x 15 tiles que está na tela podemos entender também que s2 
+	# representa o inicio do frame, e o valor de t1 e t0 em relação a s2 diz qual é a coluna e linha do 
+	# tile em a4 no frame
+	
+	# Agora e encessário encontrar o endereço do tile a4 no frame
+	
+	li t2, 5120	# t2 recebe 16 (altura de um tile) * 320 (tamanho de uma linha do frame), ou seja,
+			# o tamanho de uma linha de tiles no frame
+	
+	mul t1, t1, t2	# multiplicando a linha do tile (t1) por t2 retorna a quantos pixels é necessário pular
+			# para encontrar a linha do tile a4 no frame 
+	
+	add a5, a5, t1	# movendo o endereço base do frame (a5) para o endereço da linha do tile
+	
+	
+	li t1, 16	# t1 recebe a largura de um tile
+	mul t0, t0, t1 	# multiplicando a coluna do tile (t0) por 16 retorna a quantos pixels é necessário pular
+			# para encontrar a coluna do tile a4
+	
+	add a5, a5, t0	# movendo o endereço com a linha do tile para a coluna certa
+
+	# Com o endereço encontrado agora tudo que resta é imprimir o tile
+
+	li t0, 256	# t4 recebe 16 * 16 = 256, ou seja, a área de um tile							
+																													
+	lb t1, 0(a4)	# pega o valor do tile em a4 e coloca em t1
+		
+	mul t0, t1, t0	# t1 (número do tile) * (16 * 16) retorna a quantos pixels esse tile 
+			# está do começo da imagem de tiles (s4)
+	
+	# Imprimindo tile no frame				
+		add a0, s4, t0	# a0 recebe o endereço do tile a ser impresso
+		mv a1, a5	# a1 recebe o endereço de onde imprimir o tile
+		li a2, 16	# a2 = numero de colunas de um tile
+		li a3, 16	# a3 = numero de linhas de um tile
+		call PRINT_IMG
+						
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret			
+
+# ====================================================================================================== #	
+																																																									
 CALCULAR_ENDERECO:
 	# Procedimento que calcula um endereço no frame de escolha ou em uma imagem
 	# Argumentos: 
