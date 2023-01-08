@@ -50,7 +50,7 @@ li a4, 32	# a4 recebe 32, ou 1_000_00 em binário, de acordo com a conveção para 
 		# de transições de áreas (ver detalhes em areas.s)
 		# Dessa forma a0 codifica: 
 		# 1(indicativo de transição de área)00(para o quarto do RED)00(Entrando por lugar nenhum) 
-		
+				
 call RENDERIZAR_AREA		# chama o procedimento em areas.s
 		
 

@@ -11,6 +11,7 @@
 
 PRINT_TELA:
 	# Procedimento que imprime uma imagem de 320 x 240 no frame de escolha
+	#
 	# Argumentos: 
 	# 	a0 = endereço da imgagem		
 	# 	a1 = endereço do frame
@@ -39,6 +40,7 @@ PRINT_IMG:
 	# (0xC7), nesse caso PRINT_IMG vai verificar se algum pixel tem essa cor, e os que tiverem não
 	# serão renderizados na tela. Isso precisa ser feito ao invés de simplesmente renderizar os
 	# os pixels transparentes por conta de alguns bugs visuais, sobretudo no RARS. 
+	#
 	# Argumentos: 
 	# 	a0 = endereço da imagem		
 	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
@@ -73,7 +75,7 @@ PRINT_IMG:
 
 # ====================================================================================================== #
 	
-PRINT_AREA:
+PRINT_TILES:
 	# Procedimento auxiliar que tem por objetivo usar uma matriz de tiles para imprimir uma imagem
 	# de uma área 
 	# As imagens podem ter tamanho variado, sempre medido pelo numero de tiles impressos
@@ -92,6 +94,7 @@ PRINT_AREA:
 	# no argumento a5 é a mesma matriz que está em s2, e portanto, o procedimento usa o valor de s3
 	# Além disso, é esperado que a matriz faça referência aos tiles que estão na imagem de 
 	# s4 (endereço base da imagem contendo os tiles da área atual)
+	#
 	# Argumentos:
 	# 	a4 = endereço, na matriz de tiles, de onde começam os tiles a serem impressos
 	#	a5 = endereço no frame 0 ou 1 de onde os tiles vão começar a ser impressos
@@ -100,33 +103,32 @@ PRINT_AREA:
 					
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, 0(sp)		# empilha ra
-																
-	li t4, 256	# t4 recebe 16 * 16 = 256, ou seja, a área de um tile							
-	
+																	
 	# o loop abaixo vai imprimir a6 x a7 tiles
 																														
-	PRINT_AREA_LINHAS:
-		mv t5, a6		# copia de a6 para usar no loop de colunas
-		mv t6, a5		# copia de a5 para usar no loop de colunas
+	PRINT_TILES_LINHAS:
+		mv t3, a6		# copia de a6 para usar no loop de colunas
+		mv t4, a5		# copia de a5 para usar no loop de colunas
 				
-		PRINT_AREA_COLUNAS:
+		PRINT_TILES_COLUNAS:
 			lb t0, 0(a4)	# pega 1 elemento da matriz de tiles e coloca em t0
 		
-			mul t0, t0, t4	# como dito na descrição do procedimento t0 (número do tile) * (16 * 16)
+			li t1, 256	# t1 recebe 16 * 16 = 256, ou seja, a área de um tile							
+			mul t0, t0, t1	# como dito na descrição do procedimento t0 (número do tile) * (16 * 16)
 					# retorna quantos pixels esse tile está do começo da imagem
 			
 			add a0, s4, t0	# a0 recebe o endereço do tile a ser impresso
-			mv a1, t6	# a1 recebe o endereço de onde imprimir o tile
+			mv a1, t4	# a1 recebe o endereço de onde imprimir o tile
 			li a2, 16	# a2 = numero de colunas de um tile
 			li a3, 16	# a3 = numero de linhas de um tile
 			call PRINT_IMG
 	
 			addi a4, a4, 1		# vai para o próximo elemento da matriz de tiles
-			addi t6, t6, 16		# pula 16 colunas no bitmap já que o tile impresso tem
+			addi t4, t4, 16		# pula 16 colunas no bitmap já que o tile impresso tem
 						# 16 colunas de tamanho 
 			
-			addi t5, t5, -1			# decrementando o numero de colunas de tiles restantes
-			bne t5, zero, PRINT_AREA_COLUNAS	# reinicia o loop se t5 != 0
+			addi t3, t3, -1			# decrementando o numero de colunas de tiles restantes
+			bne t3, zero, PRINT_TILES_COLUNAS	# reinicia o loop se t3 != 0
 			
 		sub a4, a4, a6		# volta o endeço da matriz de tiles pelo numero de colunas impressas
 		add a4, a4, s3		# passa o endereço da matriz para a proxima linha (s3 tem o tamanho
@@ -137,7 +139,7 @@ PRINT_AREA:
 		add a5, a5, t0		# passa o endereço do bitmap para a endereço dos próximos tiles
 
 		addi a7, a7, -1			# decrementando o numero de linhas restantes
-		bne a7, zero, PRINT_AREA_LINHAS	# reinicia o loop se t5 != 0
+		bne a7, zero, PRINT_TILES_LINHAS	# reinicia o loop se t5 != 0
 			
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -155,6 +157,10 @@ LIMPAR_TILE:
 	# 	- o tile a ser limpo pertence a matriz indicada por s2, e está dentro
 	#	da subsecção de 20 x 15 tiles que está sendo mostrada na tela
 	#	- o tile correspondente pertence a imagem de s4
+	# O uso desse procedimento fornece alguns benefícios em relação ao PRINT_TILES, como usar menos
+	# registradores e não precisar de argumento indicando o endereço de onde o tile será impresso,
+	# já que o próprio procedimento vai calcular o endereço de onde o tile está na tela
+	# 
 	# Argumentos:
 	#	a4 = endereço, na matriz de tiles, do tile a ser limpo 
 	#	a5 = endereço base do frame 0 ou 1 onde o tile será impresso

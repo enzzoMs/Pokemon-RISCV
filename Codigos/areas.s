@@ -29,6 +29,7 @@
 # 	Áreas (AAA): 										 	 #
 #		Quarto do RED -> 000									 #
 #		Sala da casa do RED -> 001								 #
+#		Pallet -> 010										 #
 # 													 #
 # Já os valores de PP variam dependendo da área. Algumas áreas possuem mais de uma maneira de acessa-las #
 # A sala do RED, por exemplo, pode ser acessada tanto pelo quarto do RED ou pela porta da frente, nesse  #
@@ -39,6 +40,8 @@
 #	Sala do RED:											 #
 #		PP = 00 -> Entrada pela porta da frente							 #
 #		PP = 01 -> Entrada pelas escadas							 #
+#	Pallet:												 #
+#		PP = 00 -> Entrada pela casa do RED							 #
 #            												 #	 
 # ====================================================================================================== #
 
@@ -88,6 +91,10 @@ RENDERIZAR_AREA:
 		li t0, 4	# 4 ou 001 00 em binário é o código da área da sala da casa do RED
 		# se t1 (AAA) = 001 00 renderiza a sala da casa do RED
 		beq t1, t0, RENDERIZAR_SALA_RED
+		
+		li t0, 8	# 8 ou 010 00 em binário é o código da área de Pallet
+		# se t1 (AAA) = 010 00 renderiza Pallet
+		beq t1, t0, RENDERIZAR_PALLET
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -165,7 +172,7 @@ RENDERIZAR_QUARTO_RED:
 		li a5, 0xFF000000	# a imagem será impressa no frame 0
 		li a6, 20		# número de colunas de tiles a serem impressas
 		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_AREA				
+		call PRINT_TILES				
 						
 		# Imprimindo a imagem do RED virado para cima no frame 0
 		la a0, red_cima		# carrega a imagem				
@@ -181,7 +188,7 @@ RENDERIZAR_QUARTO_RED:
 		li a5, 0xFF100000	# a imagem será impressa no frame 0
 		li a6, 20		# número de colunas de tiles a serem impressas
 		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_AREA		
+		call PRINT_TILES		
 										
 		# Imprimindo a imagem do RED virado para cima no frame 0
 		
@@ -254,7 +261,7 @@ RENDERIZAR_QUARTO_RED:
 		li a5, 0xFF000000	# a imagem será impressa no frame 0
 		li a6, 20		# número de colunas de tiles a serem impressas
 		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_AREA								
+		call PRINT_TILES								
 	
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
@@ -262,7 +269,7 @@ RENDERIZAR_QUARTO_RED:
 		li a5, 0xFF100000	# a imagem será impressa no frame 0
 		li a6, 20		# número de colunas de tiles a serem impressas
 		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_AREA		
+		call PRINT_TILES		
 										
 	
 	FIM_RENDERIZAR_QUARTO_RED:									
@@ -347,15 +354,15 @@ RENDERIZAR_SALA_RED:
 		li a5, 0xFF000000	# a imagem será impressa no frame 0
 		li a6, 20		# número de colunas de tiles a serem impressas
 		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_AREA				
+		call PRINT_TILES				
 							
 	# Imprimindo a imagem da área no frame 1	
-		# Imprimindo a imagem da sala do RED no frame 0
+		# Imprimindo a imagem da sala do RED no frame 1
 		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
 		li a5, 0xFF100000	# a imagem será impressa no frame 0
 		li a6, 20		# número de colunas de tiles a serem impressas
 		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_AREA		
+		call PRINT_TILES		
 												
 		j FIM_RENDERIZAR_SALA_RED
 	
@@ -373,7 +380,99 @@ RENDERIZAR_SALA_RED:
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret
+
+# ====================================================================================================== #	
+
+RENDERIZAR_PALLET:
+	# Procedimento que imprime a imagem de pallet no frame 0 e no frame 1
+	# de acordo com o ponto de entrada, além de atualizar os registradores salvos
+	# Argumentos:
+	# 	a0 = indica o ponto de entrada na área, ou seja, por onde o RED está entrando nessa área
+	#	Para essa área os pontos de entrada possíveis são:
+	#		PP = 00 -> Entrada pela casa do RED						
+
+	# OBS: não é necessário empilhar o valor de ra pois a chegada a este procedimento é por meio
+	# de uma instrução de branch e a saída é pelo ra empilhado por RENDERIZAR_AREA
 	
+	# Primeiro verifica qual o ponto de entrada (PP = a0)		
+	#beq a0, zero, ----		
+		
+	# Se a0 == 01 (ou != 0) então o ponto de entrada é pelas escadas
+
+	# Atualizando os registradores salvos para essa área
+		# Atualizando o valor de s0 (posição atual do RED no frame 0)
+			li a1, 0xFF000000		# seleciona como argumento o frame 0
+			li a2, 97 			# numero da coluna do RED = 97
+			li a3, 109			# numero da linha do RED = 109
+			call CALCULAR_ENDERECO	
+		
+			mv s0, a0		# move o endereço retornado para s0
+	
+		# Atualizando o valor de s1 (orientação do personagem)
+			li s1, 3	# inicialmente virado para baixo
+		
+		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles ques está sendo 
+		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
+			la s2, matriz_tiles_pallet	# carregando em s2 o endereço da matriz
+		
+			lw s3, 0(s2)		# s3 recebe o tamanho de uma linha da matriz
+		
+			addi s2, s2, 8		# pula para onde começa os pixels no .data
+		
+			addi s2, s2, 27		# pula para onde começa a subsecção que será mostrada na tela
+						
+		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
+			la s4, tiles_pallet				
+			addi s4, s4, 8		# pula para onde começa os pixels no .data			
+		
+		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
+			la t0, matriz_tiles_pallet
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			addi s5, t0, 189		# o RED começa na linha 7 e coluna 7 da matriz
+							# de tiles, então é somado (7 * 26(tamanho de
+							# uma linha da matriz)) + 7		
+																																												
+		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
+		# s7 (tamanho de linha na matriz de movimentação)	
+		la t0, matriz_movimentacao_pallet	
+		
+		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
+				
+		addi t0, t0, 8
+	
+		addi s6, t0, 168	# o personagem começa na linha 7 e coluna 6 da matriz
+					# então é somado o endereço base da matriz (t0) a 
+		addi s6, s6, 6		# 7 (número da linha) * 24 (tamanho de uma linha da matriz) 
+					# e a 6 (número da coluna) 
+											
+	# Imprimindo as imagens da área no frame 0					
+		# Imprimindo a imagem de pallet no frame 0
+		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a5, 0xFF000000	# a imagem será impressa no frame 0
+		li a6, 20		# número de colunas de tiles a serem impressas
+		li a7, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES				
+							
+	# Imprimindo a imagem da área no frame 1	
+		# Imprimindo a imagem de pallet no frame 1
+		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a5, 0xFF100000	# a imagem será impressa no frame 0
+		li a6, 20		# número de colunas de tiles a serem impressas
+		li a7, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES		
+	
+	FIM_RENDERIZAR_PALLET:
+																			
+	# Mostra o frame 0		
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	sb zero, (t0)			# armazena 0 no endereço de t0
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret
+		
+			
 # ====================================================================================================== #
 					
 TRANSICAO_ENTRE_AREAS:
@@ -602,7 +701,10 @@ NAO_SAIR_DA_AREA:
 	.include "../Imagens/areas/casa_red/matriz_movimentacao_quarto_red.data"
 	.include "../Imagens/areas/casa_red/matriz_tiles_sala_red.data"
 	.include "../Imagens/areas/casa_red/matriz_movimentacao_sala_red.data"
-		
+	.include "../Imagens/areas/pallet/tiles_pallet.data"
+	.include "../Imagens/areas/pallet/matriz_tiles_pallet.data"
+	.include "../Imagens/areas/pallet/matriz_movimentacao_pallet.data"
+	
 	.include "../Imagens/areas/transicao_de_areas/seta_transicao_cima.data"
 	.include "../Imagens/areas/transicao_de_areas/seta_transicao_baixo.data"
 	.include "../Imagens/areas/transicao_de_areas/seta_transicao_esquerda.data"
