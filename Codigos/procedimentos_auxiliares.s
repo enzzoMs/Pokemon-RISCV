@@ -67,8 +67,10 @@ PRINT_IMG:
 			bne t1, zero, PRINT_IMG_COLUNAS	# reinicia o loop se t1 != 0
 			
 		addi a3, a3, -1			# decrementando o numero de linhas restantes
+		
 		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
 		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+		
 		bne a3, zero, PRINT_IMG_LINHAS	# reinicia o loop se a3 != 0
 			
 	ret
