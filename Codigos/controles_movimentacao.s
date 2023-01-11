@@ -1718,10 +1718,10 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 	li t1, 1					
 	beq t0, t1, FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
 	
-	# se t0 >= 32 então essa posição indica uma transição entre área, nesse caso RENDERIZAR_AREA tem
+	# se t0 >= 64 então essa posição indica uma transição entre área, nesse caso RENDERIZAR_AREA tem
 	# que ser chamado e depois os procedimentos de movimentação devem ocorrer
 	
-	li t1, 32						
+	li t1, 64						
 	blt t0, t1, FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
 		mv a4, t0		# move para o argumento a4 o valor da posição sendo analisada
 		call RENDERIZAR_AREA												
