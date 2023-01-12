@@ -487,7 +487,8 @@ RENDERIZAR_PALLET:
 		
 			addi s2, s2, 8		# pula para onde começa os pixels no .data
 		
-			addi s2, s2, 27		# pula para onde começa a subsecção que será mostrada na tela
+			addi s2, s2, 287	# pula para onde começa a subsecção que será mostrada na tela
+						# (1a coluna e 11a linha da matriz de tiles)
 						
 		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
 			la s4, tiles_pallet				
@@ -496,8 +497,8 @@ RENDERIZAR_PALLET:
 		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
 			la t0, matriz_tiles_pallet
 			addi t0, t0, 8			# pula para onde começa os pixels no .data
-			addi s5, t0, 189		# o RED começa na linha 7 e coluna 7 da matriz
-							# de tiles, então é somado (7 * 26(tamanho de
+			addi s5, t0, 449		# o RED começa na linha 17 e coluna 7 da matriz
+							# de tiles, então é somado (17 * 26(tamanho de
 							# uma linha da matriz)) + 7		
 																																												
 		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
@@ -508,9 +509,9 @@ RENDERIZAR_PALLET:
 				
 		addi t0, t0, 8
 	
-		addi s6, t0, 168	# o personagem começa na linha 7 e coluna 6 da matriz
+		addi s6, t0, 216	# o personagem começa na linha 7 e coluna 6 da matriz
 					# então é somado o endereço base da matriz (t0) a 
-		addi s6, s6, 6		# 7 (número da linha) * 24 (tamanho de uma linha da matriz) 
+		addi s6, s6, 6		# 9 (número da linha) * 24 (tamanho de uma linha da matriz) 
 					# e a 6 (número da coluna) 
 											
 	# Imprimindo as imagens da área no frame 0					
