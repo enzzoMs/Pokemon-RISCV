@@ -187,24 +187,24 @@ MOVIMENTACAO_TECLA_W:
 		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 1 coluna
 		# 3 linhas (2 tiles do RED + 1 tile de folga)
 		
-		mv a4, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
+		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
 				# nesse caso, o começo é o tile onde o RED está
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		mv a1, s0	# a imagem será impressa onde o RED está (s0)
 		
 		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
+		sub a1, a1, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
 				# 320 + 1 coluna)
 		
 		li t0, 320	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
 		mul t0, t0, t5	# iteração, já que o pixels da tela serão trocados para fazer a imagem "descer"
-		add a5, a5, t0	# portanto, 320 * t5 retorna quantos pixels é necessário avançar para encontrar
+		add a1, a1, t0	# portanto, 320 * t5 retorna quantos pixels é necessário avançar para encontrar
 				# a linha certa onde devem ser impressos os tiles nessa iteração
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
 					# será impressa	
 					
-		li a6, 1		# número de colunas de tiles a serem impressas
-		li a7, 3		# número de linhas de tiles a serem impressas
+		li a2, 1		# número de colunas de tiles a serem impressas
+		li a2, 3		# número de linhas de tiles a serem impressas
 		call PRINT_TILES
 		
 		# Parte (3) -> imprime o sprite do RED
@@ -311,10 +311,10 @@ MOVIMENTACAO_TECLA_W:
 	# no frame 0 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES	
 
 		# Imprimindo o sprite do RED no frame 0
@@ -330,10 +330,10 @@ MOVIMENTACAO_TECLA_W:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES			
 						
 	sub s5, s5, s3		# atualizando o lugar do personagem na matriz de tiles para a posição uma linha
@@ -490,28 +490,28 @@ MOVIMENTACAO_TECLA_A:
 		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 2 coluna e
 		# 2 linhas (2 tiles onde o RED está + 2 tiles de folga) 
 		
-		addi a4, s5, -1	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
+		addi a0, s5, -1	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
 				# nesse caso, o começo é o tile anterior onde o RED está
 				
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		mv a1, s0	# a imagem será impressa onde o RED está (s0)
 		
 		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
+		sub a1, a1, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
 				# 320 + 1 coluna)
 		
-		add a5, a5, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
+		add a1, a1, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
 				# iteração, já que o pixels da tela serão trocados para fazer a imagem se "mover"
 				# a5 + t5 passa a5 para a coluna certa onde os tiles devem ser impressos
 		
-		addi a5, a5, -16	# os tiles que serão impressos são os 2 onde o RED está e os 2
+		addi a1, a1, -16	# os tiles que serão impressos são os 2 onde o RED está e os 2
 					# anteriores como uma folga. Por isso o endereço de a5 precisa
 					# voltar 16 pixels (largura de um tile)
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
 					# será impressa	
 					
-		li a6, 2		# número de colunas de tiles a serem impressas
-		li a7, 2		# número de linhas de tiles a serem impressas
+		li a2, 2		# número de colunas de tiles a serem impressas
+		li a3, 2		# número de linhas de tiles a serem impressas
 		call PRINT_TILES
 		
 		# Parte (3) -> imprime o sprite do RED
@@ -641,10 +641,10 @@ MOVIMENTACAO_TECLA_A:
 	# no frame 0 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES	
 	
 		# Imprimindo o sprite do RED no frame 0
@@ -660,10 +660,10 @@ MOVIMENTACAO_TECLA_A:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES			
 						
 	addi s5, s5, -1		# atualizando o lugar do personagem na matriz de tiles para a posição anterior
@@ -825,24 +825,24 @@ MOVIMENTACAO_TECLA_S:
 		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 1 coluna
 		# 3 linhas (2 tiles do RED + 1 tile de folga)
 		
-		mv a4, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
+		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
 				# nesse caso, o começo é o tile onde o RED está
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		mv a1, s0	# a imagem será impressa onde o RED está (s0)
 		
 		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
+		sub a1, a1, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
 				# 320 + 1 coluna)
 		
 		li t0, 320	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
 		mul t0, t0, t5	# iteração, já que o pixels da tela serão trocados para fazer a imagem "subir"
-		sub a5, a5, t0	# portanto, 320 * t5 retorna quantos pixels é necessário voltar para encontrar
+		sub a1, a1, t0	# portanto, 320 * t5 retorna quantos pixels é necessário voltar para encontrar
 				# a linha certa onde devem ser impressos os tiles nessa iteração
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
 					# será impressa	
 					
-		li a6, 1		# número de colunas de tiles a serem impressas
-		li a7, 3		# número de linhas de tiles a serem impressas
+		li a2, 1		# número de colunas de tiles a serem impressas
+		li a3, 3		# número de linhas de tiles a serem impressas
 		call PRINT_TILES
 		
 		# Parte (3) -> imprime o sprite do RED
@@ -950,10 +950,10 @@ MOVIMENTACAO_TECLA_S:
 	# no frame 0 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES	
 
 		# Imprimindo o sprite do RED no frame 0
@@ -969,10 +969,10 @@ MOVIMENTACAO_TECLA_S:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES			
 						
 	add s5, s5, s3		# atualizando o lugar do personagem na matriz de tiles para a posição uma linha
@@ -1131,23 +1131,23 @@ MOVIMENTACAO_TECLA_D:
 		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 1 coluna e
 		# 2 linhas (2 tiles onde o RED está + 2 tiles de folga) 
 		
-		mv a4, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
+		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
 				# nesse caso, o começo é o tile onde o RED está
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		mv a1, s0	# a imagem será impressa onde o RED está (s0)
 		
 		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
+		sub a1, a1, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
 				# 320 + 1 coluna)
 		
-		sub a5, a5, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
+		sub a1, a1, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
 				# iteração, já que o pixels da tela serão trocados para fazer a imagem se "mover"
 				# a5 - t5 volta a5 para a coluna certa onde os tiles devem ser impressos
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
 					# será impressa	
 					
-		li a6, 2		# número de colunas de tiles a serem impressas
-		li a7, 2		# número de linhas de tiles a serem impressas
+		li a2, 2		# número de colunas de tiles a serem impressas
+		li a3, 2		# número de linhas de tiles a serem impressas
 		call PRINT_TILES
 		
 		# Parte (3) -> imprime o sprite do RED
@@ -1278,10 +1278,10 @@ MOVIMENTACAO_TECLA_D:
 	# no frame 0 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES	
 	
 		# Imprimindo o sprite do RED no frame 0
@@ -1297,10 +1297,10 @@ MOVIMENTACAO_TECLA_D:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES			
 						
 	addi s5, s5, 1		# atualizando o lugar do personagem na matriz de tiles para a próxima posição
@@ -1387,14 +1387,9 @@ MOVER_PERSONAGEM:
 	# Retorno:
 	#	a0 = endereço de a6 atualizado para a nova posição de acordo com a movimentação feita
 																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																									
-	addi sp, sp, -20	# cria espaço para 5 words na pilha
-	sw ra, 16(sp)		# empilha ra
-	# Por conta de PRINT_TILES esse é o único procedimento que precisa empilhar os argumentos
-	sw a4, 12(sp) 		# empilha a4
-	sw a5, 8(sp)		# empilha a5
-	sw a6, 4(sp)		# empilha a6
-	sw a7, 0(sp) 		# empilha a7
-		
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra
+	
 	li t4, 16		# contador para o número de pixels que o personagem vai se deslocar, ou seja,
 				# o número de loops a serem executados abaixo
 					
@@ -1459,35 +1454,26 @@ MOVER_PERSONAGEM:
 		MOVER_PERSONAGEM_LIMPAR_TELA:
 		
 		add a6, a6, t0	# incrementa o endereço de a6 (endereço onde o sprite do personagem será 
-		# impresso) para a próxima posição de acordo com o valor calculado em t0
-		
-		sw a6, 4(sp)		# atualiza o valor de a6 empilhado
+		# impresso) para a próxima posição de acordo com o valor calculado em t0		
 		
 		# Imprimindo os tiles e limpando a tela 
 			add t0, a6, t3		# t0 recebe o endereço de a6 atualizado com o valor de t3
 						# definido acima
 		
-			mv a6, t2		# t2 tem o número de colunas de tiles a serem impressas
-			mv a7, t1		# t1 número de linhas de tiles a serem impressas
+			mv a2, t2		# t2 tem o número de colunas de tiles a serem impressas
+			mv a3, t1		# t1 número de linhas de tiles a serem impressas
 		
 			mv a0, t0			# encontra o endereço do tile na matriz e o endereço do
 			call CALCULAR_ENDERECO_DE_TILE	# frame onde os tiles serão impressos com base no valor 
 							# de t0 definido acima
 		
-			mv a4, a0	# o a0 retornado tem o endereço do tile correspondente
-			mv a5, a1	# o a1 tem o endereço de inicio do tile a0 no frame, ou seja, o 
+			mv a0, a0	# o a0 retornado tem o endereço do tile correspondente
+			mv a1, a1	# o a1 tem o endereço de inicio do tile a0 no frame, ou seja, o 
 					# endereço onde os tiles vão começar a ser impressos
-			add a5, a5, t6	# decide a partir do valor de t6 qual o frame onde os tiles serão
+			add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde os tiles serão
 					# impressos
 			call PRINT_TILES
-			
-			# Com a chamada a PRINT_TILES o valor dos registradores a4 a a7 são modificados, portanto
-			# é necessário voltar o valor desses argumentos com os valores que foram empilhados
-			lw a4, 12(sp) 		# desempilha a4
-			lw a5, 8(sp)		# desempilha a5
-			lw a6, 4(sp)		# desempilha a6
-			lw a7, 0(sp) 		# desempilha a7
-																													
+																							
 		# Agora imprime a imagem do personagem no frame
 			mv a0, t5		# t5 tem o endereço da próxima imagem do personagem 			
 			mv a1, a6		# a6 possui o endereço de onde renderizar o personagem
@@ -1526,8 +1512,8 @@ MOVER_PERSONAGEM:
 			
 	mv a0, a6	# move para a0 o endereço de a6 atualizado durante o loop acima	
 				
-	lw ra, 16(sp)		# desempilha ra
-	addi sp, sp, 20		# remove 5 word da pilha
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
 
 	ret
 							

@@ -170,10 +170,10 @@ RENDERIZAR_QUARTO_RED:
 											
 	# Imprimindo as imagens da área e o sprite inicial do RED no frame 0					
 		# Imprimindo a imagem do quarto do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES				
 						
 		# Imprimindo a imagem do RED virado para cima no frame 0
@@ -186,10 +186,10 @@ RENDERIZAR_QUARTO_RED:
 	
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES		
 										
 		# Imprimindo a imagem do RED virado para cima no frame 0
@@ -259,18 +259,18 @@ RENDERIZAR_QUARTO_RED:
 											
 	# Imprimindo as imagens da área no frame 0					
 		# Imprimindo a imagem do quarto do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES								
 	
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES		
 										
 	
@@ -348,23 +348,7 @@ RENDERIZAR_SALA_RED:
 		addi s6, t0, 42		# o personagem começa na linha 3 e coluna 10 da matriz
 					# então é somado o endereço base da matriz (t0) a 
 		addi s6, s6, 10		# 3 (número da linha) * 14 (tamanho de uma linha da matriz) 
-					# e a 10 (número da coluna) 
-											
-	# Imprimindo as imagens da área no frame 0					
-		# Imprimindo a imagem da sala do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
-							
-	# Imprimindo a imagem da área no frame 1	
-		# Imprimindo a imagem da sala do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
+					# e a 10 (número da coluna) 	
 												
 		j FIM_RENDERIZAR_SALA_RED
 	
@@ -415,27 +399,26 @@ RENDERIZAR_SALA_RED:
 		addi s6, t0, 126	# o personagem começa na linha 9 e coluna 4 da matriz
 					# então é somado o endereço base da matriz (t0) a 
 		addi s6, s6, 4		# 9 (número da linha) * 14 (tamanho de uma linha da matriz) 
-					# e a 4 (número da coluna) 
-											
+					# e a 4 (número da coluna) 																
+	
+	FIM_RENDERIZAR_SALA_RED:
+	
 	# Imprimindo as imagens da área no frame 0					
 		# Imprimindo a imagem da sala do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES				
 							
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem da sala do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
-										
-	
-	FIM_RENDERIZAR_SALA_RED:
-																			
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES																				
+																																																							
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	sb zero, (t0)			# armazena 0 no endereço de t0
@@ -508,26 +491,26 @@ RENDERIZAR_PALLET:
 		addi s6, t0, 216	# o personagem começa na linha 7 e coluna 6 da matriz
 					# então é somado o endereço base da matriz (t0) a 
 		addi s6, s6, 6		# 9 (número da linha) * 24 (tamanho de uma linha da matriz) 
-					# e a 6 (número da coluna) 
-											
+					# e a 6 (número da coluna) 		
+	
+	FIM_RENDERIZAR_PALLET:
+																															
 	# Imprimindo as imagens da área no frame 0					
 		# Imprimindo a imagem de pallet no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES				
 							
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem de pallet no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
-	
-	FIM_RENDERIZAR_PALLET:
-																			
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES
+																				
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	sb zero, (t0)			# armazena 0 no endereço de t0
@@ -741,18 +724,18 @@ NAO_SAIR_DA_AREA:
 		li a3, 208			# numero da linha
 		call CALCULAR_ENDERECO	
 		
-		mv a5, a0		# move o endereço retornado para a5
+		mv a1, a0		# move o endereço retornado para a1
 		
 		li t0, 13		# t0 recebe 13 * s3 (tamanho de uma linha da matriz de tiles), ou
 		mul t0, t0, s3		# seja, o tamanho de 16 linhas na matriz de tiles
 		addi t0, t0, 15		# move t0 por mais 15 colunas
-		add a4, s2, t0		# a4 tem o endereço do 1o tile a ser limpo
+		add a0, s2, t0		# a0 tem o endereço do 1o tile a ser limpo
 		
 		# Imprime novamente os tiles da área no lugar da mensagem
-	 	# a4 já tem o endereço, na matriz de tiles, de onde começam os tiles a serem impressos
-		# a5 já tem o endereço onde os tiles vão começar a ser impressos
-		li a6, 5		# número de linhas de tiles a serem impressas
-		li a7, 2		# número de linhas de tiles a serem impressas
+	 	# a0 já tem o endereço, na matriz de tiles, de onde começam os tiles a serem impressos
+		# a1 já tem o endereço onde os tiles vão começar a ser impressos
+		li a2, 5		# número de linhas de tiles a serem impressas
+		li a3, 2		# número de linhas de tiles a serem impressas
 		call PRINT_TILES						
 																						
 	# Agora é preciso chamar o procedimento de movimentação adequado para a tecla apertada pelo jogador
