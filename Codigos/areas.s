@@ -572,22 +572,26 @@ TRANSICAO_ENTRE_AREAS:
 		
 	# O procedimento usa a orientação do personagem (s1) para decidir onde e qual seta renderizar 
 	
-	# Abaixo é decidido o valor de t3 (endereço na matriz de tiles de onde colocar o tile da seta) e 
+	# Abaixo é decidido o valor de t3 (endereço no frame 0 de onde colocar o tile da seta) e 
 	# t0 (qual a imagem da seta)
 	
 		bne s1, zero, TRANSICAO_SETA_DIREITA
 			# se s1 = 0 o personagem está virado para a esquerda	
-			addi t3, s5, -1	# o endereço de onde a seta vai estar é a esquerda da posição do RED
-			add t3, t3, s3	# e uma linha para baixo
+			addi t3, s0, -17	# o endereço de onde a seta vai estar é o tile a esquerda do RED
+						# e uma coluna para a esquerda
+			addi t3, t3, 960	# e 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)
 			la t0, seta_transicao_esquerda	# carregando a imagem em t0
 			j RENDERIZAR_SETA_DE_TRANSICAO
 	
 	TRANSICAO_SETA_DIREITA:
 		li t1, 1
 		bne s1, t1, TRANSICAO_SETA_CIMA
-			# se s1 = 1 o personagem está virado para a direita	
-			addi t3, s5, 1	# o endereço de onde a seta vai estar é a direita da posição do RED
-			add t3, t3, s3	# e uma linha para baixo
+			# se s1 = 1 o personagem está virado para a direita
+			addi t3, s0, 15	# o endereço de onde a seta vai estar é o tile a direita do RED
+					# e uma coluna para a esquerda			
+			addi t3, t3, 960	# e 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)	
 			la t0, seta_transicao_direita	# carregando a imagem em t0
 			j RENDERIZAR_SETA_DE_TRANSICAO
 			
@@ -595,7 +599,11 @@ TRANSICAO_ENTRE_AREAS:
 		li t1, 2
 		bne s1, t1, TRANSICAO_SETA_BAIXO
 			# se s1 = 1 o personagem está virado para cima	
-			mv t3, s5	# o endereço de onde a seta vai estar é a posição do RED
+			li t0, 5120	# 5120 = 320 (tamanho de uma linha do frame) * 16 (altura de um tile)
+			sub t3, s0, t0		# o endereço de onde a seta vai estar é o tile acima do RED
+			addi t3, t3, 960	# 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)
+			addi t3, t3, -1		# e uma coluna para a esquerda			
 			la t0, seta_transicao_cima	# carregando a imagem em t0
 			j RENDERIZAR_SETA_DE_TRANSICAO
 						
@@ -603,8 +611,11 @@ TRANSICAO_ENTRE_AREAS:
 		li t1, 3
 		bne s1, t1, RENDERIZAR_SETA_DE_TRANSICAO
 			# se s1 = 3 o personagem está virado para baixo	
-			add t3, s5, s3	# o endereço de onde a seta vai estar é 2 posições abaixo da 
-			add t3, t3, s3	# posição do RED
+			li t0, 5120	# 5120 = 320 (tamanho de uma linha do frame) * 16 (altura de um tile)
+			add t3, s0, t0		# o endereço de onde a seta vai estar é o tile abaixo do RED
+			addi t3, t3, 960	# 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)
+			addi t3, t3, -1		# e uma coluna para a esquerda									
 			la t0, seta_transicao_baixo	# carregando a imagem em t0			
 						
 						
@@ -612,45 +623,11 @@ TRANSICAO_ENTRE_AREAS:
 
 	# As setas que indicam a transição de área funcionam que nem um tile normal, a diferença é que 
 	# tem fundo transparentes
-	# Primeiro é preciso encontrar o endereço de onde imprimir as setas, para isso 
-	# é necessário saber o número da coluna e linha do tile escolhido em t0 na tela
 	
-	sub t1, t3, s2	# s2 (inicio da subseção 20 x 15 na matriz de tiles na tela) - t3 (tile onde a seta vai
-			# estar) retorna a quantos elementos s2 está de t3 na matriz de tiles
-	
-	div t2, t1, s3	# dividindo t1 por s3 (tamanho de uma linha na matriz de tiles) retorna o número da 
-			# linha do tile da seta com relação a s2
-	
-	rem t1, t1, s3	# o resto da divisão de t1 por s3 (tamanho de uma linha na matriz de tiles) retorna 
-			# o número da coluna do tile da seta com relação a s2
-	
-	# Como s2 é o inicio da subseção de 20 x 15 tiles que está na tela podemos entender também que s2 
-	# representa o inicio do frame, e o valor de t0 e t1 em relação a s2 diz qual é a coluna e linha do 
-	# tile da seta no frame
-	
-	# Agora e encessário encontrar o endereço do tile da seta no frame
-	
-	li a1, 0xFF000000	# a1 recebe o endereço base do frame 0
-	
-	li t4, 5120	# t4 recebe 16 (altura de um tile) * 320 (tamanho de uma linha do frame), ou seja,
-			# o tamanho de uma linha de tiles no frame
-	
-	mul t2, t2, t4	# multiplicando a linha do tile (t2) por t4 retorna a quantos pixels é necessário pular
-			# para encontrar a linha do tile da seta no frame 
-	
-	add a1, a1, t2	# movendo o endereço base do frame (a1) para o endereço da linha do tile
-	
-	li t2, 16	# t2 recebe a largura de um tile
-	mul t2, t2, t1 	# multiplicando a coluna do tile (t1) por 16 retorna a quantos pixels é necessário pular
-			# para encontrar a coluna do tile da seta
-	
-	add a1, a1, t2	# movendo o endereço com a linha do tile para a coluna certa
-	
-	# Com tudo feito é possível imprimir o tile da seta
-		# Imprimindo tile no frame 0				
+	# Imprimindo tile da seta no frame 0				
 		mv a0, t0	# t0 tem o endereço da imagem da seta a ser impressa
 		addi a0, a0, 8	# pula para onde começa os pixels no .data
-		# a1 já tem o endereço de onde imprimir o tile
+		mv a1, t3	# t3 tem o endereço de onde imprimir o tile
 		li a2, 16	# a2 = numero de colunas de um tile
 		li a3, 16	# a3 = numero de linhas de um tile
 		call PRINT_IMG
@@ -701,7 +678,7 @@ TRANSICAO_ENTRE_AREAS:
 	
 	ret
 	
-NAO_SAIR_DA_AREA:
+	NAO_SAIR_DA_AREA:
 	
 	# Se o jogador não deseja sair da área é necessário retirar a imagem da seta, retirar a mensagem
 	# de transição de área e chamar o procedimento de movimentação adequado
@@ -709,10 +686,15 @@ NAO_SAIR_DA_AREA:
 	mv t5, a0	# salva a0 (tecla apertada) em t5
 		
 	# Limpando o tile onde está a seta de transição no frame 0
-		mv a4, t3		# dos cálculos acima t3 ainda tem o endereço do tile onde a seta 
-					# foi impressa
-		li a5, 0xFF000000	# a5 recebe o endereço base do frame 0		
-		call LIMPAR_TILE
+		mv a0, t3	# dos cálculos acima t3 ainda tem o endereço no frame 0 onde a seta foi impressa
+		call CALCULAR_ENDERECO_DE_TILE	# encontra o endereço do tile onde a seta foi impressa 
+						# e o endereço no frame 0 
+					
+		# o a0 retornado tem o endereço do tile cnde a seta está
+		# o a1 retornado tem o endereço de inicio do tile a0 no frame 0
+		li a2, 1	# a limpeza vai ocorrer em 1 coluna
+		li a3, 1	# a limpeza vai ocorrer em 1 linha 
+		call PRINT_TILES
 	
 	# Limpando mensagem de transição de área
 		# Para isso é necessário limpar 10 tiles em 2 linhas, eles sempre são os mesmos independente 
