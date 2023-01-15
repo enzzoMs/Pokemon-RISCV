@@ -5,11 +5,7 @@
 # ------------------------------------------------------------------------------------------------------ #
 # 													 #
 # Este arquivo possui os procedimentos necesários para renderizar as diferentes áreas do jogo, fazendo   #
-# as alterações necessárias nos registradores s0 (posição atual do personagem na tela), s1 (orientação   #
-# do personagem), s2 (endereço da subseção de tiles que estão sendo mostrados na tela), s3 (tamanho de   #
-# uma lihna da matriz de tiles), s4 (endereço da imagem com os tiles da área), s5 (posição atual do RED  #
-# na matriz de tiles), s6 (posiçaõ atual do RED na matriz de movimentação) e s7 (tamanho de uma linha	 #
-# na matriz de movimentação).										 #
+# as alterações necessárias nos registradores salvos s0 - s7						 #
 #            												 #	 
 # Além disso, esse arquivo também contém os procedimentos para realizar as transições entre área.	 #
 # A transição entre uma área e outra acontece quando o jogador se encontra em uma posição especial na	 #

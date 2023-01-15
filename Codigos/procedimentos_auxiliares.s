@@ -110,7 +110,6 @@ PRINT_TILES:
 																														
 	PRINT_TILES_LINHAS:
 		mv t3, a6		# copia de a6 para usar no loop de colunas
-		mv t4, a5		# copia de a5 para usar no loop de colunas
 				
 		PRINT_TILES_COLUNAS:
 			lb t0, 0(a4)	# pega 1 elemento da matriz de tiles e coloca em t0
@@ -120,13 +119,13 @@ PRINT_TILES:
 					# retorna quantos pixels esse tile está do começo da imagem
 			
 			add a0, s4, t0	# a0 recebe o endereço do tile a ser impresso
-			mv a1, t4	# a1 recebe o endereço de onde imprimir o tile
+			mv a1, a5	# a1 recebe o endereço de onde imprimir o tile
 			li a2, 16	# a2 = numero de colunas de um tile
 			li a3, 16	# a3 = numero de linhas de um tile
 			call PRINT_IMG
 	
 			addi a4, a4, 1		# vai para o próximo elemento da matriz de tiles
-			addi t4, t4, 16		# pula 16 colunas no bitmap já que o tile impresso tem
+			addi a5, a5, 16		# pula 16 colunas no bitmap já que o tile impresso tem
 						# 16 colunas de tamanho 
 			
 			addi t3, t3, -1			# decrementando o numero de colunas de tiles restantes
@@ -135,6 +134,10 @@ PRINT_TILES:
 		sub a4, a4, a6		# volta o endeço da matriz de tiles pelo numero de colunas impressas
 		add a4, a4, s3		# passa o endereço da matriz para a proxima linha (s3 tem o tamanho
 					# de uma linha na matriz)
+	
+		li t0, 16		# t0 recebe a largura de um tile
+		mul t0, t0, a6		# 16 * a6 retorna o numero de pixels em a5 foi incrementado no loop acima
+		sub a5, a5, t0		# volta a5 pelo numero de colunas de tiles impressas
 	
 		li t0, 5120		# t0 recebe 16 (número de linhas impressas)  * 320 (tamanho de uma linha
 					# do bitmap)
@@ -242,6 +245,69 @@ CALCULAR_ENDERECO:
 	
 	ret 
 
+# ====================================================================================================== #
+
+CALCULAR_ENDERECO_DE_TILE:
+	# Procedimento que recebe um endereço no frame 0 ou 1 e descobre qual é o endereço do tile 
+	# correspondente na subsecção da matriz de tiles que está na tela (s2), retornando também o
+	# endereço de inicio desse tile no frame
+	#
+	# Argumentos:
+	#	a0 = um endereço no frame 0 ou 1
+	#
+	# Retorno:
+	#	a0 = endereço do tile correspondente a partir de s2
+	#	a1 = endereço de inicio do tile no frame
+	
+	# Primeiro descobre se o endereço de a0 está no frame 0 ou 1 para que o endereço de a1 já esteja
+	# no frame certo
+	
+	li a1, 0xFF100000
+	bge a0, a1, INICIO_CALCULAR_ENDERECO_DE_TILE
+		li a1, 0xFF000000
+	
+	INICIO_CALCULAR_ENDERECO_DE_TILE:
+	
+	# Para encontrar o endereço do tile é necessário saber o número da coluna e linha desse tile na tela
+	
+	sub a0, a0, a1	# a0 - endereço base do frame decidido acima retorna a posição de a0 em relação ao 
+			# inicio do frame
+	
+	li t0, 5120	# t0 recebe 16 (altura de um tile) * 320 (tamanho de uma linha do frame), ou seja,
+			# o tamanho de uma linha de tiles no frame
+			
+	div t0, a0, t0	# a0 / 5120 retorna o número da linha de tiles onde a0 está 	
+	
+	li t1, 320	# t1 recebe o tamanho de uma linha do frame
+	remu t1, a0, t1	# o resto de a0 / 320 retorna o numero da coluna de a0 no frame			
+	li t2, 16 	# t2 recebe a largura de um tile	
+	div t1, t1, t2	# o resto de t1 / 16 retorna o número da coluna de a0 na matriz de tiles 
+					
+	# Com o número da linha (t0) e coluna (t1) é fácil encontrar o tile correspondente na matriz
+			
+	mul t2, t0, s3	# t0 * s3 (tamanho de uma linha na matriz de tiles) retorna quantos elementos é necessário
+			# pular em s2 para encontrar a linha certa do tile correspondente
+	
+	add a0, t2, t1		# s2 + t2 (número de elementos até a linha certa) + t1 (número de elementos até
+	add a0, a0, s2		# a coluna correta) = endereço do tile correspondente na matriz a partir de a0
+												
+	# Agora e encessário encontrar o endereço de inicio do tile a0 no frame
+	
+	li t2, 5120	# t2 recebe 16 (altura de um tile) * 320 (tamanho de uma linha do frame), ou seja,
+			# o tamanho de uma linha de tiles no frame
+	
+	mul t0, t0, t2	# multiplicando a linha do tile (t0) por t2 retorna a quantos pixels é necessário pular
+			# para encontrar a linha do tile a0 no frame 
+	
+	li t2, 16	# t2 recebe a largura de um tile
+	mul t1, t1, t2 	# multiplicando a coluna do tile (t1) por 16 retorna a quantos pixels é necessário pular
+			# para encontrar a coluna do tile a0
+	
+	add a1, a1, t0	# movendo o endereço de a1 para o endereço da linha do tile			
+	add a1, a1, t1	# movendo o endereço de a1 para o endereço da coluna do tile
+
+	ret
+	
 # ====================================================================================================== #
 
 TROCAR_FRAME:
