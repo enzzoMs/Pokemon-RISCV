@@ -485,32 +485,74 @@ MOVIMENTACAO_TECLA_A:
 		bne t0, zero, MOVER_TELA_A_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES imprimindo 2 coluna e
-		# 2 linhas (2 tiles onde o RED está + 2 tiles de folga) 
+		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
+		# Como PRINT_TILES utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
+		# em certos momentos o endereço de onde imprimir os tiles não vai estar alinhado para o 
+		# store word, portanto não é possível usar o PRINT_TILES aqui.
+		# Para a limpeza será usado o endereço do personagem (s0) junto do PRINT_IMG (que usa lb e sb)
+		# imprimindo novamente os 2 tiles onde o RED está e os 2 tiles atrás como uma folga
 		
-		addi a0, s5, -1	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
-				# nesse caso, o começo é o tile anterior onde o RED está
-				
-		mv a1, s0	# a imagem será impressa onde o RED está (s0)
+		# Primeiro limpa o tile da cabeça do RED 
+		mv a0, s0	# endereço de onde o RED está no frame 0
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a1, a1, t0	# portanto é necessário voltar o endereço de a1 em 4164 pixels (13 linhas * 
-				# 320 + 1 coluna)
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+		# Limpa o tile do corpo do RED
+		addi a0, s0, 960	# somando s0 com 960 passa o endereço de onde o RED está 
+					# para o inicio do tile abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		add a1, a1, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
-				# iteração, já que o pixels da tela serão trocados para fazer a imagem se "mover"
-				# a5 + t5 passa a1 para a coluna certa onde os tiles devem ser impressos
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+
+		# Limpa o tile a esquerda da cabeça do RED
+		addi a0, s0, -16	# somando s0 com -16 passa o endereço de onde o RED está 
+					# para o inicio do tile a esquerda dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		addi a1, a1, -16	# os tiles que serão impressos são os 2 onde o RED está e os 2
-					# anteriores como uma folga. Por isso o endereço de a5 precisa
-					# voltar 16 pixels (largura de um tile)
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
 		
-		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
-					# será impressa	
-					
-		li a2, 2		# número de colunas de tiles a serem impressas
-		li a3, 2		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		# Limpa o tile na diagonal inferior esquerda da cabeça do RED
+		addi a0, s0, -16	# somando s0 com -16 passa o endereço de onde o RED está 
+					# para o inicio do tile a esquerda dele
+		addi a0, a0, 960	# somando a0 com 960 passa o endereço de a0 para o inicio do tile 
+					# abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
+		
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
 		
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
@@ -1124,28 +1166,75 @@ MOVIMENTACAO_TECLA_D:
 		bne t0, zero, MOVER_TELA_D_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES imprimindo 1 coluna e
-		# 2 linhas (2 tiles onde o RED está + 2 tiles de folga) 
+		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
+		# Como PRINT_TILES utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
+		# em certos momentos o endereço de onde imprimir os tiles não vai estar alinhado para o 
+		# store word, portanto não é possível usar o PRINT_TILES aqui.
+		# Para a limpeza será usado o endereço do personagem (s0) junto do PRINT_IMG (que usa lb e sb)
+		# imprimindo novamente os 2 tiles onde o RED está e os 2 tiles a frente como uma folga
 		
-		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
-				# nesse caso, o começo é o tile onde o RED está
-		mv a1, s0	# a imagem será impressa onde o RED está (s0)
+		# Primeiro limpa o tile da cabeça do RED 
+		mv a0, s0	# endereço de onde o RED está no frame 0
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a1, a1, t0	# portanto é necessário voltar o endereço de a1 em 4164 pixels (13 linhas * 
-				# 320 + 1 coluna)
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+		# Limpa o tile do corpo do RED
+		addi a0, s0, 960	# somando s0 com 960 passa o endereço de onde o RED está 
+					# para o inicio do tile abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		sub a1, a1, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
-				# iteração, já que o pixels da tela serão trocados para fazer a imagem se "mover"
-				# a5 - t5 volta a5 para a coluna certa onde os tiles devem ser impressos
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+
+		# Limpa o tile a direita da cabeça do RED
+		addi a0, s0, 16		# somando s0 com 16 passa o endereço de onde o RED está 
+					# para o inicio do tile a direita dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
-					# será impressa	
-					
-		li a2, 2		# número de colunas de tiles a serem impressas
-		li a3, 2		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
 		
+		# Limpa o tile na diagonal inferior direita da cabeça do RED
+		addi a0, s0, 16		# somando s0 com 16 passa o endereço de onde o RED está 
+					# para o inicio do tile a direta dele
+		addi a0, a0, 960	# somando a0 com 960 passa o endereço de a0 para o inicio do tile 
+					# abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
+		
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+														
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
 		# de modo que a animação siga o seguinte padrão:
@@ -1478,7 +1567,7 @@ MOVER_PERSONAGEM:
 			add t0, a6, t3		# t0 recebe o endereço de a6 atualizado com o valor de t3
 						# definido acima
 		
-			mv a2, t2		# t2 tem o número de colunas de tiles a serem impressas
+			mv t3, t2		# salva t2 em t3
 			mv a3, t1		# t1 número de linhas de tiles a serem impressas
 		
 			mv a0, t0			# encontra o endereço do tile na matriz e o endereço do
@@ -1486,6 +1575,9 @@ MOVER_PERSONAGEM:
 							# de t0 definido acima
 		
 			mv a0, a0	# o a0 retornado tem o endereço do tile correspondente
+			
+			mv a2, t3	# t3 tem o número de colunas de tiles a serem impressas
+					
 			mv a1, a1	# o a1 tem o endereço de inicio do tile a0 no frame, ou seja, o 
 					# endereço onde os tiles vão começar a ser impressos
 			add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde os tiles serão

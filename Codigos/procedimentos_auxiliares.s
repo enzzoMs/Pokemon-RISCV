@@ -192,7 +192,7 @@ CALCULAR_ENDERECO:
 CALCULAR_ENDERECO_DE_TILE:
 	# Procedimento que recebe um endereço no frame 0 ou 1 e descobre qual é o endereço do tile 
 	# correspondente na subsecção da matriz de tiles que está na tela (s2), retornando também o
-	# endereço de inicio desse tile no frame
+	# endereço de inicio desse tile no frame e o endereço da imagem correspondente a esse tile
 	#
 	# Argumentos:
 	#	a0 = um endereço no frame 0 ou 1
@@ -200,6 +200,7 @@ CALCULAR_ENDERECO_DE_TILE:
 	# Retorno:
 	#	a0 = endereço do tile correspondente a partir de s2
 	#	a1 = endereço de inicio do tile no frame
+	# 	a2 = endereço da imagem correspondente a esse tile com base em s4
 	
 	# Primeiro descobre se o endereço de a0 está no frame 0 ou 1 para que o endereço de a1 já esteja
 	# no frame certo
@@ -247,6 +248,13 @@ CALCULAR_ENDERECO_DE_TILE:
 	
 	add a1, a1, t0	# movendo o endereço de a1 para o endereço da linha do tile			
 	add a1, a1, t1	# movendo o endereço de a1 para o endereço da coluna do tile
+
+	lb t0, 0(a0)	# armazena o valor do tile a0 em t0
+		
+	li t1, 256	# t1 recebe 16 * 16 = 256, ou seja, a área de um tile							
+	mul t0, t0, t1	# t0 (número do tile) * (16 * 16) retorna quantos pixels esse tile está do começo 
+			# da imagem dos tiles
+	add a2, s4, t0	# a2 recebe o endereço de inicio da imagem correspondente ao tile a0		
 
 	ret
 	
