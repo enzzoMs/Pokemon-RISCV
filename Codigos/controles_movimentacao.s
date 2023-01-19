@@ -63,7 +63,7 @@ MOVIMENTACAO_TECLA_W:
 		li t0, 2
 		beq s1, t0, INICIO_MOVIMENTACAO_W
 			la a4, red_cima		# carrega como argumento o sprite do RED virada para cima		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			call MUDAR_ORIENTACAO_RED
 			
 			li s1, 2	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para cima
@@ -362,7 +362,7 @@ MOVIMENTACAO_TECLA_A:
 	# Primeiro verifica se o personagem está virado para a esquerda
 		beq s1, zero, INICIO_MOVIMENTACAO_A
 			la a4, red_esquerda	# carrega como argumento o sprite do RED virada para a esquerda		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			call MUDAR_ORIENTACAO_RED
 			
 			li s1, 0	# atualiza o valor de s0 dizendo que agora o RED está virado 
 					# para a esquerda
@@ -732,7 +732,7 @@ MOVIMENTACAO_TECLA_S:
 		li t0, 3
 		beq s1, t0, INICIO_MOVIMENTACAO_S
 			la a4, red_baixo	# carrega como argumento o sprite do RED virada para baixo		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			call MUDAR_ORIENTACAO_RED
 			
 			li s1, 3	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para baixo
@@ -1042,7 +1042,7 @@ MOVIMENTACAO_TECLA_D:
 		li t0, 1
 		beq s1, t0, INICIO_MOVIMENTACAO_D
 			la a4, red_direita	# carrega como argumento o sprite do RED virada para a direita		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			call MUDAR_ORIENTACAO_RED
 
 			li s1, 1	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para a direita	
@@ -1404,7 +1404,7 @@ MOVIMENTACAO_TECLA_D:
 
 # ====================================================================================================== #									
 
-MUDAR_ORIENTACAO_PERSONAGEM:
+MUDAR_ORIENTACAO_RED:
 	# Procedimento que muda a orientação do personagem a depender do argumento, ou seja,
 	# imprime o sprite do RED em uma determinada orientação.
 	# OBS: O procedimento não altera o valor de s1, apenas imprime o sprite em uma orientação
@@ -1498,19 +1498,14 @@ MOVER_PERSONAGEM:
 	sw ra, 0(sp)		# empilha ra
 	
 	li t4, 16		# contador para o número de pixels que o personagem vai se deslocar, ou seja,
-				# o número de loops a serem executados abaixo
-					
-	mv t5, a4		# t5 vai guardar o endereço da próxima imagem do personagem
-				# o loop de movimentação começa imprimindo a imagem do presonagem parado (a4) 
+				# o número de loops a serem executados abaixo					
 	
-	li t6, 0x00100000	# t6 será usada para fazer a troca entre frames no loop de movimentação	
+	li t5, 0x00100000	# t5 será usada para fazer a troca entre frames no loop de movimentação	
 				# O loop abaixo começa imprimindo os sprites no frame 1 já que se parte
 				# do pressuposto de que o frame 0 é o que está sendo mostrado
 																																							
 	LOOP_MOVER_PERSONAGEM:
 
-		call TROCAR_FRAME		# inverte o frame sendo mostrado
-			
 		# Primeiro é necessário "limpar" o antigo sprite do personagem da tela. 
 		# Isso é feito imprimindo novamente os tiles onde o personagem está através de PRINT_TILES
  		# A quantidade de tiles a serem limpos depende da orientação da movimentação (a7) porque em
@@ -1534,7 +1529,7 @@ MOVER_PERSONAGEM:
 			li t0, -1 	# Caso a7 == 1 a movimentação é para a esquerda, então o endereço de a6 
 					# vai ser decrementado em -1 pixel, ou seja, vai voltar 1 coluna
 			li t1, 2	# a limpeza vai ocorrer em 2 linhas
-			li t2, 2	# a limpeza vai ocorrer em 2 colunas
+			li t2, 3	# a limpeza vai ocorrer em 3 colunas
 			li t3, 0	# a limpeza começa no mesmo endereço de a6
 			j MOVER_PERSONAGEM_LIMPAR_TELA
 
@@ -1555,7 +1550,7 @@ MOVER_PERSONAGEM:
 			li t0, 1 	# Caso a7 == 3 a movimentação é para a direita, então o endereço de a6 
 					# vai ser incrementado em 1 pixels, ou seja, vai avançar 1 coluna
 			li t1, 2	# a limpeza vai ocorrer em 2 linhas
-			li t2, 2	# a limpeza vai ocorrer em 2 colunas
+			li t2, 3	# a limpeza vai ocorrer em 3 colunas
 			li t3, -16	# a limpeza começa no tile anterior a a6
 
 		MOVER_PERSONAGEM_LIMPAR_TELA:
@@ -1574,20 +1569,33 @@ MOVER_PERSONAGEM:
 			call CALCULAR_ENDERECO_DE_TILE	# frame onde os tiles serão impressos com base no valor 
 							# de t0 definido acima
 		
-			mv a0, a0	# o a0 retornado tem o endereço do tile correspondente
+			# o a0 retornado tem o endereço do tile correspondente
 			
 			mv a2, t3	# t3 tem o número de colunas de tiles a serem impressas
 					
-			mv a1, a1	# o a1 tem o endereço de inicio do tile a0 no frame, ou seja, o 
-					# endereço onde os tiles vão começar a ser impressos
-			add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde os tiles serão
+			# o a1 tem o endereço de inicio do tile a0 no frame, ou seja, o 
+			# endereço onde os tiles vão começar a ser impressos
+			
+			add a1, a1, t5	# decide a partir do valor de t5 qual o frame onde os tiles serão
 					# impressos
 			call PRINT_TILES
-																							
+		
+		# Determina qual é o próximo sprite do personagem a ser renderizado,
+		# de modo que a animação siga o seguinte padrão:
+		# PERSONAGEM PARADO -> PERSONAGEM DANDO UM PASSO -> PERSONAGEM PARADO	
+			mv a0, a4		# a4 tem a imagem do personagem parado
+			li t0, 14		
+			bgt t4, t0, MOVER_PERSONAGEM_PRINT_SPRITE
+			mv a0, a5		# a5 tem o endereço da imagem do personagem dando um passo
+			li t0, 2
+			bgt t4, t0, MOVER_PERSONAGEM_PRINT_SPRITE
+			mv a0, a4		# a4 tem a imagem do personagem parado
+		
+		MOVER_PERSONAGEM_PRINT_SPRITE:																																																																																				
 		# Agora imprime a imagem do personagem no frame
-			mv a0, t5		# t5 tem o endereço da próxima imagem do personagem 			
+			# a0 já tem o endereço da próxima imagem do personagem 			
 			mv a1, a6		# a6 possui o endereço de onde renderizar o personagem
-			add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
+			add a1, a1, t5		# decide a partir do valor de t5 qual o frame onde a imagem
 						# será impressa			
 			lw a2, 0(a0)		# numero de colunas de uma imagem do personagem
 			lw a3, 4(a0)		# numero de linhas de uma imagem do personagem	
@@ -1598,28 +1606,31 @@ MOVER_PERSONAGEM:
 		li a0, 20			# sleep 20 ms
 		call SLEEP			# chama o procedimento SLEEP	
 			
-		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+		call TROCAR_FRAME		# inverte o frame sendo mostrado
 		
-		li t0, 0x00100000	# com essa operação xor se t6 for 0 ele recebe 0x0010000
-		xor t6, t6, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
+		li t0, 0x00100000	# com essa operação xor se t5 for 0 ele recebe 0x0010000
+		xor t5, t5, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
 					# ficar alternando entre esses valores
 					
-		# Determina qual é o próximo sprite do personagem a ser renderizado,
-		# de modo que a animação siga o seguinte padrão:
-		# PERSONAGEM PARADO -> PERSONAGEM DANDO UM PASSO -> PERSONAGEM PARADO
+		addi t4, t4, -1		# decrementa o número de loops restantes			
+		bne t4, zero, LOOP_MOVER_PERSONAGEM	# reinicia o loop se t4 != 0
+	
+	# Pela maneira com que o loop acima é executado o frame 1 sempre está desatualizado com relação ao 
+	# frame 0, por isso é melhorar remover o sprite do personagem do frame 1 para evitar problemas		
+		mv a0, a6			# encontra o endereço do tile na matriz e o endereço do
+		call CALCULAR_ENDERECO_DE_TILE	# frame onde os tiles serão impressos com base no valor 
+						# da ultima posição do personagem (a6) 
 		
-		addi t4, t4, -1		# decrementa o número de loops restantes
-		
-		# t5 vai guardar o endereço da próxima imagem do RED		
-		mv t5, a4		# a4 tem a imagem do personagem parado
-		li t0, 14		
-		bgt t4, t0, LOOP_MOVER_PERSONAGEM
-		mv t5, a5		# a5 tem o endereço da imagem do personagem dando um passo
-		li t0, 2
-		bgt t4, t0, LOOP_MOVER_PERSONAGEM
-		mv t5, a4		# a4 tem a imagem do personagem parado
-		bne t4, zero, LOOP_MOVER_PERSONAGEM
-			
+		# o a0 retornado tem o endereço do tile correspondente		
+		# o a1 tem o endereço de inicio do tile a0 no frame 0, ou seja, o 
+		# endereço onde os tiles vão começar a ser impressos
+		li t0, 0x00100000
+		add a1, a1, t0		# passa o endereço de a1 para o frame 1
+		li a2, 1		# número de colunas de tiles a serem impressas
+		li a3, 3		# número de linhas de tiles a serem impressas (2 linhas onde o 
+					# personagem está + 1 de folga)	
+		call PRINT_TILES
+									
 	mv a0, a6	# move para a0 o endereço de a6 atualizado durante o loop acima	
 				
 	lw ra, (sp)		# desempilha ra
@@ -1658,6 +1669,18 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 	li t1, 1					
 	beq t0, t1, FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
 	
+	# se t0 == 2 então essa posição indica um momento da história, mas especificamente o momento que o RED
+	# tenta sair de Pallet pela primeira vez.
+	# Nesse caso RENDERIZAR_ANIMACAO_PROF_OAK tem que ser chamado e depois os procedimentos de 
+	# movimentação não devem ocorrer
+	
+	li t1, 2						
+	bne t0, t1, VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS
+		call RENDERIZAR_ANIMACAO_PROF_OAK												
+		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
+		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
+	
+	VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS:
 	# se t0 >= 64 então essa posição indica uma transição entre área, nesse caso RENDERIZAR_AREA tem
 	# que ser chamado e depois os procedimentos de movimentação devem ocorrer
 	

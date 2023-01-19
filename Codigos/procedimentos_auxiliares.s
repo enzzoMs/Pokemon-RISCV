@@ -40,6 +40,8 @@ PRINT_IMG:
 	# (0xC7), nesse caso PRINT_IMG vai verificar se algum pixel tem essa cor, e os que tiverem não
 	# serão renderizados na tela. Isso precisa ser feito ao invés de simplesmente renderizar os
 	# os pixels transparentes por conta de alguns bugs visuais, sobretudo no RARS. 
+	# Geralmente esse procedimento é usado para imprimir imagens pequenas, cosias muito grandes são
+	# divididas e impressas com o PRINT_TILES
 	#
 	# Argumentos: 
 	# 	a0 = endereço da imagem		
