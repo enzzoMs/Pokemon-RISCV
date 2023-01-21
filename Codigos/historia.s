@@ -43,9 +43,14 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		call PRINT_IMG
 
 	# Espera alguns milisegundos	
-		li a0, 1500			# sleep 1,5 s
+		li a0, 800			# sleep 800 ms
 		call SLEEP			# chama o procedimento SLEEP	
-		
+	
+	# Imprime o dialogo inicial do professor
+	la a4, matriz_dialogo_oak_1	# carrega a matriz de tiles do dialogo
+	li a5, 1			# renderiza 1 dialogo		
+	call RENDERIZAR_DIALOGOS
+	
 	# Agora é necessário trocar a orientação do RED para que ele fique virado para baixo
 			
 	la a4, red_baixo	# carrega como argumento o sprite do RED virada para baixo		
@@ -75,6 +80,7 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	li t1, 16	# multiplicando 16 pelo valor lido em t0 retorna a quantidade certa de pixels (0 ou 
 	mul t0, t0, t1	# 16) que é necessário subtrair do endereço de t3
 	sub t3, t3, t0 
+		
 	
 	# Imprimindo o sprite do professor entrando em cena
 	
@@ -216,8 +222,13 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		j LOOP_MOVER_PROFESSOR
 		
 	FIM_MOVER_PROFESSOR:
-																							
-	a: j a
+
+	# Imprime o proximo dialogo do professor
+		la a4, matriz_dialogo_oak_2	# carrega a matriz de tiles do dialogo
+		li a5, 3			# renderiza 3 dialogos		
+		call RENDERIZAR_DIALOGOS
+																																														
+	d: j d
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -225,18 +236,359 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	ret
 
 	
-
-
-
-
 # ====================================================================================================== #	
-																																			
+
+RENDERIZAR_DIALOGOS:
+	# Procedimento auxiliar aos procedimento de história que imprime uma caixa de dialogo com uma
+	# quantidade variável de textos.
+	# Para imprimir os dialogos é necessário uma matriz de tiles. Nessa matriz cada dialogo só pode 
+	# ter no máximo 2 linhas, mas é possível encadear um dialogo com outro na mesma matriz, de modo que
+	# quando 2 linhas da matriz forem renderizadas o procedimento vai esperar o jogador apertar ENTER e 
+	# vai imprimir as proximas 2 linhas, e assim por diante imprimindo a5 dialogos.
+	# Para que o procedimento funcione é necessário que a matriz em a5 especifique um número par de dialogos
+	# (já que serão impressas 2 linhas por vez) e que cada linha da matriz tenha o mesmo numero de elementos
+	#
+	# Argumentos:
+	#	a4 = matriz de tiles condificando o texto do dialogo de acordo com tiles_alfabeto
+	#	a5 = número de dialogos especificados na matriz (lembrando que cada dialogo tem 2 linhas)
+			
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra	
+		
+	lw a6, 0(a4)		# a6 recebe o tamanho de uma linha da matriz de tiles	
+	addi a4, a4, 8		# pula para onde começa os pixels no .data	
+	
+	# Impreme os a5 dialogos
+	LOOP_PRINT_DIALOGO:	
+		# Primeiro imprime a caixa de dialogo na tela
+		li a0, 0xFF000000	# a0 tem o endereço base do frame 0
+		
+		andi t0, a5, 1		# realiza a operação andi de forma a deixar somente o primeiro bit de
+					# a5 intacto. Esse bit vai ser 1 se a5 for impar e 0 caso for par
+		li t1, 0x00100000	
+		mul t0, t0, t1		# multiplica o bti de t0 por 0x00100000 e soma com a0 de modo que o				
+		add a0, a0, t0		# endereço de a0 vai para o frame 1 caso a5 for impar e continua no 
+					# frame 0 caso contrário
+		call PRINT_CAIXA_DE_DIALOGO
+			
+		# Impreme o dialogo
+			
+		# a4 já tem a matriz de tiles do dialogo
+		# a6 já tem tamanho de uma linha da matriz de tiles	
+		li a7, 0xFF000000	# a7 tem o endereço base do frame 0
+		
+		andi t0, a5, 1		# realiza a operação andi de forma a deixar somente o primeiro bit de
+					# a5 intacto. Esse bit vai ser 1 se a5 for impar e 0 caso for par
+		li t1, 0x00100000	
+		mul t0, t0, t1		# multiplica o bti de t0 por 0x00100000 e soma com a7 de modo que o				
+		add a7, a7, t0		# endereço de a0 vai para o frame 1 caso a5 for impar e continua no 
+					# frame 0 caso contrário			
+		call PRINT_DIALOGO
+		# pelo funcionamento do PRINT_DIALOGO o valor de a4 já é convenientemente atualizado de modo
+		# que ele aponta para as próximas 2 linhas de dialogo	
+		# além disso, o valor de a6 é preservado durante o loop	
+		
+		call TROCAR_FRAME		# inverte o frame sendo mostrado
+				
+		LOOP_TECLA_ENTER_PRINT_DIALOGO:
+			# Espera o jogador apertar ENTER para ir para o proximo dialogo
+			call VERIFICAR_TECLA			# verifica se alguma tecla foi apertada	
+			li t0, 10				# t0 = 10 = valor da tecla ENTER
+			bne a0, t0, LOOP_TECLA_ENTER_PRINT_DIALOGO	# se a0 = 10 -> tecla ENTER foi apertada 
+	
+		li t0, 0x00100000	# com essa operação xor se t6 for 0 ele recebe 0x0010000
+		xor t6, t6, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
+					# ficar alternando entre esses valores
+					
+		addi a5, a5, -1				# decrementa o numero de dialogos restantes
+		bne a5, zero, LOOP_PRINT_DIALOGO	# reinicia o loop se a5 != 0																																							
+
+	# Agora é necessário limpar a caixa de dialogo da tela imprindo novamente os tiles nos dois frames
+	
+	# O loop acima pode ser executado um numero arbitrario de vezes de acordo com o valor de a5,
+	# assim não é possivel saber no final qual dos dois frame é que está sendo mostrado
+	# Sendo assim, a limpeza da tela vai acontecer do seguinte modo:
+	# 	(1) ->  analise de qual frame está sendo mostrado
+	#	(2) -> limpa o outro frame
+	#	(3) -> mostra o outro frame
+	#	(4) -> limpa o frame que estava na tela
+	#	(5) -> mostra o frame 0
+	
+	# (1) ->  analise de qual frame está sendo mostrado
+		li t0, 0xFF200604		# t0 = endereço para escolher frames 
+		lb t4, (t0)			# t4 = valor armazenado em t0 = qual o frame (0 ou 1) que 
+						# está na tela
+	
+	# (2) -> limpa o outro frame
+		# Calculando o endereço de onde foi impresso a caixa no frame 0
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		li a2, 48 			# numero da coluna 
+		li a3, 192			# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		# do retorno do procedimento acima a0 tem o endereço de onde a caixa de dialogo começou
+		# a ser impressa. Dessa forma, é necessário encontrar o endereço do tile correspondente na matriz 
+		# e no frame
+		call CALCULAR_ENDERECO_DE_TILE	
+		
+		mv t5, a0	# salva o a0 retornado em t5			
+		mv t6, a1	# salva o a1 retornado em t6	
+		
+		# Imprimindo novamente os tiles e limpando a tela no frame inverso a t4
+		
+		# o a0 retornado tem o endereço do tile correspondente na matriz		
+		# o a1 tem o endereço de inicio do tile a0 no frame 0, ou seja, o endereço onde os tiles 
+		# vão começar a ser impressos
+		xori t0, t4, 1			# inverte o valor de t6
+		li t1, 0x00100000		# multiplica 0x0010000 com o inverso de t4 e soma com a1
+		mul t0, t0, t1			# de modo que o endereço de a1 vai para o frame inverso
+		add a1, a1, t0			# do que está na tela
+		li a2, 14	# número de colunas de tiles a serem impressas (largura da caixa de dialogo)
+		li a3, 3	# número de linhas de tiles a serem impressas (altura da caixa de dialogo)
+		call PRINT_TILES
+		
+	# (3) -> mostra o outro frame
+		call TROCAR_FRAME
+	
+	# (4) -> limpa o frame que estava na tela
+		mv a0, t5	# t5 tem salvo o a0 retornado de CALCULAR_ENDERECO_DE_TILE com 
+				# o endereço do tile correspondente		
+		mv a1, t6 	# t6 tem salvo o a1 retornado de CALCULAR_ENDERECO_DE_TILE com o endereço 
+				# de inicio do tile a0 no frame 0, ou seja, o endereço onde os tiles 
+				# vão começar a ser impressos
+		li t1, 0x00100000	# multiplica 0x0010000 com o valor de t4  soma com a1 de modo que
+		mul t0, t4, t1		# que o endereço de a1 vai para o endereço correspondente 
+		add a1, a1, t0		# no frame que estava na tela
+		li a2, 14	# número de colunas de tiles a serem impressas (largura da caixa de dialogo)
+		li a3, 3	# número de linhas de tiles a serem impressas (altura da caixa de dialogo)
+		call PRINT_TILES
+			
+	# (5) -> mostra o frame 0																				
+		li t0, 0xFF200604		# t0 = endereço para escolher frames 
+		sb zero, (t0)			# armazena 0 no endereço de t0
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret
+	
+# ====================================================================================================== #
+
+PRINT_DIALOGO:
+	# Procedimento auxiliar a RENDERIZAR_DIALOGOS que usa uma matriz de tiles para imprimir duas 
+	# linhas de um dialogo no frame 0.
+	# Cada texto de um dialogo é codificado em uma matriz de tiles, a diferença é que enquanto 
+	# normalmente os tiles do jogo tem 16 x 16, os tiles dos textos tem 8 x 15.
+	# Todos os textos são construidos com os tiles em "../Imagens/historia/dialogos/tiles_alfabeto".
+	# Para renderizar o dialogo é necessário fornecer uma matriz de tiles, onde cada tile
+	# é uma letra desse alfebeto.
+	# Esse procedimento só imprime 2 linhas da matriz de tiles do dialogo.
+	# 
+	# Argumentos:
+	#	a4 = matriz de tiles condificando o texto do dialogo de acordo com tiles_alfabeto
+	# 	a6 = tamanho de uma linha da matriz em a4
+	# 	a7 = endereço base do frame 0 ou 1 indicando o frame onde os tile serão impressos
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra
+
+	# Calculando o endereço de onde imprimir a primeira letra do dialogo
+		mv a1, a7		# move para a1 o endereço do frame onde os tiles serão renderizados 
+		li a2, 63 			# numero da coluna 
+		li a3, 198			# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0	# do retorno do procedimento acima a0 tem o endereço de onde começar a 
+				# imprimir as letras
+
+	la t3, tiles_alfabeto	# carrega a imagem com os tiles do alfabeto
+	addi t3, t3, 8		# pula para onde começa os pixels no .data
+
+	li t4, 2		# numero de linhas de tiles a serem impressas
+
+	PRINT_DIALOGO_LINHAS:
+		mv t5, a6		# copia do numero de colunas para usar no loop abaixo 
+				
+		PRINT_DIALOGO_COLUNAS:
+			lb t0, 0(a4)	# pega 1 elemento da matriz de tiles e coloca em t0
+		
+			li t1, 120	# t1 recebe 8 * 15 = 120, ou seja, a área de um tile do alfabeto							
+			mul t0, t0, t1	# t0 (número do tile) * (8 * 15) etorna quantos pixels esse tile
+					# está do começo da imagem dos tiles do alfabeto
+			
+			add a0, t0, t3	# a0 recebe o endereço da imagem do tile a ser impresso
+			# a1 tem o endereço de onde imprimir a letra			
+			li a2, 8		# numero de colunas de um tile do alfabeto
+			li a3, 15		# numero de linhas de um tile do alfabeto
+			call PRINT_IMG	
+			
+			li t0, 4800		# t1 recebe 15 (altura de um tile do alfabeto) * 320 
+						# (tamanho de uma linha do frame)
+			sub a1, a1, t0		# volta o endereço de a1 pelas linhas impressas			
+			addi a1, a1, 8		# pula 8 colunas no bitmap já que o tile impresso tem
+						# 8 colunas de tamanho 
+			
+			# Na verdade os tiles do alfabeto não estão ordenados em ordem alfabética, mas sim
+			# em determinados grupos.
+			# Nem todas as letras tem exatamente 8 x 15 pixels, na verdade esse tamanho é apenas
+			# um limite definido pelo tamanho do maior simbolo nesse alfabeto. 
+			# Por isso certos tiles acabam ficando com um excesso de colunas em branco, então
+			# as letras estão arranjadas em grupos que indicam quantos pixels é necessário voltar
+			# antes de imprimir o proximo tile para que cada letra fique mais ou menos uma do lado
+			# da outra.
+			
+			lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
+			
+			li t1, 1		# se o numero do tile for menor do que 55		
+			li t2, 55		# então é necessário voltar 1 pixel
+			blt t0, t2, PROXIMO_TILE_DIALOGO
+			li t1, 2		# se o numero do tile for maior ou igual a 55 e menor do que 65
+			li t2, 65		# então é necessário voltar 2 pixels
+			blt t0, t2, PROXIMO_TILE_DIALOGO
+			li t1, 4		# se o numero do tile for maior que 65 menor a 67 volta 4 pixels
+			li t2, 67
+			ble t0, t2, PROXIMO_TILE_DIALOGO			
+			li t2, 5		# caso contrário volta 5 pixels
+									
+			PROXIMO_TILE_DIALOGO:
+			
+			sub a1, a1, t1	# atualiza o endereço onde o proximo tile será impresso de acordo com
+					# o valor de t1 decidido acima		
+						
+			addi a4, a4, 1		# vai para o próximo elemento da matriz de tiles
+									
+			addi t5, t5, -1			# decrementando o numero de colunas de tiles restantes
+			bne t5, zero, PRINT_DIALOGO_COLUNAS	# reinicia o loop se t5 != 0
+		
+		# Calculando o endereço de onde imprimir a segunda linha do dialogo
+		mv a1, a7		# move para a1 o endereço do frame onde os tiles serão renderizados 
+		li a2, 63 			# numero da coluna 
+		li a3, 213			# numero da linha
+		call CALCULAR_ENDERECO	
+			
+		mv a1, a0	# como retorno do procedimento acima a0 tem o endereço de inicio da segunda 
+				# linha do dialogo
+				
+		addi t4, t4, -1				# decrementando o numero de linhas restantes
+		bne t4, zero, PRINT_DIALOGO_LINHAS	# reinicia o loop se t4 != 0
+				
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret
+	
+# ====================================================================================================== #
+
+PRINT_CAIXA_DE_DIALOGO:
+	# Procedimento auxiliar a RENDERIZAR_DIALOGOS que imprime uma caixa de dialogo em uma posição
+	# fixa no frame 0 ou 1. Para imprimir a caixa é usado "../Imagens/historia/dialogos/tiles_caixa_dialogo",
+	# de modo que a impressão funciona de maneira similar a qualquer outra matriz de tiles.
+	#
+	# Argumentos:
+	#	a0 = endereço base do frame 0 ou 1 indicando o frame onde a caixa será renderizada
+ 	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra
+
+	# Calculando o endereço de onde imprimir a caixa no frame 0
+		mv a1, a0		# move para a1 o endereço do frame onde a caixa será renderizada 
+		li a2, 48 		# numero da coluna 
+		li a3, 192		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		# do retorno do procedimento acima a0 tem o endereço de onde imprimir a caixa
+
+	la t0, matriz_tiles_caixa_dialogo	# carrega a matriz de tiles da caixa
+	addi t0, t0, 8				# pula para onde começa os pixels no .data
+
+	la t1, tiles_caixa_dialogo		# carrega a imagem com os tiles da caixa
+	addi t1, t1, 8				# pula para onde começa os pixels no .data
+
+	# O loop abaixo segue um funcionamento quase identico a PRINT_TILES. 
+	# Não foi possível utilizar puramente o PRINT_TILES aqui porque ele utiliza muitos registradores, 
+	# e para evitar usar ainda mais ele tem que fazer algumas suposições (que a matriz passada no 
+	# argumento faz referência aos tiles que estão na imagem de s4, por exemplo) o que torna inviavel
+	# utiliza-lo para imprimir a caixa de dialogo.
+
+	li t2, 3		# numero de linhas de tiles a serem impressos
+
+	PRINT_CAIXA_DIALOGO_LINHAS:
+		li t3, 14		# numero de colunas de tiles a serem impressos
+				
+		PRINT_CAIXA_DIALOGO_COLUNAS:
+			lb t4, 0(t0)	# pega 1 elemento da matriz de tiles e coloca em t4
+		
+			li t5, 256	# t5 recebe 16 * 16 = 256, ou seja, a área de um tile							
+			mul t4, t4, t5	# t4 (número do tile) * (16 * 16) etorna quantos pixels esse tile
+					# está do começo da imagem dos tiles
+			
+			add t4, t4, t1	# t4 recebe o endereço da imagem do tile a ser impresso
+	
+			# O loop abaixo emula um PRINT_IMG, a diferença é que como PRINT_IMG pode imprimir
+			# imagens com uma tamanho arbitrário de colunas e linhas ele tem que utlizar instruções
+			# load e store byte, mas como cada tile sempre tem 16 x 16 de tamanho é possível usar
+			# load e store word para agilizar o processo
+			
+			li t5, 256	# numero de pixels de um tile (16 x 16)
+										
+			PRINT_TILE_CAIXA_DIALOGO_COLUNAS:
+			lw t6, 0(t4)		# pega 4 pixels do .data do tile (t4) e coloca em t6
+			
+			sw t6, 0(a0)		# pega os 4 pixels de t6 e coloca no bitmap
+	
+			addi t4, t4, 4		# vai para os próximos pixels da imagem
+			addi a0, a0, 4		# vai para os próximos pixels do bitmap
+			addi t5, t5, -4		# decrementa o numero de pixels restantes
+			
+			li t6, 16		# largura de um tile
+			rem t6, t5, t6		# se o resto de t5 / 16 não for 0 então ainda restam pixels
+						# da linha atual para serem impressos
+			bne t6, zero, PRINT_TILE_CAIXA_DIALOGO_COLUNAS	# reinicia o loop se t6 != 0
+			
+			addi a0, a0, -16	# volta o endeço do bitmap pelo numero de colunas impressas
+			addi a0, a0, 320	# passa o endereço do bitmap para a proxima linha
+			bne t5, zero, PRINT_TILE_CAIXA_DIALOGO_COLUNAS	# reinicia o loop se t5 != 0
+	
+			addi t0, t0, 1		# vai para o próximo elemento da matriz de tiles
+			
+			li t4, 5120		# t4 recebe 16 (altura de um tile) * 320 
+						# (tamanho de uma linha do frame)
+			sub a0, a0, t4		# volta o endereço de a0 pelas linhas impressas			
+			addi a0, a0, 16		# pula 16 colunas no bitmap já que o tile impresso tem
+						# 16 colunas de tamanho 
+			
+			addi t3, t3, -1			# decrementando o numero de colunas de tiles restantes
+			bne t3, zero, PRINT_CAIXA_DIALOGO_COLUNAS	# reinicia o loop se t3 != 0
+			
+		addi a0, a0, -224	# 16 (largura de um tile)* 14 (numero de tiles impressos) = 224, 
+					# ou seja, volta a0 pelo numero de colunas que foram impressas
+					
+		li t3, 5120		# t3 recebe 16 (altura de um tile) * 320 (tamanho de uma linha do frame)
+		add a0, a0, t3		# avança o endereço de a0 para a proxima linha de tiles		
+			
+		addi t2, t2, -1				# decrementando o numero de linhas restantes
+		bne t2, zero, PRINT_CAIXA_DIALOGO_LINHAS	# reinicia o loop se t2 != 0
+				
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret
+				
+# ====================================================================================================== #																																			
 .data
 	.include "../Imagens/outros/balao_exclamacao.data"
-					
+
 	.include "../Imagens/historia/professor_carvalho/oak_cima.data"
 	.include "../Imagens/historia/professor_carvalho/oak_cima_passo_direito.data"
 	.include "../Imagens/historia/professor_carvalho/oak_cima_passo_esquerdo.data"
 	.include "../Imagens/historia/professor_carvalho/oak_direita.data"
 	.include "../Imagens/historia/professor_carvalho/oak_direita_passo_direito.data"
 	.include "../Imagens/historia/professor_carvalho/oak_direita_passo_esquerdo.data"	
+	
+	.include "../Imagens/historia/dialogos/tiles_caixa_dialogo.data"
+	.include "../Imagens/historia/dialogos/matriz_tiles_caixa_dialogo.data"
+
+	.include "../Imagens/historia/dialogos/tiles_alfabeto.data"
+	
+	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_1.data"	
+	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_2.data"	
