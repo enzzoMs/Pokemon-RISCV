@@ -33,7 +33,7 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	mv a0, s0			# calcula o endereço de inicio do tile onde a cabeça do RED está (s0)
 	call CALCULAR_ENDERECO_DE_TILE	
 	
-	# Imprimindo o balão de exclamação no frame 0			
+	# Imprimindo o balão de exclamação no frame 1			
 		la a0, balao_exclamacao		# carrega a imagem
 		addi a0, a0, 8			# pula para onde começa os pixels no .data
 		# do retorno do procedimento CALCULAR_ENDERECO_DE_TILE a1 já tem o endereço de inicio 
@@ -43,7 +43,7 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		call PRINT_IMG
 
 	# Espera alguns milisegundos	
-		li a0, 800			# sleep 800 ms
+		li a0, 1000			# sleep 1 s
 		call SLEEP			# chama o procedimento SLEEP	
 	
 	# Imprime o dialogo inicial do professor
@@ -61,7 +61,7 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	# Obs: a mudança de orientação naturalmente vai retirar a imagem do balão de exclamação
 	
 	# Agora começa a animação do professor Carvalho
-	# Na primeira parte o sprite do professor dando um passo direito para cima será lentamente impressa,
+	# Na primeira parte o sprite do professor dando um passo para cima será lentamente impressa,
 	# pixel por pixel, na tela, dando a impressão de que o professor está entrando em cena
 	
 	# O endereço onde o sprite do professor será impresso depende da posição do RED.
@@ -112,7 +112,7 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	
 	
 		# Agora imprime a imagem do professor no frame
-		la a0, oak_cima_passo_direito	# carrega o sprite do professor	
+		la a0, oak_cima_passo_esquerdo	# carrega o sprite do professor	
 		mv a1, t3		# t3 possui o endereço de onde renderizar o sprite
 		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
 					# será impressa			
@@ -135,8 +135,8 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		addi t3, t3, -320	# volta o endereço de onde imprimir o professor para linha acima			
 											
 		addi t5, t5, 1		# incrementa o numero de loops restantes
-		li t0, 20		# 19 é a altura do sprite do professor (+ 1 porque t5 começa no 0)
-		bne t5, t0, LOOP_PROFESSOR_ENTRANDO	# reinicia o loop se t5 != 19 		
+		li t0, 20		# 20 é a altura do sprite do professor 
+		bne t5, t0, LOOP_PROFESSOR_ENTRANDO	# reinicia o loop se t5 != 20
 	
 	addi t3, t3, 320	# na ultima iteração o valor de t3 é decrementado mais uma vez desnecessariamente
 				# portanto, é necessário reverter essa mudança 				
@@ -149,13 +149,13 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	li t6, -1		# contador para o loop abaixo, de modo que cada loop representa uma movimentação
 				# do professor em alguma orientação
 
-	LOOP_MOVER_PROFESSOR:
+	LOOP_ANIMACAO_PROFESSOR:
 	
 	addi t6, t6, 1		# incrementa o numero de loops feitos
 	
 	# Primeiro determina qual é o sentido da movimentação do professor de acordo com o numero da iteração,
 	# de modo que a animação siga o seguinte padrão:
-	# PROF SOBE 4 TILES -> PERSONAGEM DANDO UM PASSO -> PERSONAGEM PARADO	
+	# Prof sobe até o RED -> DIALOGO DO PROFESSOR -> Prof sai da área dependendo de onde o RED está
 	li t0, 3		
 	ble t6, t0, MOVER_PROFESSOR_CIMA
 	
@@ -167,8 +167,43 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	
 	addi t0, t0, 1		
 	ble t6, t0, MOVER_PROFESSOR_CIMA
-					
-	j FIM_MOVER_PROFESSOR
+	
+	addi t0, t0, 1			# caso o número de iterações chegue nesse ponto então é necessario
+					# imprimir o próximo dialogo do professor
+	ble t6, t0, ANIMACAO_PROFESSOR_PRINT_DIALOGO
+		
+	# Ao chegar nesse ponto é necessario fazer com que o professor ande até uma posição no canto inferior 
+	# da tela para que ele possa sair de cena, mas qual é essa posição vai ser determinada pela posição
+	# do RED. Se a posição ao lado do RED estiver livre então o prof vai ir para a direita e depois descer, 
+	# senão ele vai para a esquerda e depois desce
+	lb t1, -1(s6)		 
+	bne t1, zero, ANIMACAO_PROFESSOR_ESQUERDA		
+	
+	li t0, 8			
+	ble t6, t0, MOVER_PROFESSOR_DIREITA
+
+	addi t0, t0, 1			
+	ble t6, t0, MOVER_PROFESSOR_BAIXO					
+
+	addi t0, t0, 7			
+	ble t6, t0, MOVER_PROFESSOR_DIREITA															
+	j ANIMACAO_PROFESSOR_DESCER
+
+	ANIMACAO_PROFESSOR_ESQUERDA:
+	li t0, 8					
+	ble t6, t0, MOVER_PROFESSOR_ESQUERDA					
+
+	addi t0, t0, 1			
+	ble t6, t0, MOVER_PROFESSOR_BAIXO	
+	
+	addi t0, t0, 1		
+	ble t6, t0, MOVER_PROFESSOR_ESQUERDA	
+	
+	ANIMACAO_PROFESSOR_DESCER:
+	addi t0, t0, 4			
+	ble t6, t0, MOVER_PROFESSOR_BAIXO
+																																																																																											
+	j FIM_ANIMACAO_PROFESSOR
 
 		MOVER_PROFESSOR_CIMA:
 		# Decide os valores de a4 e a7 para a movimentação	
@@ -177,11 +212,11 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		li a7, 0		# a = 0 = animação para cima																
 		
 		# Decide se o professor vai ser renderizado dando o passo com o pé esquerdo ou direito
-		# de acordo com o valor de a5	
+		# de acordo com o valor de t6	
 						
 		# Com o branch abaixo é possivel alternar entre os passos esquerdo e direito a cada iteração		
-		la t0, oak_cima_passo_esquerdo				
-		beq a5, t0, PROFESSOR_CIMA_PASSO_DIREITO
+		andi t0, t6, 1					# se t6 for par o professor dá um passo
+		beq t0, zero, PROFESSOR_CIMA_PASSO_DIREITO	# direito, senão um passo esquerdo
 			la a5, oak_cima_passo_esquerdo	
 			j MOVER_PROFESSOR
 			
@@ -198,38 +233,189 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		li a7, 3		# a7 = 0 = animação para a direita																
 		
 		# Decide se o professor vai ser renderizado dando o passo com o pé esquerdo ou direito
-		# de acordo com o valor de a5	
+		# de acordo com o valor de t6	
 						
 		# Com o branch abaixo é possivel alternar entre os passos esquerdo e direito a cada iteração		
-		la t0, oak_direita_passo_esquerdo				
-		beq a5, t0, PROFESSOR_DIREITA_PASSO_DIREITO
+		andi t0, t6, 1					# se t6 for par o professor dá um passo
+		bne t0, zero, PROFESSOR_DIREITA_PASSO_DIREITO	# esquerdo, senão um passo direito
 			la a5, oak_direita_passo_esquerdo	
-			j MOVER_PROFESSOR_DIREITA
+			j MOVER_PROFESSOR
 			
 		PROFESSOR_DIREITA_PASSO_DIREITO:		
 			la a5, oak_direita_passo_direito
 			j MOVER_PROFESSOR
 			
 		# -------------------------------------------------------------------------------------------
-																																																																					
-		MOVER_PROFESSOR:				
-		# a4 já tem a imagem do professor parado
-		# a5 tem a a imagem do professor dando um passo	
-		mv a6, a0		# a0 tem o endereço de onde imprimir o sprite do professor
-		# a7 tem o número indicando qual o sentido da movimentação															
-		call MOVER_PERSONAGEM	
-	
-		j LOOP_MOVER_PROFESSOR
 		
-	FIM_MOVER_PROFESSOR:
+		MOVER_PROFESSOR_ESQUERDA:
+		# Decide os valores de a4 e a7 para a movimentação	
+		
+		la a4, oak_esquerda	# carrega a imagem do professor parado virado para a esquerda
+		li a7, 1		# a7 = 1 = animação para a esquerda																
+		
+		# Decide se o professor vai ser renderizado dando o passo com o pé esquerdo ou direito
+		# de acordo com o valor de t6	
+						
+		# Com o branch abaixo é possivel alternar entre os passos esquerdo e direito a cada iteração		
+		andi t0, t6, 1					# se t6 for par o professor dá um passo
+		bne t0, zero, PROFESSOR_ESQUERDA_PASSO_DIREITO	# esquerdo, senão um passo direito
+			la a5, oak_esquerda_passo_esquerdo	
+			j MOVER_PROFESSOR
+			
+		PROFESSOR_ESQUERDA_PASSO_DIREITO:		
+			la a5, oak_esquerda_passo_direito
+			j MOVER_PROFESSOR
+			
+		# -------------------------------------------------------------------------------------------
+		
+		MOVER_PROFESSOR_BAIXO:
+		# Decide os valores de a4 e a7 para a movimentação	
+		
+		la a4, oak_baixo	# carrega a imagem do professor parado virado para baixo
+		li a7, 2		# a = 2 = animação para baixo																
+		
+		# Decide se o professor vai ser renderizado dando o passo com o pé esquerdo ou direito
+		# de acordo com o valor de t6	
+						
+		# Com o branch abaixo é possivel alternar entre os passos esquerdo e direito a cada iteração		
+		andi t0, t6, 1					# se t6 for par o professor dá um passo
+		beq t0, zero, PROFESSOR_BAIXO_PASSO_DIREITO	# direito, senão um passo esquerdo
+			la a5, oak_baixo_passo_esquerdo	
+			j MOVER_PROFESSOR
+			
+		PROFESSOR_BAIXO_PASSO_DIREITO:		
+			la a5, oak_baixo_passo_direito
+			
+		# -------------------------------------------------------------------------------------------
+																																																																						
+		MOVER_PROFESSOR:				
+			# a4 já tem a imagem do professor parado
+			# a5 tem a a imagem do professor dando um passo	
+			mv a6, a0		# a0 tem o endereço de onde imprimir o sprite do professor
+			# a7 tem o número indicando qual o sentido da movimentação															
+			call MOVER_PERSONAGEM	
+		
+			j LOOP_ANIMACAO_PROFESSOR
+		
+		ANIMACAO_PROFESSOR_PRINT_DIALOGO:
+			addi sp, sp, -4		# cria espaço para 1 word na pilha
+			sw a0, 0(sp)		# empilha ra
+	
+			# Imprime o proximo dialogo do professor
+			la a4, matriz_dialogo_oak_2	# carrega a matriz de tiles do dialogo
+			li a5, 3			# renderiza 3 dialogos		
+			call RENDERIZAR_DIALOGOS
+		
+			li t6, 7 	# como o RENDERIZAR_DIALOGOS modifica o valor de t6 é necessário voltar
+					# esse registrador para o valor antigo. Felizmente nesse ponto do código
+					# é possível saber quase exatamente que valor t6 tinha antes do
+					# procedimento: no máximo 7 quando o ANIMACAO_PROFESSOR_PRINT_DIALOGO 
+					# foi chamado
+					
+			lw a0, (sp)		# desempilha ra
+			addi sp, sp, 4		# remove 1 word da pilha
+					
+			j LOOP_ANIMACAO_PROFESSOR
+		
+	FIM_ANIMACAO_PROFESSOR:
+	
+	# Agora é necessário imprimir o sprite do professor saindo de cena
+	
+	# Do loop acima a0 ainda tem o endereço de onde o ultimo sprite do professor foi renderizado
+	
+	mv t4, a0		# salva a0 em t4	
+			
+	li t5, 0		# contador para o numero de loops feitos
+				
+	li t6, 0x00100000	# t6 será usada para fazer a troca entre frames no loop de movimentação	
+				# O loop abaixo começa imprimindo os sprites no frame 1 já que se parte
+				# do pressuposto de que o frame 0 é o que está sendo mostrado
+				
+	LOOP_PROFESSOR_SAINDO:
+		# Limpa os 2 tiles onde o professor está 
+		mv a0, t4			# encontra o endereço do tile na matriz e o endereço do
+		call CALCULAR_ENDERECO_DE_TILE	# frame onde o professor está
 
-	# Imprime o proximo dialogo do professor
-		la a4, matriz_dialogo_oak_2	# carrega a matriz de tiles do dialogo
-		li a5, 3			# renderiza 3 dialogos		
-		call RENDERIZAR_DIALOGOS
-																																														
-	d: j d
+		# Imprimindo os tiles e limpando a tela no frame
+		# do retorno do procedimento a0 tem o endereço do tile onde a cabeça do professor está
+		# do retorno do procedimento a1 tem o endereço de inicio do tile a0 no frame 0, ou seja, o 
+		# endereço onde os tiles vão começar a ser impressos para a limpeza
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
+					# será impressa	
+		li a2, 1	# a limpeza vai ocorrer em 1 coluna
+		li a3, 2	# a limpeza vai ocorrer em 2 linhas 
+		call PRINT_TILES
+		
+		# Agora imprime a imagem do professor no frame
+		la a0, oak_baixo_passo_esquerdo		# carrega o sprite do professor	
+		mv a1, t4		# t4 possui o endereço de onde o ultimo sprite do professor estava
 
+		li t0, 320		# a linha onde o sprite será impresso depende do número da interação
+		mul t0, t0, t5		# de modo que quanto maior for t5 mais baixo o sprite será renderizado
+		add a1, a1, t0		# dando a impressão que o professar está saindo de cena
+		
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
+					# será impressa		
+						
+		lw a2, 0(a0)		# numero de colunas de uma imagem do professor	
+		
+		li a3, 20		# o numero de linhas a serem impressas depende do numero da iteração
+		sub a3, a3, t5		# diminuindo conforme o valor de t5
+					
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+	
+		# Espera alguns milisegundos	
+		li a0, 20			# sleep 20 ms
+		call SLEEP			# chama o procedimento SLEEP
+			
+		call TROCAR_FRAME		# inverte o frame sendo mostrado
+			
+		li t0, 0x00100000	# com essa operação xor se t6 for 0 ele recebe 0x0010000
+		xor t6, t6, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
+					# ficar alternando entre esses valores
+												
+		addi t5, t5, 1		# incrementa o numero de loops restantes
+		li t0, 20		# 20 é a altura do sprite do professor
+		bne t5, t0, LOOP_PROFESSOR_SAINDO	# reinicia o loop se t5 != 20
+	
+	# Pela maneira como o loop acima é feito ainda sobram alguns sprites no frame 0 e 1 que precisam ser
+	# limpos
+		mv a0, t4			# encontra o endereço do tile na matriz e o endereço do
+		call CALCULAR_ENDERECO_DE_TILE	# frame onde o sprite do professor foi renderizado
+				
+		mv t4, a0	# salva o a0 retornado em t4
+		mv t5, a1	# salva o a1 retornado em t5
+
+		# Limpa o tile onde o professor estava no frame 0
+		# do retorno do procedimento a0 tem o endereço do tile onde a cabeça do professor está
+		# do retorno do procedimento a1 tem o endereço de inicio do tile a0 no frame 0, ou seja, o 
+		# endereço onde os tiles vão começar a ser impressos para a limpeza
+		li a2, 1	# a limpeza vai ocorrer em 1 coluna
+		li a3, 2	# a limpeza vai ocorrer em 2 linhas 
+		call PRINT_TILES
+		
+		# Limpa o tile onde o professor estava no frame 1
+		mv a0, t4 	# t4 tem o endereço do tile onde a cabeça do professor está
+		mv a1, t5	# t5 tem o endereço de inicio do tile a0 no frame 0, ou seja, o 
+				# endereço onde os tiles vão começar a ser impressos para a limpeza
+		li t0, 0x00100000	
+		add a1, a1, t0		# passa o endereço de a1 para o equivalente no frame 1		
+		li a2, 1	# a limpeza vai ocorrer em 1 coluna
+		li a3, 2	# a limpeza vai ocorrer em 2 linhas 
+		call PRINT_TILES
+	
+	# Por fim, é preciso atualizar os valores da matriz de grama que estão acima no RED para que eles
+	# não chamem mais esse procedimento
+	
+	sub t0, s6, s7		# t0 tem o endereço na linha anterior a s6 na matriz de movimentação
+	
+	# armazena 0 na posição de t0 e nas duas adjacentes de modo que essas posições da matriz de movimentação
+	# não vão mais permitir movimentação
+	sb zero, -1(t0)		
+	sb zero, 0(t0)
+	sb zero, 1(t0)
+															
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 
@@ -584,7 +770,13 @@ PRINT_CAIXA_DE_DIALOGO:
 	.include "../Imagens/historia/professor_carvalho/oak_direita.data"
 	.include "../Imagens/historia/professor_carvalho/oak_direita_passo_direito.data"
 	.include "../Imagens/historia/professor_carvalho/oak_direita_passo_esquerdo.data"	
-	
+	.include "../Imagens/historia/professor_carvalho/oak_baixo.data"
+	.include "../Imagens/historia/professor_carvalho/oak_baixo_passo_direito.data"
+	.include "../Imagens/historia/professor_carvalho/oak_baixo_passo_esquerdo.data"	
+	.include "../Imagens/historia/professor_carvalho/oak_esquerda.data"
+	.include "../Imagens/historia/professor_carvalho/oak_esquerda_passo_direito.data"
+	.include "../Imagens/historia/professor_carvalho/oak_esquerda_passo_esquerdo.data"	
+			
 	.include "../Imagens/historia/dialogos/tiles_caixa_dialogo.data"
 	.include "../Imagens/historia/dialogos/matriz_tiles_caixa_dialogo.data"
 
