@@ -28,6 +28,7 @@
 #		Quarto do RED -> 000									 #
 #		Sala da casa do RED -> 001								 #
 #		Pallet -> 010										 #
+#		Laboratório -> 011									 #
 # 													 #
 # Já os valores de PP variam dependendo da área. Algumas áreas possuem mais de uma maneira de acessa-las #
 # A sala do RED, por exemplo, pode ser acessada tanto pelo quarto do RED ou pela porta da frente, nesse  #
@@ -40,6 +41,8 @@
 #		PP = 01 -> Entrada pelas escadas							 #
 #	Pallet:												 #
 #		PP = 00 -> Entrada pela casa do RED							 #
+#	Laboratório:											 #
+#		PP = 00 -> Entrada pela porta								 #
 #            												 #	 
 # ====================================================================================================== #
 
@@ -97,6 +100,10 @@ RENDERIZAR_AREA:
 		li t0, 8	# 8 ou 010 00 em binário é o código da área de Pallet
 		# se t1 (AAA) = 010 00 renderiza Pallet
 		beq t1, t0, RENDERIZAR_PALLET
+		
+		li t0, 12	# 12 ou 011 00 em binário é o código da área de Pallet
+		# se t1 (AAA) = 011 00 renderiza o laboratorio
+		beq t1, t0, RENDERIZAR_LABORATORIO
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -522,7 +529,93 @@ RENDERIZAR_PALLET:
 		
 			
 # ====================================================================================================== #
-					
+
+RENDERIZAR_LABORATORIO:
+	# Procedimento que imprime a imagem do laboratorio no frame 0 e no frame 1
+	# de acordo com o ponto de entrada, além de atualizar os registradores salvos
+	# Argumentos:
+	# 	a0 = indica o ponto de entrada na área, ou seja, por onde o RED está entrando nessa área
+	#	Para essa área os pontos de entrada possíveis são:
+	#		PP = 00 -> Entrada pela porta 						
+
+	# OBS: não é necessário empilhar o valor de ra pois a chegada a este procedimento é por meio
+	# de uma instrução de branch e a saída é pelo ra empilhado por RENDERIZAR_AREA
+	
+	# Não é nem necessário verificar o ponto de entrada por que essa área só tem um (PP = 0) de qualquer forma 	
+	
+	# Atualizando os registradores salvos para essa área
+		# Atualizando o valor de s0 (posição atual do RED no frame 0)
+			li a1, 0xFF000000		# seleciona como argumento o frame 0
+			li a2, 145 			# numero da coluna do RED = 145
+			li a3, 205			# numero da linha do RED = 205
+			call CALCULAR_ENDERECO	
+		
+			mv s0, a0		# move o endereço retornado para s0
+	
+		# Atualizando o valor de s1 (orientação do personagem)
+			li s1, 2	# inicialmente virado para cima
+		
+		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles ques está sendo 
+		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
+			la s2, matriz_tiles_laboratorio		# carregando em s2 o endereço da matriz
+		
+			lw s3, 0(s2)		# s3 recebe o tamanho de uma linha da matriz
+		
+			addi s2, s2, 8		# pula para onde começa os pixels no .data
+		
+			addi s2, s2, 23		# pula para onde começa a subsecção que será mostrada na tela
+						
+		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
+			la s4, tiles_laboratorio			
+			addi s4, s4, 8		# pula para onde começa os pixels no .data			
+		
+		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
+			la t0, matriz_tiles_laboratorio
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			addi s5, t0, 296		# o RED começa na linha 13 e coluna 10 da matriz
+							# de tiles, então é somado (13 * 22(tamanho de
+							# uma linha da matriz)) + 10		
+																																												
+		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
+		# s7 (tamanho de linha na matriz de movimentação)	
+		la t0, matriz_movimentacao_laboratorio
+		
+		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
+				
+		addi t0, t0, 8
+	
+		addi s6, t0, 208	# o personagem começa na linha 13 e coluna 7 da matriz
+					# então é somado o endereço base da matriz (t0) a 
+		addi s6, s6, 7		# 13 (número da linha) * 16 (tamanho de uma linha da matriz) 
+					# e a 7 (número da coluna) 	
+														
+	# Imprimindo as imagens da área no frame 0					
+		# Imprimindo a imagem da sala do RED no frame 0
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES				
+							
+	# Imprimindo a imagem da área no frame 1	
+		# Imprimindo a imagem da sala do RED no frame 1
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES																				
+																																																							
+	# Mostra o frame 0		
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	sb zero, (t0)			# armazena 0 no endereço de t0
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret
+
+# ====================================================================================================== #
+												
 TRANSICAO_ENTRE_AREAS:
 	# Procedimento que renderiza uma pequena seta para indicar a transição entre área e pergunta
 	# ao jogador se ele deseja sair da área atual
@@ -745,6 +838,9 @@ TRANSICAO_ENTRE_AREAS:
 	.include "../Imagens/areas/pallet/tiles_pallet.data"
 	.include "../Imagens/areas/pallet/matriz_tiles_pallet.data"
 	.include "../Imagens/areas/pallet/matriz_movimentacao_pallet.data"
+	.include "../Imagens/areas/laboratorio/tiles_laboratorio.data"
+	.include "../Imagens/areas/laboratorio/matriz_tiles_laboratorio.data"
+	.include "../Imagens/areas/laboratorio/matriz_movimentacao_laboratorio.data"
 	
 	.include "../Imagens/areas/transicao_de_areas/seta_transicao_cima.data"
 	.include "../Imagens/areas/transicao_de_areas/seta_transicao_baixo.data"

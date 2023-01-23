@@ -405,7 +405,7 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		li a3, 2	# a limpeza vai ocorrer em 2 linhas 
 		call PRINT_TILES
 	
-	# Por fim, é preciso atualizar os valores da matriz de grama que estão acima no RED para que eles
+	# Agpra é preciso atualizar os valores da matriz de grama que estão acima no RED para que eles
 	# não chamem mais esse procedimento
 	
 	sub t0, s6, s7		# t0 tem o endereço na linha anterior a s6 na matriz de movimentação
@@ -415,6 +415,23 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 	sb zero, -1(t0)		
 	sb zero, 0(t0)
 	sb zero, 1(t0)
+	
+	# Por fim, é necessário atualizar a matriz de movimentação novamente para permitir a entrada
+	# no laboratório
+	
+	lb t0, 1(s6)		# para encontrar o elemento da matriz de movimentação
+				# que corresponde a ponta para o laboratorio é possivel
+	li t1, 14 		# usar as relações ao lado que usam a posição do RED para calcular
+	mul t1, t1, s7		# qual o endereço da porta
+	add t0, t0, t1
+	
+	addi t0, t0, 3
+	add t0, t0, s6
+	
+	li t1, 108		# armazena 108 em t0 (endereço na matriz de movimentação para a porta
+	sb t1, 0(t0)		# do laboratório), sendo que 108 representa o codigo para entrar na área
+				# do laboratório
+	
 															
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
