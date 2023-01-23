@@ -183,7 +183,7 @@ MOVIMENTACAO_TECLA_W:
 		bne t0, zero, MOVER_TELA_W_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES imprimindo 1 coluna
+		# Para limpar os sprites antigos é possível usar o PRINT_TILES_AREA imprimindo 1 coluna
 		# 3 linhas (2 tiles do RED + 1 tile de folga)
 		
 		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
@@ -204,7 +204,7 @@ MOVIMENTACAO_TECLA_W:
 					
 		li a2, 1		# número de colunas de tiles a serem impressas
 		li a3, 3		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		call PRINT_TILES_AREA
 		
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
@@ -314,7 +314,7 @@ MOVIMENTACAO_TECLA_W:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		call PRINT_TILES_AREA	
 
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_cima		# carrega a imagem do sprite			
@@ -333,7 +333,7 @@ MOVIMENTACAO_TECLA_W:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		call PRINT_TILES_AREA	
 				
 		# Imprimindo o sprite do RED no frame 1
 		la a0, red_cima		# carrega a imagem do sprite			
@@ -496,9 +496,9 @@ MOVIMENTACAO_TECLA_A:
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
 		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
-		# Como PRINT_TILES utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
+		# Como PRINT_TILES_AREA utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
 		# em certos momentos o endereço de onde imprimir os tiles não vai estar alinhado para o 
-		# store word, portanto não é possível usar o PRINT_TILES aqui.
+		# store word, portanto não é possível usar o PRINT_TILES_AREA aqui.
 		# Para a limpeza será usado o endereço do personagem (s0) junto do PRINT_IMG (que usa lb e sb)
 		# imprimindo novamente os 2 tiles onde o RED está e os 2 tiles atrás como uma folga
 		
@@ -695,7 +695,7 @@ MOVIMENTACAO_TECLA_A:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		call PRINT_TILES_AREA	
 	
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_esquerda	# carrega a imagem do sprite			
@@ -714,7 +714,7 @@ MOVIMENTACAO_TECLA_A:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES			
+		call PRINT_TILES_AREA			
 		
 		# Imprimindo o sprite do RED no frame 1
 		la a0, red_esquerda	# carrega a imagem do sprite			
@@ -881,7 +881,7 @@ MOVIMENTACAO_TECLA_S:
 		bne t0, zero, MOVER_TELA_S_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES imprimindo 1 coluna
+		# Para limpar os sprites antigos é possível usar o PRINT_TILES_AREA imprimindo 1 coluna
 		# 3 linhas (2 tiles do RED + 1 tile de folga)
 		
 		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
@@ -902,7 +902,7 @@ MOVIMENTACAO_TECLA_S:
 					
 		li a2, 1		# número de colunas de tiles a serem impressas
 		li a3, 3		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		call PRINT_TILES_AREA
 		
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
@@ -1013,7 +1013,7 @@ MOVIMENTACAO_TECLA_S:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		call PRINT_TILES_AREA	
 
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_baixo	# carrega a imagem do sprite			
@@ -1032,7 +1032,7 @@ MOVIMENTACAO_TECLA_S:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES			
+		call PRINT_TILES_AREA			
 		
 		# Imprimindo o sprite do RED no frame 1
 		la a0, red_baixo	# carrega a imagem do sprite			
@@ -1197,9 +1197,9 @@ MOVIMENTACAO_TECLA_D:
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
 		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
-		# Como PRINT_TILES utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
+		# Como PRINT_TILES_AREA utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
 		# em certos momentos o endereço de onde imprimir os tiles não vai estar alinhado para o 
-		# store word, portanto não é possível usar o PRINT_TILES aqui.
+		# store word, portanto não é possível usar o PRINT_TILES_AREA aqui.
 		# Para a limpeza será usado o endereço do personagem (s0) junto do PRINT_IMG (que usa lb e sb)
 		# imprimindo novamente os 2 tiles onde o RED está e os 2 tiles a frente como uma folga
 		
@@ -1397,7 +1397,7 @@ MOVIMENTACAO_TECLA_D:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		call PRINT_TILES_AREA	
 	
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_direita	# carrega a imagem do sprite			
@@ -1416,7 +1416,7 @@ MOVIMENTACAO_TECLA_D:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES			
+		call PRINT_TILES_AREA			
 		
 		# Imprimindo o sprite do RED no frame 1
 		la a0, red_direita	# carrega a imagem do sprite			
@@ -1455,7 +1455,7 @@ MUDAR_ORIENTACAO_RED:
 	sw ra, (sp)		# empilha ra
 			
 	# Primeiro é necessário "limpar" o antigo sprite do RED dos frames. Isso é feito imprimindo novamente
-	# os dois tiles onde o RED está através de PRINT_TILES
+	# os dois tiles onde o RED está através de PRINT_TILES_AREA
 		
 	# Imprimindo os tiles e limpando a tela no frame 1
 		mv a0, s0		# a0 recebe o endereço de onde o RED está no frame 0 (s0)
@@ -1471,7 +1471,7 @@ MUDAR_ORIENTACAO_RED:
 					# através da soma com t0 o endereço de a1 passa para o frame 1
 		li a2, 1	# a limpeza vai ocorrer em 1 coluna
 		li a3, 3	# a limpeza vai ocorrer em 3 linhas (2 onde o RED está e mais 1 de folga)
-		call PRINT_TILES
+		call PRINT_TILES_AREA
 				
 	# Agora imprime a nova imagem do RED no frame 0
 		mv a0, a4		# a4 tem o endereço da imagem a ser impressa
@@ -1491,7 +1491,7 @@ MUDAR_ORIENTACAO_RED:
 				# endereço onde os tiles vão começar a ser impressos para a limpeza
 		li a2, 1	# a limpeza vai ocorrer em 1 coluna
 		li a3, 3	# a limpeza vai ocorrer em 3 linhas (2 onde o RED está e mais 1 de folga)
-		call PRINT_TILES
+		call PRINT_TILES_AREA
 				
 	# Agora imprime a nova imagem do RED no frame 0
 		mv a0, a4		# a4 tem o endereço da imagem a ser impressa
@@ -1547,7 +1547,7 @@ MOVER_PERSONAGEM:
 	LOOP_MOVER_PERSONAGEM:
 
 		# Primeiro é necessário "limpar" o antigo sprite do personagem da tela. 
-		# Isso é feito imprimindo novamente os tiles onde o personagem está através de PRINT_TILES
+		# Isso é feito imprimindo novamente os tiles onde o personagem está através de PRINT_TILES_AREA
  		# A quantidade de tiles a serem limpos depende da orientação da movimentação (a7) porque em
 		# alguns casos durante o personagem fica na intersecção entre vários tiles diferentes
 			
@@ -1625,7 +1625,7 @@ MOVER_PERSONAGEM:
 			
 			add a1, a1, t5	# decide a partir do valor de t5 qual o frame onde os tiles serão
 					# impressos
-			call PRINT_TILES
+			call PRINT_TILES_AREA
 		
 		# Determina qual é o próximo sprite do personagem a ser renderizado,
 		# de modo que a animação siga o seguinte padrão:

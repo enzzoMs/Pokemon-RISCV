@@ -181,7 +181,7 @@ RENDERIZAR_QUARTO_RED:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
+		call PRINT_TILES_AREA				
 						
 		# Imprimindo a imagem do RED virado para cima no frame 0
 		la a0, red_cima		# carrega a imagem				
@@ -197,7 +197,7 @@ RENDERIZAR_QUARTO_RED:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
+		call PRINT_TILES_AREA		
 										
 		# Imprimindo a imagem do RED virado para cima no frame 0
 		
@@ -270,7 +270,7 @@ RENDERIZAR_QUARTO_RED:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES								
+		call PRINT_TILES_AREA								
 	
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
@@ -278,7 +278,7 @@ RENDERIZAR_QUARTO_RED:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
+		call PRINT_TILES_AREA		
 										
 	
 	FIM_RENDERIZAR_QUARTO_RED:									
@@ -416,7 +416,7 @@ RENDERIZAR_SALA_RED:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
+		call PRINT_TILES_AREA				
 							
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem da sala do RED no frame 1
@@ -424,7 +424,7 @@ RENDERIZAR_SALA_RED:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES																				
+		call PRINT_TILES_AREA																				
 																																																							
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
@@ -508,7 +508,7 @@ RENDERIZAR_PALLET:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
+		call PRINT_TILES_AREA				
 							
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem de pallet no frame 1
@@ -516,7 +516,7 @@ RENDERIZAR_PALLET:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		call PRINT_TILES_AREA
 																				
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
@@ -595,7 +595,7 @@ RENDERIZAR_LABORATORIO:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
+		call PRINT_TILES_AREA				
 							
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem da sala do RED no frame 1
@@ -603,7 +603,7 @@ RENDERIZAR_LABORATORIO:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES																				
+		call PRINT_TILES_AREA																				
 																																																							
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
@@ -787,7 +787,7 @@ TRANSICAO_ENTRE_AREAS:
 		# o a1 retornado tem o endereço de inicio do tile a0 no frame 0
 		li a2, 1	# a limpeza vai ocorrer em 1 coluna
 		li a3, 1	# a limpeza vai ocorrer em 1 linha 
-		call PRINT_TILES
+		call PRINT_TILES_AREA
 	
 	# Limpando mensagem de transição de área
 		# Para isso é necessário limpar 10 tiles em 2 linhas, eles sempre são os mesmos independente 
@@ -811,7 +811,7 @@ TRANSICAO_ENTRE_AREAS:
 		# a1 já tem o endereço onde os tiles vão começar a ser impressos
 		li a2, 5		# número de linhas de tiles a serem impressas
 		li a3, 2		# número de linhas de tiles a serem impressas
-		call PRINT_TILES						
+		call PRINT_TILES_AREA						
 																						
 	# Agora é preciso chamar o procedimento de movimentação adequado para a tecla apertada pelo jogador
 	
