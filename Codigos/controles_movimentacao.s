@@ -62,8 +62,8 @@ MOVIMENTACAO_TECLA_W:
 	# Primeiro verifica se o personagem está virado para cima
 		li t0, 2
 		beq s1, t0, INICIO_MOVIMENTACAO_W
-			la a6, red_cima		# carrega como argumento o sprite do RED virada para cima		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			la a4, red_cima		# carrega como argumento o sprite do RED virada para cima		
+			call MUDAR_ORIENTACAO_RED
 			
 			li s1, 2	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para cima
@@ -94,96 +94,23 @@ MOVIMENTACAO_TECLA_W:
 	bne t0, t1, MOVER_TELA_W		# deve se mover é o personagem
 	
 	
-	# Com tudo feito agora começa o procedimento de movimentação para o personagem
-	
-	li t3, 16		# contador para o número de pixels que o personagem vai se deslocar, ou seja,
-				# o número de loops a serem executados abaixo
-					
-	la t4, red_cima		# t4 vai guardar o endereço da próxima imagem do RED
-					# o loop de movimentação começa imprimindo a imagem do RED 
-					# virado para cima normalmente	
-	
-	li t5, 0x00100000		# t5 será usada para fazer a troca entre frames no loop de movimentação				
-													
-	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-	# de acordo com o valor de s8
-		
-	la t6, red_cima_passo_direito
+	# Com tudo feito agora é possivel chamar o procedimento de movimentação para o personagem
+		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+		# de acordo com o valor de s8		
+		la a5, red_cima_passo_direito
 							
-	beq s8, zero, LOOP_MOVIMENTACAO_W		
-		la t6, red_cima_passo_esquerdo
-												
-
-	LOOP_MOVIMENTACAO_W:
-		addi s0, s0, -320	# decrementa o endereço de s0 (endereço do RED no frame 0) para 
-					# a linha anterior
-	
-		call TROCAR_FRAME		# inverte o frame sendo mostrado
-			
-		# Primeiro é necessário "limpar" o antigo sprite do RED da tela. Isso é feito imprimindo novamente
-		# os dois tiles onde o RED está através de LIMPAR_TILE
-		# Como o RED ocupa dois tiles é necessário limpar o tile onde está a cabeça dele (s6)
-		# e o tile onde está o corpo (s5 + s3)
-				
-			# Limpando o tile da cabeça do RED
-			mv a4, s5		# o tile a ser limpo é o tile onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE
-		
-			# Limpando o tile do corpo do RED 
-			add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE		
-								
-		PRINT_RED_LOOP_MOVIMENTACAO_W:					
-		# Agora imprime a imagem do RED no frame
-			mv a0, t4		# t4 tem o endereço da próxima imagem do RED 			
-			mv a1, s0		# s0 possui o endereço do RED no frame 0
-			add a1, a1, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			lw a2, 0(a0)		# numero de colunas de uma imagem do RED
-			lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
-			addi a0, a0, 8		# pula para onde começa os pixels no .data	
-			call PRINT_IMG	
+		beq s8, zero, MOVER_RED_W		
+			la a5, red_cima_passo_esquerdo
 						
-		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
-		call SLEEP			# chama o procedimento SLEEP	
-			
-		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+		MOVER_RED_W:				
+		la a4, red_cima	# carrega a imagem do RED parado
+		# a5 tem a a imagem do RED dando um passo	
+		mv a6, s0		# a animação vai começar onde o RED está (s0)
+		li a7, 0		# a3 = 0 = animação para cima																
+		call MOVER_PERSONAGEM																																																															
 		
-		li t0, 0x00100000	# fazendo essa operação xor se t5 for 0 ele recebe 0x0010000
-		xor t5, t5, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
-					# trocar entre esses valores
-							
-		# Determina qual é o próximo sprite do RED a ser renderizado,
-		# de modo que a animação siga o seguinte padrão:
-		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
-		
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
-		# t4 vai guardar o endereço da próxima imagem do RED		
-		la t4, red_cima
-		li t0, 14
-		bgt t3, t0, LOOP_MOVIMENTACAO_W
-		mv t4, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 2
-		bgt t3, t0, LOOP_MOVIMENTACAO_W
-		la t4, red_cima
-		bne t3, zero, LOOP_MOVIMENTACAO_W
-	
-	# Pela maneira como os loops acima acontecem o sprite do RED no frame 1 sempre está um pixel abaixo 
-	# do sprite no frame 0, para não causar problemas em procedimentos subsequentes é necessário limpar 
-	# novamente o tile onde o corpo do RED está no frame 1 
-	
-		# Limpando o tile do corpo do RED 
-		add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo onde o RED está
-		li a5, 0xFF100000	# a5 recebe o endereço base do frame 1
-		call LIMPAR_TILE	
+	mv s0, a0		# De acordo com o retorno de MOVER_PERSONAGEM a0 tem o endereço de s0 
+				# atualizado pela movimentação feita
 	
 	sub s5, s5, s3		# atualizando o lugar do personagem na matriz de tiles para a posição uma linha
 				# acima
@@ -256,29 +183,28 @@ MOVIMENTACAO_TECLA_W:
 		bne t0, zero, MOVER_TELA_W_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES (o LIMPAR_TILE não funciona
-		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 1 coluna
+		# Para limpar os sprites antigos é possível usar o PRINT_TILES_AREA imprimindo 1 coluna
 		# 3 linhas (2 tiles do RED + 1 tile de folga)
 		
-		mv a4, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
+		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
 				# nesse caso, o começo é o tile onde o RED está
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		mv a1, s0	# a imagem será impressa onde o RED está (s0)
 		
 		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
+		sub a1, a1, t0	# portanto é necessário voltar o endereço de a1 em 4164 pixels (13 linhas * 
 				# 320 + 1 coluna)
 		
 		li t0, 320	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
 		mul t0, t0, t5	# iteração, já que o pixels da tela serão trocados para fazer a imagem "descer"
-		add a5, a5, t0	# portanto, 320 * t5 retorna quantos pixels é necessário avançar para encontrar
+		add a1, a1, t0	# portanto, 320 * t5 retorna quantos pixels é necessário avançar para encontrar
 				# a linha certa onde devem ser impressos os tiles nessa iteração
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
 					# será impressa	
 					
-		li a6, 1		# número de colunas de tiles a serem impressas
-		li a7, 3		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		li a2, 1		# número de colunas de tiles a serem impressas
+		li a3, 3		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA
 		
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
@@ -381,14 +307,14 @@ MOVIMENTACAO_TECLA_W:
 	
 	# Pela maneira que o loop acima é executado na verdade só são feitas 15 iterações e não 16, 
 	# portanto, é necessário imprimir novamente as imagem da área em ambos os frames + o sprite do RED 
-	# no frame 0 para que tudo fique no lugar certo
+	# no frame 0 e 1 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA	
 
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_cima		# carrega a imagem do sprite			
@@ -403,11 +329,21 @@ MOVIMENTACAO_TECLA_W:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES			
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA	
+				
+		# Imprimindo o sprite do RED no frame 1
+		la a0, red_cima		# carrega a imagem do sprite			
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		li t0, 0x00100000
+		add a1, a1, t0		# passa o endereço de a1 para o frame 1
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
 						
 	sub s5, s5, s3		# atualizando o lugar do personagem na matriz de tiles para a posição uma linha
 				# acima
@@ -435,8 +371,8 @@ MOVIMENTACAO_TECLA_A:
 	
 	# Primeiro verifica se o personagem está virado para a esquerda
 		beq s1, zero, INICIO_MOVIMENTACAO_A
-			la a6, red_esquerda	# carrega como argumento o sprite do RED virada para a esquerda		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			la a4, red_esquerda	# carrega como argumento o sprite do RED virada para a esquerda		
+			call MUDAR_ORIENTACAO_RED
 			
 			li s1, 0	# atualiza o valor de s0 dizendo que agora o RED está virado 
 					# para a esquerda
@@ -462,109 +398,23 @@ MOVIMENTACAO_TECLA_A:
 	li t1, -1				# se t0 for -1 a tela não permite movimento, então o que								
 	bne t0, t1, MOVER_TELA_A		# deve se mover é o personagem
 						
-	# Com tudo feito agora começa o procedimento de movimentação para o personagem
-	
-	li t3, 16		# contador para o número de pixels que o personagem vai se deslocar, ou seja,
-				# o número de loops a serem executados abaixo
-					
-	la t4, red_esquerda		# t4 vai guardar o endereço da próxima imagem do RED
-					# o loop de movimentação começa imprimindo a imagem do RED 
-					# virado para a esquerda normalmente	
-	
-	li t5, 0x00100000		# t5 será usada para fazer a troca entre frames no loop de movimentação				
-													
-	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-	# de acordo com o valor de s8
-		
-	la t6, red_esquerda_passo_direito
+	# Com tudo feito agora é possivel chamar o procedimento de movimentação para o personagem
+		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+		# de acordo com o valor de s8		
+		la a5, red_esquerda_passo_direito
 							
-	beq s8, zero, LOOP_MOVIMENTACAO_A		
-		la t6, red_esquerda_passo_esquerdo
-
-	LOOP_MOVIMENTACAO_A:
-		addi s0, s0, -1		# decrementa o endereço de s0 (endereço do RED no frame 0) para 
-					# a coluna anterior
-	
-		call TROCAR_FRAME		# inverte o frame sendo mostrado
-			
-		# Primeiro é necessário "limpar" o antigo sprite do RED da tela. Isso é feito imprimindo novamente
-		# os dois tiles onde o RED está através de LIMPAR_TILE
-		# Como o RED ocupa dois tiles é necessário limpar o tile onde está a cabeça dele (s6)
-		# e o tile onde está o corpo (s5 + s3)
-				
-			# Limpando o tile da cabeça do RED
-			mv a4, s5		# o tile a ser limpo é o tile onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE
-		
-			# Limpando o tile do corpo do RED 
-			add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE		
-			
-			# Como o personagem se move gradualmente, 1 pixel por vez, em determinados momentos
-			# ele vai estar entre 4 tiles diferentes, os dois tiles onde ele está e os dois tiles
-			# para onde ele vai, portanto depois de um ponto (t3 <= 6) é necessário limpar também
-			# os tiles para onde ele está indo		
-			li t0, 6
-			bgt t3, t0, PRINT_RED_LOOP_MOVIMENTACAO_A
-				# Limpando o tile superior para onde o RED vai
-				addi a4, s5, -1 	# o tile a ser limpo é o anterior a partir de s5
-				li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-				add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a
-							# imagem será impressa			
-				call LIMPAR_TILE
-		
-				# Limpando o tile inferior para onde o RED vai
-				add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo 
-				addi a4, a4, -1		# onde o RED está e uma coluna para trás
-
-				li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-				add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a 
-							# imagem será impressa			
-				call LIMPAR_TILE			
-					
-					
-		PRINT_RED_LOOP_MOVIMENTACAO_A:					
-		# Agora imprime a imagem do RED no frame
-			mv a0, t4		# t4 tem o endereço da próxima imagem do RED 			
-			mv a1, s0		# s0 possui o endereço do RED no frame 0
-			add a1, a1, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			lw a2, 0(a0)		# numero de colunas de uma imagem do RED
-			lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
-			addi a0, a0, 8		# pula para onde começa os pixels no .data	
-			call PRINT_IMG	
+		beq s8, zero, MOVER_RED_A		
+			la a5, red_esquerda_passo_esquerdo
 						
-		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
-		call SLEEP			# chama o procedimento SLEEP	
-			
-		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+		MOVER_RED_A:				
+		la a4, red_esquerda	# carrega a imagem do RED parado
+		# a5 tem a a imagem do RED dando um passo	
+		mv a6, s0		# a animação vai começar onde o RED está (s0)
+		li a7, 1		# a3 = 1 = animação para a esquerda																
+		call MOVER_PERSONAGEM																																																															
 		
-		li t0, 0x00100000	# fazendo essa operação xor se t5 for 0 ele recebe 0x0010000
-		xor t5, t5, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
-					# trocar entre esses valores
-					
-		# Determina qual é o próximo sprite do RED a ser renderizado,
-		# de modo que a animação siga o seguinte padrão:
-		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
-		
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
-		# t4 vai guardar o endereço da próxima imagem do RED		
-		la t4, red_esquerda
-		li t0, 14
-		bgt t3, t0, LOOP_MOVIMENTACAO_A
-		mv t4, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 2
-		bgt t3, t0, LOOP_MOVIMENTACAO_A
-		la t4, red_esquerda
-		bne t3, zero, LOOP_MOVIMENTACAO_A
+	mv s0, a0		# De acordo com o retorno de MOVER_PERSONAGEM a0 tem o endereço de s0 
+				# atualizado pela movimentação feita
 	
 	addi s5, s5, -1		# atualizando o lugar do personagem na matriz de tiles para a posição anterior
 
@@ -645,33 +495,74 @@ MOVIMENTACAO_TECLA_A:
 		bne t0, zero, MOVER_TELA_A_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES (o LIMPAR_TILE não funciona
-		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 2 coluna e
-		# 2 linhas (2 tiles onde o RED está + 2 tiles de folga) 
+		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
+		# Como PRINT_TILES_AREA utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
+		# em certos momentos o endereço de onde imprimir os tiles não vai estar alinhado para o 
+		# store word, portanto não é possível usar o PRINT_TILES_AREA aqui.
+		# Para a limpeza será usado o endereço do personagem (s0) junto do PRINT_IMG (que usa lb e sb)
+		# imprimindo novamente os 2 tiles onde o RED está e os 2 tiles atrás como uma folga
 		
-		addi a4, s5, -1	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
-				# nesse caso, o começo é o tile anterior onde o RED está
-				
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		# Primeiro limpa o tile da cabeça do RED 
+		mv a0, s0	# endereço de onde o RED está no frame 0
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
-				# 320 + 1 coluna)
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+		# Limpa o tile do corpo do RED
+		addi a0, s0, 960	# somando s0 com 960 passa o endereço de onde o RED está 
+					# para o inicio do tile abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		add a5, a5, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
-				# iteração, já que o pixels da tela serão trocados para fazer a imagem se "mover"
-				# a5 + t5 passa a5 para a coluna certa onde os tiles devem ser impressos
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+
+		# Limpa o tile a esquerda da cabeça do RED
+		addi a0, s0, -16	# somando s0 com -16 passa o endereço de onde o RED está 
+					# para o inicio do tile a esquerda dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		addi a5, a5, -16	# os tiles que serão impressos são os 2 onde o RED está e os 2
-					# anteriores como uma folga. Por isso o endereço de a5 precisa
-					# voltar 16 pixels (largura de um tile)
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
-					# será impressa	
-					
-		li a6, 2		# número de colunas de tiles a serem impressas
-		li a7, 2		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		# Limpa o tile na diagonal inferior esquerda da cabeça do RED
+		addi a0, s0, -16	# somando s0 com -16 passa o endereço de onde o RED está 
+					# para o inicio do tile a esquerda dele
+		addi a0, a0, 960	# somando a0 com 960 passa o endereço de a0 para o inicio do tile 
+					# abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
+		
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		add a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário avançar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
 		
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
@@ -797,14 +688,14 @@ MOVIMENTACAO_TECLA_A:
 	
 	# Pela maneira que o loop acima é executado na verdade só são feitas 15 iterações e não 16, 
 	# portanto, é necessário imprimir novamente as imagem da área em ambos os frames + o sprite do RED 
-	# no frame 0 para que tudo fique no lugar certo
+	# no frame 0 e 1 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA	
 	
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_esquerda	# carrega a imagem do sprite			
@@ -819,12 +710,22 @@ MOVIMENTACAO_TECLA_A:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES			
-						
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA			
+		
+		# Imprimindo o sprite do RED no frame 1
+		la a0, red_esquerda	# carrega a imagem do sprite			
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		li t0, 0x00100000
+		add a1, a1, t0		# passa o endereço de a1 para o frame 1
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+										
 	addi s5, s5, -1		# atualizando o lugar do personagem na matriz de tiles para a posição anterior
 
 	addi s6, s6, -1		# atualiza o valor de s6 para o endereço anterior da matriz de movimentação 
@@ -850,8 +751,8 @@ MOVIMENTACAO_TECLA_S:
 	# Primeiro verifica se o personagem está virado para baixo
 		li t0, 3
 		beq s1, t0, INICIO_MOVIMENTACAO_S
-			la a6, red_baixo	# carrega como argumento o sprite do RED virada para baixo		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			la a4, red_baixo	# carrega como argumento o sprite do RED virada para baixo		
+			call MUDAR_ORIENTACAO_RED
 			
 			li s1, 3	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para baixo
@@ -884,103 +785,24 @@ MOVIMENTACAO_TECLA_S:
 	li t1, -1				# se t0 for -1 a tela não permite movimento, então o que								
 	bne t0, t1, MOVER_TELA_S		# deve se mover é o personagem
 								
-	# Com tudo feito agora começa o procedimento de movimentação para o personagem
-	
-	li t3, 16		# contador para o número de pixels que o personagem vai se deslocar, ou seja,
-				# o número de loops a serem executados abaixo
-					
-	la t4, red_baixo		# t4 vai guardar o endereço da próxima imagem do RED
-					# o loop de movimentação começa imprimindo a imagem do RED 
-					# virado para baixo normalmente	
-	
-	li t5, 0x00100000		# t5 será usada para fazer a troca entre frames no loop de movimentação				
-													
-	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-	# de acordo com o valor de s8
-		
-	la t6, red_baixo_passo_direito
+	# Com tudo feito agora é possivel chamar o procedimento de movimentação para o personagem
+		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+		# de acordo com o valor de s8		
+		la a5, red_baixo_passo_direito
 							
-	beq s8, zero, LOOP_MOVIMENTACAO_S		
-		la t6, red_baixo_passo_esquerdo
-												
-
-	LOOP_MOVIMENTACAO_S:
-		addi s0, s0, 320	# incrementa o endereço de s0 (endereço do RED no frame 0) para 
-					# a próxima linha
-	
-		call TROCAR_FRAME		# inverte o frame sendo mostrado
-			
-		# Primeiro é necessário "limpar" o antigo sprite do RED da tela. Isso é feito imprimindo novamente
-		# os dois tiles onde o RED está através de LIMPAR_TILE
-		# Como o RED ocupa dois tiles é necessário limpar o tile onde está a cabeça dele (s6)
-		# e o tile onde está o corpo (s5 + s3)
-				
-			# Limpando o tile da cabeça do RED
-			mv a4, s5		# o tile a ser limpo é o tile onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE
-		
-			# Limpando o tile do corpo do RED 
-			add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE		
-			
-			# Como o personagem se move gradualmente, 1 pixel por vez, em determinados momentos
-			# ele vai estar entre 3 tiles diferentes, os dois tiles onde ele está e o tile
-			# para onde ele vai, portanto depois de um ponto (t3 <= 6) é necessário limpar também
-			# esse tile para onde ele está indo		
-			li t0, 6
-			bgt t3, t0, PRINT_RED_LOOP_MOVIMENTACAO_S
-				# Limpando o tile superior para onde o RED vai
-				add a4, s5, s3 		# o tile a ser limpo é o que está duas linhas para 
-				add a4, a4, s3 		# baixo de s5				
-				li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-				add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a
-							# imagem será impressa			
-				call LIMPAR_TILE					
-					
-		PRINT_RED_LOOP_MOVIMENTACAO_S:					
-		# Agora imprime a imagem do RED no frame
-			mv a0, t4		# t4 tem o endereço da próxima imagem do RED 			
-			mv a1, s0		# s0 possui o endereço do RED no frame 0
-			add a1, a1, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			lw a2, 0(a0)		# numero de colunas de uma imagem do RED
-			lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
-			addi a0, a0, 8		# pula para onde começa os pixels no .data	
-			call PRINT_IMG	
+		beq s8, zero, MOVER_RED_S		
+			la a5, red_baixo_passo_esquerdo
 						
-		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
-		call SLEEP			# chama o procedimento SLEEP	
-			
-		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+		MOVER_RED_S:				
+		la a4, red_baixo	# carrega a imagem do RED parado
+		# a5 tem a a imagem do RED dando um passo	
+		mv a6, s0		# a animação vai começar onde o RED está (s0)
+		li a7, 2		# a3 = 2 = animação para baixo																
+		call MOVER_PERSONAGEM																																																															
 		
-		li t0, 0x00100000	# fazendo essa operação xor se t5 for 0 ele recebe 0x0010000
-		xor t5, t5, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
-					# trocar entre esses valores
-					
-					
-		# Determina qual é o próximo sprite do RED a ser renderizado,
-		# de modo que a animação siga o seguinte padrão:
-		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
-		
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
-		# t4 vai guardar o endereço da próxima imagem do RED		
-		la t4, red_baixo
-		li t0, 14
-		bgt t3, t0, LOOP_MOVIMENTACAO_S
-		mv t4, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 2
-		bgt t3, t0, LOOP_MOVIMENTACAO_S
-		la t4, red_baixo
-		bne t3, zero, LOOP_MOVIMENTACAO_S
-
+	mv s0, a0		# De acordo com o retorno de MOVER_PERSONAGEM a0 tem o endereço de s0 
+				# atualizado pela movimentação feita
+	
 	add s5, s5, s3		# atualizando o lugar do personagem na matriz de tiles para a posição uma linha
 				# abaixo
 
@@ -1059,29 +881,28 @@ MOVIMENTACAO_TECLA_S:
 		bne t0, zero, MOVER_TELA_S_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES (o LIMPAR_TILE não funciona
-		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 1 coluna
+		# Para limpar os sprites antigos é possível usar o PRINT_TILES_AREA imprimindo 1 coluna
 		# 3 linhas (2 tiles do RED + 1 tile de folga)
 		
-		mv a4, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
+		mv a0, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
 				# nesse caso, o começo é o tile onde o RED está
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		mv a1, s0	# a imagem será impressa onde o RED está (s0)
 		
 		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
+		sub a1, a1, t0	# portanto é necessário voltar o endereço de a1 em 4164 pixels (13 linhas * 
 				# 320 + 1 coluna)
 		
 		li t0, 320	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
 		mul t0, t0, t5	# iteração, já que o pixels da tela serão trocados para fazer a imagem "subir"
-		sub a5, a5, t0	# portanto, 320 * t5 retorna quantos pixels é necessário voltar para encontrar
+		sub a1, a1, t0	# portanto, 320 * t5 retorna quantos pixels é necessário voltar para encontrar
 				# a linha certa onde devem ser impressos os tiles nessa iteração
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
+		add a1, a1, t6		# decide a partir do valor de t6 qual o frame onde os tiles
 					# será impressa	
 					
-		li a6, 1		# número de colunas de tiles a serem impressas
-		li a7, 3		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		li a2, 1		# número de colunas de tiles a serem impressas
+		li a3, 3		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA
 		
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
@@ -1185,14 +1006,14 @@ MOVIMENTACAO_TECLA_S:
 	
 	# Pela maneira que o loop acima é executado na verdade só são feitas 15 iterações e não 16, 
 	# portanto, é necessário imprimir novamente as imagem da área em ambos os frames + o sprite do RED 
-	# no frame 0 para que tudo fique no lugar certo
+	# no frame 0  e 1 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA	
 
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_baixo	# carrega a imagem do sprite			
@@ -1207,12 +1028,22 @@ MOVIMENTACAO_TECLA_S:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES			
-						
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA			
+		
+		# Imprimindo o sprite do RED no frame 1
+		la a0, red_baixo	# carrega a imagem do sprite			
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		li t0, 0x00100000
+		add a1, a1, t0		# passa o endereço de a1 para o frame 1
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+										
 	add s5, s5, s3		# atualizando o lugar do personagem na matriz de tiles para a posição uma linha
 				# abaixo
 
@@ -1240,8 +1071,8 @@ MOVIMENTACAO_TECLA_D:
 	# Primeiro verifica se o personagem está virado para a direita
 		li t0, 1
 		beq s1, t0, INICIO_MOVIMENTACAO_D
-			la a6, red_direita	# carrega como argumento o sprite do RED virada para a direita		
-			call MUDAR_ORIENTACAO_PERSONAGEM
+			la a4, red_direita	# carrega como argumento o sprite do RED virada para a direita		
+			call MUDAR_ORIENTACAO_RED
 
 			li s1, 1	# atualiza o valor de s1 dizendo que agora o RED está virado 
 					# para a direita	
@@ -1269,110 +1100,23 @@ MOVIMENTACAO_TECLA_D:
 	bne t0, t1, MOVER_TELA_D		# deve se mover é o personagem
 	
 								
-	# Com tudo feito agora começa o procedimento de movimentação para o personagem
-																						
-	li t3, 16		# contador para o número de pixels que o personagem vai se deslocar, ou seja,
-				# o número de loops a serem executados abaixo
-					
-	la t4, red_direita		# t4 vai guardar o endereço da próxima imagem do RED
-					# o loop de movimentação começa imprimindo a imagem do RED 
-					# virado para a direita normalmente	
-	
-	li t5, 0x00100000		# t5 será usada para fazer a troca entre frames no loop de movimentação				
-													
-	# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
-	# de acordo com o valor de s8
-		
-	la t6, red_direita_passo_direito
+	# Com tudo feito agora é possivel chamar o procedimento de movimentação para o personagem
+		# Decide se o RED vai ser renderizado dando o passo com o pé esquedo ou direito
+		# de acordo com o valor de s8		
+		la a5, red_direita_passo_direito
 							
-	beq s8, zero, LOOP_MOVIMENTACAO_D		
-		la t6, red_direita_passo_esquerdo
-																											
-	LOOP_MOVIMENTACAO_D:
-		addi s0, s0, 1		# incrementa o endereço de s0 (endereço do RED no frame 0) para 
-					# a próxima coluna
-	
-		call TROCAR_FRAME		# inverte o frame sendo mostrado
-			
-		# Primeiro é necessário "limpar" o antigo sprite do RED da tela. Isso é feito imprimindo novamente
-		# os dois tiles onde o RED está através de LIMPAR_TILE
-		# Como o RED ocupa dois tiles é necessário limpar o tile onde está a cabeça dele (s6)
-		# e o tile onde está o corpo (s5 + s3)
-				
-			# Limpando o tile da cabeça do RED
-			mv a4, s5		# o tile a ser limpo é o tile onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE
-		
-			# Limpando o tile do corpo do RED 
-			add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo onde o RED está
-			li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-			add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			call LIMPAR_TILE		
-			
-			# Como o personagem se move gradualmente, 1 pixel por vez, em determinados momentos
-			# ele vai estar entre 4 tiles diferentes, os dois tiles onde ele está e os dois tiles
-			# para onde ele vai, portanto depois de um ponto (t3 <= 6) é necessário limpar também
-			# os tiles para onde ele está indo		
-			li t0, 6
-			bgt t3, t0, PRINT_RED_LOOP_MOVIMENTACAO_D
-				# Limpando o tile superior para onde o RED vai
-				addi a4, s5, 1 		# o tile a ser limpo é próximo a partir de s5
-				li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-				add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a
-							# imagem será impressa			
-				call LIMPAR_TILE
-		
-				# Limpando o tile inferior para onde o RED vai
-				add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo 
-				addi a4, a4, 1		# onde o RED está e uma coluna a frente
-
-				li a5, 0xFF000000	# a5 recebe o endereço base do frame 0
-				add a5, a5, t5		# decide a partir do valor de t5 qual o frame onde a 
-							# imagem será impressa			
-				call LIMPAR_TILE			
-					
-					
-		PRINT_RED_LOOP_MOVIMENTACAO_D:					
-		# Agora imprime a imagem do RED no frame
-			mv a0, t4		# t4 tem o endereço da próxima imagem do RED 			
-			mv a1, s0		# s0 possui o endereço do RED no frame 0
-			add a1, a1, t5		# decide a partir do valor de t5 qual o frame onde a imagem
-						# será impressa			
-			lw a2, 0(a0)		# numero de colunas de uma imagem do RED
-			lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
-			addi a0, a0, 8		# pula para onde começa os pixels no .data	
-			call PRINT_IMG	
+		beq s8, zero, MOVER_RED_D		
+			la a5, red_direita_passo_esquerdo
 						
-		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
-		call SLEEP			# chama o procedimento SLEEP	
-			
-		call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
+		MOVER_RED_D:				
+		la a4, red_direita	# carrega a imagem do RED parado
+		# a5 tem a a imagem do RED dando um passo	
+		mv a6, s0		# a animação vai começar onde o RED está (s0)
+		li a7, 3		# a3 = 3 = animação para a direita																
+		call MOVER_PERSONAGEM																																																															
 		
-		li t0, 0x00100000	# fazendo essa operação xor se t5 for 0 ele recebe 0x0010000
-		xor t5, t5, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
-					# trocar entre esses valores
-					
-		# Determina qual é o próximo sprite do RED a ser renderizado,
-		# de modo que a animação siga o seguinte padrão:
-		# RED PARADO -> RED DANDO UM PASSO -> RED PARADO
-		
-		addi t3, t3, -1		# decrementa o número de loops restantes
-		
-		
-		# t4 vai guardar o endereço da próxima imagem do RED		
-		la t4 red_direita
-		li t0, 14
-		bgt t3, t0, LOOP_MOVIMENTACAO_D
-		mv t4, t6				# t6 tem o endereço da imagem do RED dando um passo
-		li t0, 2
-		bgt t3, t0, LOOP_MOVIMENTACAO_D
-		la t4, red_direita
-		bne t3, zero, LOOP_MOVIMENTACAO_D
+	mv s0, a0		# De acordo com o retorno de MOVER_PERSONAGEM a0 tem o endereço de s0 
+				# atualizado pela movimentação feita
 	
 	addi s5, s5, 1		# atualizando o lugar do personagem na matriz de tiles para a próxima posição
 
@@ -1452,29 +1196,75 @@ MOVIMENTACAO_TECLA_D:
 		bne t0, zero, MOVER_TELA_D_LOOP_LINHAS	# reinicia o loop se t0 != 0 
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
-		# Para limpar os sprites antigos é possível usar o PRINT_TILES (o LIMPAR_TILE não funciona
-		# porque ele não permite imprimir os tiles em endereços arbitrários) imprimindo 1 coluna e
-		# 2 linhas (2 tiles onde o RED está + 2 tiles de folga) 
+		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
+		# Como PRINT_TILES_AREA utiliza lw e sw, além de que esse MOVER_TELA_D move a tela 1 pixel por vez,
+		# em certos momentos o endereço de onde imprimir os tiles não vai estar alinhado para o 
+		# store word, portanto não é possível usar o PRINT_TILES_AREA aqui.
+		# Para a limpeza será usado o endereço do personagem (s0) junto do PRINT_IMG (que usa lb e sb)
+		# imprimindo novamente os 2 tiles onde o RED está e os 2 tiles a frente como uma folga
 		
-		mv a4, s5	# endereço, na matriz de tiles, de onde começam os tiles a ser impressos,
-				# nesse caso, o começo é o tile onde o RED está
-		mv a5, s0	# a imagem será impressa onde o RED está (s0)
+		# Primeiro limpa o tile da cabeça do RED 
+		mv a0, s0	# endereço de onde o RED está no frame 0
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		li t0, 4161	# o endereço do RED na verdade está um pouco abaixo do inicio do tile,
-		sub a5, a5, t0	# portanto é necessário voltar o endereço de a5 em 4164 pixels (13 linhas * 
-				# 320 + 1 coluna)
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+		# Limpa o tile do corpo do RED
+		addi a0, s0, 960	# somando s0 com 960 passa o endereço de onde o RED está 
+					# para o inicio do tile abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		sub a5, a5, t5	# o endereço de onde os tiles vão ser impressos também muda de acordo com a
-				# iteração, já que o pixels da tela serão trocados para fazer a imagem se "mover"
-				# a5 - t5 volta a5 para a coluna certa onde os tiles devem ser impressos
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+
+
+		# Limpa o tile a direita da cabeça do RED
+		addi a0, s0, 16		# somando s0 com 16 passa o endereço de onde o RED está 
+					# para o inicio do tile a direita dele
+		call CALCULAR_ENDERECO_DE_TILE
 		
-		add a5, a5, t6		# decide a partir do valor de t6 qual o frame onde os tiles
-					# será impressa	
-					
-		li a6, 2		# número de colunas de tiles a serem impressas
-		li a7, 2		# número de linhas de tiles a serem impressas
-		call PRINT_TILES
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
 		
+		# Limpa o tile na diagonal inferior direita da cabeça do RED
+		addi a0, s0, 16		# somando s0 com 16 passa o endereço de onde o RED está 
+					# para o inicio do tile a direta dele
+		addi a0, a0, 960	# somando a0 com 960 passa o endereço de a0 para o inicio do tile 
+					# abaixo dele
+		call CALCULAR_ENDERECO_DE_TILE
+		
+		mv a0, a2 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a2 tem o endereço da imagem do 
+				# tile correspondente
+		sub a1, a1, t5 	# Pelo retorno de CALCULAR_ENDERECO_DE_TILE a1 tem o endereço de inicio do tile
+				# no frame 0. Além disso, é necessário voltar a1 por t5 colunas para imprimir
+				# o tile no lugar certo nessa iteração
+		add a1, a1, t6	# decide a partir do valor de t6 qual o frame onde o tile será impresso	
+		li a2, 16		# número de colunas de tiles a serem impressas
+		li a3, 16		# número de linhas de tiles a serem impressas
+		call PRINT_IMG
+														
 		# Parte (3) -> imprime o sprite do RED
 		# O próximo sprite do RED vai ser decidido de acordo com o número da interação (t3)
 		# de modo que a animação siga o seguinte padrão:
@@ -1600,14 +1390,14 @@ MOVIMENTACAO_TECLA_D:
 	
 	# Pela maneira que o loop acima é executado na verdade só são feitas 15 iterações e não 16, 
 	# portanto, é necessário imprimir novamente as imagem da área em ambos os frames + o sprite do RED 
-	# no frame 0 para que tudo fique no lugar certo
+	# no frame 0  e 1 para que tudo fique no lugar certo
 		
 		# Imprimindo a imagem da área no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES	
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA	
 	
 		# Imprimindo o sprite do RED no frame 0
 		la a0, red_direita	# carrega a imagem do sprite			
@@ -1622,11 +1412,21 @@ MOVIMENTACAO_TECLA_D:
 				# seja o 0		
 					
 		# Imprimindo a imagem da área no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES			
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA			
+		
+		# Imprimindo o sprite do RED no frame 1
+		la a0, red_direita	# carrega a imagem do sprite			
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		li t0, 0x00100000
+		add a1, a1, t0		# passa o endereço de a1 para o frame 1
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG					
 						
 	addi s5, s5, 1		# atualizando o lugar do personagem na matriz de tiles para a próxima posição
 
@@ -1644,41 +1444,63 @@ MOVIMENTACAO_TECLA_D:
 
 # ====================================================================================================== #									
 
-MUDAR_ORIENTACAO_PERSONAGEM:
+MUDAR_ORIENTACAO_RED:
 	# Procedimento que muda a orientação do personagem a depender do argumento, ou seja,
 	# imprime o sprite do RED em uma determinada orientação.
 	# OBS: O procedimento não altera o valor de s1, apenas imprime o sprite em uma orientação
 	# Argumentos:
-	# 	 a6 = endereço base da imagem do RED na orientação desejada
+	# 	 a4 = endereço base da imagem do RED na orientação desejada
 	
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
+			
+	# Primeiro é necessário "limpar" o antigo sprite do RED dos frames. Isso é feito imprimindo novamente
+	# os dois tiles onde o RED está através de PRINT_TILES_AREA
+		
+	# Imprimindo os tiles e limpando a tela no frame 1
+		mv a0, s0		# a0 recebe o endereço de onde o RED está no frame 0 (s0)
+		call CALCULAR_ENDERECO_DE_TILE	# encontra o endereço do tile onde o RED está na matriz e o 
+						# no frame 0
+		
+		mv t4, a0	# salva o retorno a0 em t4
+		mv t5, a1	# salva o retorno a1 em t5
+		
+		# o a0 retornado tem o endereço do tile cnde o RED está
+		li t0, 0x00100000	# o a1 retornado tem o endereço de inicio do tile a0 no frame 0, ou seja, 
+		add a1, a1, t0 		# o endereço onde os tiles vão começar a ser impressos para a limpeza
+					# através da soma com t0 o endereço de a1 passa para o frame 1
+		li a2, 1	# a limpeza vai ocorrer em 1 coluna
+		li a3, 3	# a limpeza vai ocorrer em 3 linhas (2 onde o RED está e mais 1 de folga)
+		call PRINT_TILES_AREA
+				
+	# Agora imprime a nova imagem do RED no frame 0
+		mv a0, a4		# a4 tem o endereço da imagem a ser impressa
+		mv a1, s0		# s0 possui o endereço do RED no frame 0
+		li t0, 0x00100000 	# através da soma com t0 o endereço de a1 passa para o frame 1
+		add a1, a1, t0		
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
 	
 	call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
-			
-	# Primeiro é necessário "limpar" o antigo sprite do RED da tela. Isso é feito imprimindo novamente
-	# os dois tiles onde o RED está através de LIMPAR_TILE
-	# Como o RED ocupa dois tiles é necessário limpar o tile onde está a cabeça dele (s6)
-	# e o tile onde está o corpo (s5 + s3)
-		
-		# Limpando o tile da cabeça do RED
-		mv a4, s5		# o tile a ser limpo é o tile onde o RED está
-		li a5, 0xFF000000	# o tile a ser limpo está no frame 0
-		call LIMPAR_TILE
-		
-		# Limpando o tile do corpo do RED 
-		add a4, s5, s3		# o tile a ser limpo é o tile uma linha abaixo onde o RED está
-		li a5, 0xFF000000	# o tile a ser limpo está no frame 0
-		call LIMPAR_TILE		
+	
+	# Imprimindo os tiles e limpando a tela no frame 0
+		mv a0, t4	# t4 tem salvo o endereço do tile cnde o RED está
+		mv a1, t5	# t5 tem salvo o endereço de inicio do tile a0 no frame 0, ou seja, o 
+				# endereço onde os tiles vão começar a ser impressos para a limpeza
+		li a2, 1	# a limpeza vai ocorrer em 1 coluna
+		li a3, 3	# a limpeza vai ocorrer em 3 linhas (2 onde o RED está e mais 1 de folga)
+		call PRINT_TILES_AREA
 				
-	# Agora imprime a imagem do RED virado para a direita no frame 0
-		mv a0, a6		# a6 tem o endereço da imagem a ser impressa
+	# Agora imprime a nova imagem do RED no frame 0
+		mv a0, a4		# a4 tem o endereço da imagem a ser impressa
 		mv a1, s0		# s0 possui o endereço do RED no frame 0
 		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
 		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
 		call PRINT_IMG	
-		
+					
 	call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 0
 							
 	lw ra, (sp)		# desempilha ra
@@ -1686,7 +1508,170 @@ MUDAR_ORIENTACAO_PERSONAGEM:
 
 	ret
 	
+# ====================================================================================================== #									
+
+MOVER_PERSONAGEM:
+	# Procedimento que realiza uma animação de movimentação para um personagem.
+	# Esse procedimento existe para que possa ser usado tanto para a animação do RED quanto do 
+	# professor Carvalho, portanto parte do pressuposto de que os sprites tem no máximo 2 tiles de tamanho,
+	# de modo que executa a aniamação pixel por pixel, de um tile para o outro.
+	# A animação sempre segue o padrão: PERSONAGEM PARADO -> PERSONAGEM DANDO UM PASSO -> PERSONAGEM PARADO.
+	# O procedimento funciona imprimindo os sprites do personagem de maneira alternada entres os 
+	# frames 0 e 1. Para fazer corretamente a troca entre frames o endereço de a6 precisa ser do
+	# frame 0. Além disso, esse procedimento sempre é chamado com o frame 0 sendo msotrado e, apesar
+	# das tracas de frames, sempre retorna com o frame 0 na tela.  
+	#
+	# Argumentos:
+	# 	a4 = sprite do personagem parado (qualquer direção)
+	# 	a5 = sprite do personagem dando um passo (seja esquerdo ou direito para qualquer direção)
+	# 	a6 = endereço no frame 0 de onde começar a movimentação
+	# 	a7 = qual a direção da movimentação, de modo que:
+	#		[ 0 ] -> movimentação para cima
+	#		[ 1 ] -> movimentação para a esquerda
+	#		[ 2 ] -> movimentação para baixo
+	#		[ 3 ] -> movimentação para a direita
+	#
+	# Retorno:
+	#	a0 = endereço de a6 atualizado para a nova posição de acordo com a movimentação feita
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																									
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra
 	
+	li t4, 16		# contador para o número de pixels que o personagem vai se deslocar, ou seja,
+				# o número de loops a serem executados abaixo					
+	
+	li t5, 0x00100000	# t5 será usada para fazer a troca entre frames no loop de movimentação	
+				# O loop abaixo começa imprimindo os sprites no frame 1 já que se parte
+				# do pressuposto de que o frame 0 é o que está sendo mostrado
+																																							
+	LOOP_MOVER_PERSONAGEM:
+
+		# Primeiro é necessário "limpar" o antigo sprite do personagem da tela. 
+		# Isso é feito imprimindo novamente os tiles onde o personagem está através de PRINT_TILES_AREA
+ 		# A quantidade de tiles a serem limpos depende da orientação da movimentação (a7) porque em
+		# alguns casos durante o personagem fica na intersecção entre vários tiles diferentes
+			
+		# Abaixo é decidido a quantidade de pixels em que o endereço de a6 será incrementado 
+		# ou decrementado (t0), quantidade de tiles para a limpeza da tela (t1 e t2) e endereço
+		# de inicio da limpeza a partir de a6 (t3)
+	
+		bne a7, zero, MOVER_PERSONAGEM_ESQUERDA
+			li t0, -320 	# Caso a7 == 0 a movimentação é para cima, então o endereço de a6 vai ser 
+					# decrementado em -320 pixels, ou seja, vai voltar 1 linha
+			li t1, 3	# a limpeza vai ocorrer em 3 linhas
+			li t2, 1	# a limpeza vai ocorrer em 1 coluna
+			li t3, 0	# a limpeza começa no mesmo endereço de a6
+			j MOVER_PERSONAGEM_PROXIMA_POSICAO
+		
+		MOVER_PERSONAGEM_ESQUERDA:
+		li t0, 1
+		bne a7, t0, MOVER_PERSONAGEM_BAIXO
+			li t0, -1 	# Caso a7 == 1 a movimentação é para a esquerda, então o endereço de a6 
+					# vai ser decrementado em -1 pixel, ou seja, vai voltar 1 coluna
+			li t1, 2	# a limpeza vai ocorrer em 2 linhas
+			li t2, 3	# a limpeza vai ocorrer em 3 colunas
+			li t3, 0	# a limpeza começa no mesmo endereço de a6
+			j MOVER_PERSONAGEM_PROXIMA_POSICAO
+
+		MOVER_PERSONAGEM_BAIXO:
+		li t0, 2
+		bne a7, t0, MOVER_PERSONAGEM_DIREITA
+			li t0, 320	# Caso a7 == 2 a movimentação é para baixo, então o endereço de a6 
+					# vai ser incrementado em 320 pixels, ou seja, vai avançar 1 coluna
+			li t1, 3	# a limpeza vai ocorrer em 3 linhas
+			li t2, 1	# a limpeza vai ocorrer em 1 coluna
+			li t3, -5120	# t3 recebe 16 (altura de um tile) * 320 (tamanho de uma linha do frema),
+					# ou seja, a limpeza começa no tile acima de a6
+			j MOVER_PERSONAGEM_PROXIMA_POSICAO
+		
+		MOVER_PERSONAGEM_DIREITA:
+		# Caso a7 == 3 a movimentação é para a direita, então o endereço de a6 vai ser incrementado em 
+		# 1 pixels a cada iteração, ou seja, vai avançar 1 coluna
+			li t0, 1 	# Caso a7 == 3 a movimentação é para a direita, então o endereço de a6 
+					# vai ser incrementado em 1 pixels, ou seja, vai avançar 1 coluna
+			li t1, 2	# a limpeza vai ocorrer em 2 linhas
+			li t2, 3	# a limpeza vai ocorrer em 3 colunas
+			li t3, -16	# a limpeza começa no tile anterior a a6
+
+		MOVER_PERSONAGEM_PROXIMA_POSICAO:
+		
+		# Pela maneira com que o loop é executado o frame 1 sempre está desatualizado com relação ao 
+		# frame 0, por isso é melhor executar o loop mais uma vez (t4 == 0) só que sem atualizar
+		# o valor de a6 para que o sprite do personagem seja impresso no frame 1 e os dois frames
+		# fiquem iguais	
+
+		beq t4, zero, MOVER_PERSONAGEM_LIMPAR_TELA
+			add a6, a6, t0	# incrementa o endereço de a6 (endereço onde o sprite do personagem será 
+			# impresso) para a próxima posição de acordo com o valor calculado em t0		
+		
+		MOVER_PERSONAGEM_LIMPAR_TELA:
+		# Imprimindo os tiles e limpando a tela 
+			add t0, a6, t3		# t0 recebe o endereço de a6 atualizado com o valor de t3
+						# definido acima
+		
+			mv t3, t2		# salva t2 em t3
+			mv a3, t1		# t1 número de linhas de tiles a serem impressas
+		
+			mv a0, t0			# encontra o endereço do tile na matriz e o endereço do
+			call CALCULAR_ENDERECO_DE_TILE	# frame onde os tiles serão impressos com base no valor 
+							# de t0 definido acima
+		
+			# o a0 retornado tem o endereço do tile correspondente
+			
+			mv a2, t3	# t3 tem o número de colunas de tiles a serem impressas
+					
+			# o a1 tem o endereço de inicio do tile a0 no frame, ou seja, o 
+			# endereço onde os tiles vão começar a ser impressos
+			
+			add a1, a1, t5	# decide a partir do valor de t5 qual o frame onde os tiles serão
+					# impressos
+			call PRINT_TILES_AREA
+		
+		# Determina qual é o próximo sprite do personagem a ser renderizado,
+		# de modo que a animação siga o seguinte padrão:
+		# PERSONAGEM PARADO -> PERSONAGEM DANDO UM PASSO -> PERSONAGEM PARADO	
+			mv a0, a4		# a4 tem a imagem do personagem parado
+			li t0, 14		
+			bgt t4, t0, MOVER_PERSONAGEM_PRINT_SPRITE
+			mv a0, a5		# a5 tem o endereço da imagem do personagem dando um passo
+			li t0, 2
+			bgt t4, t0, MOVER_PERSONAGEM_PRINT_SPRITE
+			mv a0, a4		# a4 tem a imagem do personagem parado
+		
+		MOVER_PERSONAGEM_PRINT_SPRITE:																																																																																				
+		# Agora imprime a imagem do personagem no frame
+			# a0 já tem o endereço da próxima imagem do personagem 			
+			mv a1, a6		# a6 possui o endereço de onde renderizar o personagem
+			add a1, a1, t5		# decide a partir do valor de t5 qual o frame onde a imagem
+						# será impressa			
+			lw a2, 0(a0)		# numero de colunas de uma imagem do personagem
+			lw a3, 4(a0)		# numero de linhas de uma imagem do personagem	
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG	
+						
+		# Espera alguns milisegundos	
+		li a0, 20			# sleep 20 ms
+		call SLEEP			# chama o procedimento SLEEP	
+			
+		call TROCAR_FRAME		# inverte o frame sendo mostrado
+		
+		li t0, 0x00100000	# com essa operação xor se t5 for 0 ele recebe 0x0010000
+		xor t5, t5, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
+					# ficar alternando entre esses valores
+					
+		addi t4, t4, -1		# decrementa o número de loops restantes			
+		bge t4, zero, LOOP_MOVER_PERSONAGEM	# reinicia o loop se t4 >= 0
+	
+	call TROCAR_FRAME		# o loop acima sempre termina mostrando o frame 1, portanto
+					# é necessário trocar mais uma vez o frame	
+																																																																																																																																																	
+	mv a0, a6	# move para a0 o endereço de a6 atualizado durante o loop acima	
+				
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret
+							
 # ====================================================================================================== #									
 
 VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
@@ -1698,7 +1683,7 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 	# depois da movimentação, por isso também é retornado a0 com algum valor correpondente a um comando 
 	# para os procedimentos de movimentação, como explicado abaixo:
 	# Argumentos:
-	# 	a0 = endereço de uma matriz de movimentação
+	# 	a0 = endereço de uma posição na matriz de movimentação
 	# 
 	# Retorno:
 	#	a0 = -1 se os procedimentos de movimentação NÃO devem acontecer
@@ -1718,6 +1703,49 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 	li t1, 1					
 	beq t0, t1, FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
 	
+	# se t0 == 2 então essa posição indica um momento da história, mas especificamente o momento que o RED
+	# tenta sair de Pallet pela primeira vez.
+	# Nesse caso RENDERIZAR_ANIMACAO_PROF_OAK tem que ser chamado e depois os procedimentos de 
+	# movimentação não devem ocorrer
+	
+	li t1, 2						
+	bne t0, t1, VERIFICAR_MATRIZ_HISTORIA_LAB
+		call RENDERIZAR_ANIMACAO_PROF_OAK												
+		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
+		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
+		
+	# se t0 == 3 então essa posição indica um momento da história, mas especificamente o momento que o RED
+	# entra no laboratório pela primeira vez
+	# Nesse caso RENDERIZAR_DIALOGO_PROFESSOR_LABORATORIO tem que ser chamado e depois os procedimentos de 
+	# movimentação não devem ocorrer
+	
+	VERIFICAR_MATRIZ_HISTORIA_LAB:
+	
+	li t1, 3																		
+	bne t0, t1, VERIFICAR_MATRIZ_POKEMON_INICIAL
+		call RENDERIZAR_DIALOGO_PROFESSOR_LABORATORIO											
+		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
+		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO	
+	
+	
+	# se 3 < t0 <= 6 então essa posição representa uma das mesas com uma pokebola no laboratorio, 
+	# indicando a escolha de um pokemon inicial
+	# Nesse caso RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL tem que ser chamado e depois os procedimentos de 
+	# movimentação não devem ocorrer
+	
+	VERIFICAR_MATRIZ_POKEMON_INICIAL:
+	
+	li t1, 6																		
+	bgt t0, t1, VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS
+		addi a5, t0, -4		# move para o argumento a5 o valor da posição da matriz em t0 - 5 
+					# de modo que o valor de a5 siga o convencionado no procedimento
+					# (ver descrição de RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL para detalhes)
+		call RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL									
+		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
+		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO	
+	
+	
+	VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS:
 	# se t0 >= 64 então essa posição indica uma transição entre área, nesse caso RENDERIZAR_AREA tem
 	# que ser chamado e depois os procedimentos de movimentação devem ocorrer
 	

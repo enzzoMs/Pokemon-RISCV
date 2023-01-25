@@ -5,11 +5,7 @@
 # ------------------------------------------------------------------------------------------------------ #
 # 													 #
 # Este arquivo possui os procedimentos necesários para renderizar as diferentes áreas do jogo, fazendo   #
-# as alterações necessárias nos registradores s0 (posição atual do personagem na tela), s1 (orientação   #
-# do personagem), s2 (endereço da subseção de tiles que estão sendo mostrados na tela), s3 (tamanho de   #
-# uma lihna da matriz de tiles), s4 (endereço da imagem com os tiles da área), s5 (posição atual do RED  #
-# na matriz de tiles), s6 (posiçaõ atual do RED na matriz de movimentação) e s7 (tamanho de uma linha	 #
-# na matriz de movimentação).										 #
+# as alterações necessárias nos registradores salvos s0 - s7						 #
 #            												 #	 
 # Além disso, esse arquivo também contém os procedimentos para realizar as transições entre área.	 #
 # A transição entre uma área e outra acontece quando o jogador se encontra em uma posição especial na	 #
@@ -32,6 +28,7 @@
 #		Quarto do RED -> 000									 #
 #		Sala da casa do RED -> 001								 #
 #		Pallet -> 010										 #
+#		Laboratório -> 011									 #
 # 													 #
 # Já os valores de PP variam dependendo da área. Algumas áreas possuem mais de uma maneira de acessa-las #
 # A sala do RED, por exemplo, pode ser acessada tanto pelo quarto do RED ou pela porta da frente, nesse  #
@@ -44,6 +41,9 @@
 #		PP = 01 -> Entrada pelas escadas							 #
 #	Pallet:												 #
 #		PP = 00 -> Entrada pela casa do RED							 #
+#		PP = 01 -> Entrada pelo laboratorio							 #
+#	Laboratório:											 #
+#		PP = 00 -> Entrada pela porta								 #
 #            												 #	 
 # ====================================================================================================== #
 
@@ -101,6 +101,10 @@ RENDERIZAR_AREA:
 		li t0, 8	# 8 ou 010 00 em binário é o código da área de Pallet
 		# se t1 (AAA) = 010 00 renderiza Pallet
 		beq t1, t0, RENDERIZAR_PALLET
+		
+		li t0, 12	# 12 ou 011 00 em binário é o código da área de Pallet
+		# se t1 (AAA) = 011 00 renderiza o laboratorio
+		beq t1, t0, RENDERIZAR_LABORATORIO
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -174,11 +178,11 @@ RENDERIZAR_QUARTO_RED:
 											
 	# Imprimindo as imagens da área e o sprite inicial do RED no frame 0					
 		# Imprimindo a imagem do quarto do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA				
 						
 		# Imprimindo a imagem do RED virado para cima no frame 0
 		la a0, red_cima		# carrega a imagem				
@@ -190,11 +194,11 @@ RENDERIZAR_QUARTO_RED:
 	
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA		
 										
 		# Imprimindo a imagem do RED virado para cima no frame 0
 		
@@ -263,19 +267,19 @@ RENDERIZAR_QUARTO_RED:
 											
 	# Imprimindo as imagens da área no frame 0					
 		# Imprimindo a imagem do quarto do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES								
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA								
 	
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA		
 										
 	
 	FIM_RENDERIZAR_QUARTO_RED:									
@@ -352,23 +356,7 @@ RENDERIZAR_SALA_RED:
 		addi s6, t0, 42		# o personagem começa na linha 3 e coluna 10 da matriz
 					# então é somado o endereço base da matriz (t0) a 
 		addi s6, s6, 10		# 3 (número da linha) * 14 (tamanho de uma linha da matriz) 
-					# e a 10 (número da coluna) 
-											
-	# Imprimindo as imagens da área no frame 0					
-		# Imprimindo a imagem da sala do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
-							
-	# Imprimindo a imagem da área no frame 1	
-		# Imprimindo a imagem da sala do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
+					# e a 10 (número da coluna) 	
 												
 		j FIM_RENDERIZAR_SALA_RED
 	
@@ -419,27 +407,26 @@ RENDERIZAR_SALA_RED:
 		addi s6, t0, 126	# o personagem começa na linha 9 e coluna 4 da matriz
 					# então é somado o endereço base da matriz (t0) a 
 		addi s6, s6, 4		# 9 (número da linha) * 14 (tamanho de uma linha da matriz) 
-					# e a 4 (número da coluna) 
-											
+					# e a 4 (número da coluna) 																
+	
+	FIM_RENDERIZAR_SALA_RED:
+	
 	# Imprimindo as imagens da área no frame 0					
 		# Imprimindo a imagem da sala do RED no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA				
 							
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem da sala do RED no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
-										
-	
-	FIM_RENDERIZAR_SALA_RED:
-																			
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA																				
+																																																							
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	sb zero, (t0)			# armazena 0 no endereço de t0
@@ -463,10 +450,61 @@ RENDERIZAR_PALLET:
 	# de uma instrução de branch e a saída é pelo ra empilhado por RENDERIZAR_AREA
 	
 	# Primeiro verifica qual o ponto de entrada (PP = a0)		
-	#beq a0, zero, ----		
-		
-	# Se a0 == 01 (ou != 0) então o ponto de entrada é pelas escadas
+	beq a0, zero, PALLET_PP_CASA_RED		
+	# Se a0 == 01 (ou != 0) então o ponto de entrada é pelo laboratorio
 
+	# Atualizando os registradores salvos para essa área
+		# Atualizando o valor de s0 (posição atual do RED no frame 0)
+			li a1, 0xFF000000		# seleciona como argumento o frame 0
+			li a2, 193 			# numero da coluna do RED = 193
+			li a3, 141			# numero da linha do RED = 141
+			call CALCULAR_ENDERECO	
+		
+			mv s0, a0		# move o endereço retornado para s0
+	
+		# Atualizando o valor de s1 (orientação do personagem)
+			li s1, 3	# inicialmente virado para baixo
+		
+		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles ques está sendo 
+		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
+			la s2, matriz_tiles_pallet	# carregando em s2 o endereço da matriz
+		
+			lw s3, 0(s2)		# s3 recebe o tamanho de uma linha da matriz
+		
+			addi s2, s2, 8		# pula para onde começa os pixels no .data
+		
+			addi s2, s2, 395	# pula para onde começa a subsecção que será mostrada na tela
+						# (5a coluna e 15a linha da matriz de tiles)
+						
+		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
+			la s4, tiles_pallet				
+			addi s4, s4, 8		# pula para onde começa os pixels no .data			
+		
+		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
+			la t0, matriz_tiles_pallet
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			addi s5, t0, 615		# o RED começa na linha 23 e coluna 17 da matriz
+							# de tiles, então é somado (23 * 26(tamanho de
+							# uma linha da matriz)) + 17		
+																																												
+		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
+		# s7 (tamanho de linha na matriz de movimentação)	
+		la t0, matriz_movimentacao_pallet	
+		
+		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
+				
+		addi t0, t0, 8
+	
+		addi s6, t0, 360	# o personagem começa na linha 16 e coluna 16 da matriz
+					# então é somado o endereço base da matriz (t0) a 
+		addi s6, s6, 16		# 19 (número da linha) * 24 (tamanho de uma linha da matriz) 
+					# e a 16 (número da coluna) 		
+
+		j FIM_RENDERIZAR_PALLET
+
+	PALLET_PP_CASA_RED:
+	# Se a0 == 00 então o ponto de entrada é pela casa do RED
+		
 	# Atualizando os registradores salvos para essa área
 		# Atualizando o valor de s0 (posição atual do RED no frame 0)
 			li a1, 0xFF000000		# seleciona como argumento o frame 0
@@ -512,26 +550,26 @@ RENDERIZAR_PALLET:
 		addi s6, t0, 216	# o personagem começa na linha 7 e coluna 6 da matriz
 					# então é somado o endereço base da matriz (t0) a 
 		addi s6, s6, 6		# 9 (número da linha) * 24 (tamanho de uma linha da matriz) 
-					# e a 6 (número da coluna) 
-											
+					# e a 6 (número da coluna) 		
+	
+	FIM_RENDERIZAR_PALLET:
+																															
 	# Imprimindo as imagens da área no frame 0					
 		# Imprimindo a imagem de pallet no frame 0
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF000000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES				
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA				
 							
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem de pallet no frame 1
-		mv a4, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a5, 0xFF100000	# a imagem será impressa no frame 0
-		li a6, 20		# número de colunas de tiles a serem impressas
-		li a7, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES		
-	
-	FIM_RENDERIZAR_PALLET:
-																			
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA
+																				
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	sb zero, (t0)			# armazena 0 no endereço de t0
@@ -543,7 +581,93 @@ RENDERIZAR_PALLET:
 		
 			
 # ====================================================================================================== #
-					
+
+RENDERIZAR_LABORATORIO:
+	# Procedimento que imprime a imagem do laboratorio no frame 0 e no frame 1
+	# de acordo com o ponto de entrada, além de atualizar os registradores salvos
+	# Argumentos:
+	# 	a0 = indica o ponto de entrada na área, ou seja, por onde o RED está entrando nessa área
+	#	Para essa área os pontos de entrada possíveis são:
+	#		PP = 00 -> Entrada pela porta 						
+
+	# OBS: não é necessário empilhar o valor de ra pois a chegada a este procedimento é por meio
+	# de uma instrução de branch e a saída é pelo ra empilhado por RENDERIZAR_AREA
+	
+	# Não é nem necessário verificar o ponto de entrada por que essa área só tem um (PP = 0) de qualquer forma 	
+	
+	# Atualizando os registradores salvos para essa área
+		# Atualizando o valor de s0 (posição atual do RED no frame 0)
+			li a1, 0xFF000000		# seleciona como argumento o frame 0
+			li a2, 145 			# numero da coluna do RED = 145
+			li a3, 205			# numero da linha do RED = 205
+			call CALCULAR_ENDERECO	
+		
+			mv s0, a0		# move o endereço retornado para s0
+	
+		# Atualizando o valor de s1 (orientação do personagem)
+			li s1, 2	# inicialmente virado para cima
+		
+		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles ques está sendo 
+		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
+			la s2, matriz_tiles_laboratorio		# carregando em s2 o endereço da matriz
+		
+			lw s3, 0(s2)		# s3 recebe o tamanho de uma linha da matriz
+		
+			addi s2, s2, 8		# pula para onde começa os pixels no .data
+		
+			addi s2, s2, 23		# pula para onde começa a subsecção que será mostrada na tela
+						
+		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
+			la s4, tiles_laboratorio			
+			addi s4, s4, 8		# pula para onde começa os pixels no .data			
+		
+		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
+			la t0, matriz_tiles_laboratorio
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			addi s5, t0, 296		# o RED começa na linha 13 e coluna 10 da matriz
+							# de tiles, então é somado (13 * 22(tamanho de
+							# uma linha da matriz)) + 10		
+																																												
+		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
+		# s7 (tamanho de linha na matriz de movimentação)	
+		la t0, matriz_movimentacao_laboratorio
+		
+		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
+				
+		addi t0, t0, 8
+	
+		addi s6, t0, 208	# o personagem começa na linha 13 e coluna 7 da matriz
+					# então é somado o endereço base da matriz (t0) a 
+		addi s6, s6, 7		# 13 (número da linha) * 16 (tamanho de uma linha da matriz) 
+					# e a 7 (número da coluna) 	
+														
+	# Imprimindo as imagens da área no frame 0					
+		# Imprimindo a imagem da sala do RED no frame 0
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA				
+							
+	# Imprimindo a imagem da área no frame 1	
+		# Imprimindo a imagem da sala do RED no frame 1
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA																				
+																																																							
+	# Mostra o frame 0		
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	sb zero, (t0)			# armazena 0 no endereço de t0
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret
+
+# ====================================================================================================== #
+												
 TRANSICAO_ENTRE_AREAS:
 	# Procedimento que renderiza uma pequena seta para indicar a transição entre área e pergunta
 	# ao jogador se ele deseja sair da área atual
@@ -593,22 +717,26 @@ TRANSICAO_ENTRE_AREAS:
 		
 	# O procedimento usa a orientação do personagem (s1) para decidir onde e qual seta renderizar 
 	
-	# Abaixo é decidido o valor de t3 (endereço na matriz de tiles de onde colocar o tile da seta) e 
+	# Abaixo é decidido o valor de t3 (endereço no frame 0 de onde colocar o tile da seta) e 
 	# t0 (qual a imagem da seta)
 	
 		bne s1, zero, TRANSICAO_SETA_DIREITA
 			# se s1 = 0 o personagem está virado para a esquerda	
-			addi t3, s5, -1	# o endereço de onde a seta vai estar é a esquerda da posição do RED
-			add t3, t3, s3	# e uma linha para baixo
+			addi t3, s0, -17	# o endereço de onde a seta vai estar é o tile a esquerda do RED
+						# e uma coluna para a esquerda
+			addi t3, t3, 960	# e 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)
 			la t0, seta_transicao_esquerda	# carregando a imagem em t0
 			j RENDERIZAR_SETA_DE_TRANSICAO
 	
 	TRANSICAO_SETA_DIREITA:
 		li t1, 1
 		bne s1, t1, TRANSICAO_SETA_CIMA
-			# se s1 = 1 o personagem está virado para a direita	
-			addi t3, s5, 1	# o endereço de onde a seta vai estar é a direita da posição do RED
-			add t3, t3, s3	# e uma linha para baixo
+			# se s1 = 1 o personagem está virado para a direita
+			addi t3, s0, 15	# o endereço de onde a seta vai estar é o tile a direita do RED
+					# e uma coluna para a esquerda			
+			addi t3, t3, 960	# e 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)	
 			la t0, seta_transicao_direita	# carregando a imagem em t0
 			j RENDERIZAR_SETA_DE_TRANSICAO
 			
@@ -616,7 +744,11 @@ TRANSICAO_ENTRE_AREAS:
 		li t1, 2
 		bne s1, t1, TRANSICAO_SETA_BAIXO
 			# se s1 = 1 o personagem está virado para cima	
-			mv t3, s5	# o endereço de onde a seta vai estar é a posição do RED
+			li t0, 5120	# 5120 = 320 (tamanho de uma linha do frame) * 16 (altura de um tile)
+			sub t3, s0, t0		# o endereço de onde a seta vai estar é o tile acima do RED
+			addi t3, t3, 960	# 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)
+			addi t3, t3, -1		# e uma coluna para a esquerda			
 			la t0, seta_transicao_cima	# carregando a imagem em t0
 			j RENDERIZAR_SETA_DE_TRANSICAO
 						
@@ -624,8 +756,11 @@ TRANSICAO_ENTRE_AREAS:
 		li t1, 3
 		bne s1, t1, RENDERIZAR_SETA_DE_TRANSICAO
 			# se s1 = 3 o personagem está virado para baixo	
-			add t3, s5, s3	# o endereço de onde a seta vai estar é 2 posições abaixo da 
-			add t3, t3, s3	# posição do RED
+			li t0, 5120	# 5120 = 320 (tamanho de uma linha do frame) * 16 (altura de um tile)
+			add t3, s0, t0		# o endereço de onde a seta vai estar é o tile abaixo do RED
+			addi t3, t3, 960	# 3 linhas para baixo (porque s0 tem na verdade o endereço da 
+						# cabeça do RED)
+			addi t3, t3, -1		# e uma coluna para a esquerda									
 			la t0, seta_transicao_baixo	# carregando a imagem em t0			
 						
 						
@@ -633,45 +768,11 @@ TRANSICAO_ENTRE_AREAS:
 
 	# As setas que indicam a transição de área funcionam que nem um tile normal, a diferença é que 
 	# tem fundo transparentes
-	# Primeiro é preciso encontrar o endereço de onde imprimir as setas, para isso 
-	# é necessário saber o número da coluna e linha do tile escolhido em t0 na tela
 	
-	sub t1, t3, s2	# s2 (inicio da subseção 20 x 15 na matriz de tiles na tela) - t3 (tile onde a seta vai
-			# estar) retorna a quantos elementos s2 está de t3 na matriz de tiles
-	
-	div t2, t1, s3	# dividindo t1 por s3 (tamanho de uma linha na matriz de tiles) retorna o número da 
-			# linha do tile da seta com relação a s2
-	
-	rem t1, t1, s3	# o resto da divisão de t1 por s3 (tamanho de uma linha na matriz de tiles) retorna 
-			# o número da coluna do tile da seta com relação a s2
-	
-	# Como s2 é o inicio da subseção de 20 x 15 tiles que está na tela podemos entender também que s2 
-	# representa o inicio do frame, e o valor de t0 e t1 em relação a s2 diz qual é a coluna e linha do 
-	# tile da seta no frame
-	
-	# Agora e encessário encontrar o endereço do tile da seta no frame
-	
-	li a1, 0xFF000000	# a1 recebe o endereço base do frame 0
-	
-	li t4, 5120	# t4 recebe 16 (altura de um tile) * 320 (tamanho de uma linha do frame), ou seja,
-			# o tamanho de uma linha de tiles no frame
-	
-	mul t2, t2, t4	# multiplicando a linha do tile (t2) por t4 retorna a quantos pixels é necessário pular
-			# para encontrar a linha do tile da seta no frame 
-	
-	add a1, a1, t2	# movendo o endereço base do frame (a1) para o endereço da linha do tile
-	
-	li t2, 16	# t2 recebe a largura de um tile
-	mul t2, t2, t1 	# multiplicando a coluna do tile (t1) por 16 retorna a quantos pixels é necessário pular
-			# para encontrar a coluna do tile da seta
-	
-	add a1, a1, t2	# movendo o endereço com a linha do tile para a coluna certa
-	
-	# Com tudo feito é possível imprimir o tile da seta
-		# Imprimindo tile no frame 0				
+	# Imprimindo tile da seta no frame 0				
 		mv a0, t0	# t0 tem o endereço da imagem da seta a ser impressa
 		addi a0, a0, 8	# pula para onde começa os pixels no .data
-		# a1 já tem o endereço de onde imprimir o tile
+		mv a1, t3	# t3 tem o endereço de onde imprimir o tile
 		li a2, 16	# a2 = numero de colunas de um tile
 		li a3, 16	# a3 = numero de linhas de um tile
 		call PRINT_IMG
@@ -722,7 +823,7 @@ TRANSICAO_ENTRE_AREAS:
 	
 	ret
 	
-NAO_SAIR_DA_AREA:
+	NAO_SAIR_DA_AREA:
 	
 	# Se o jogador não deseja sair da área é necessário retirar a imagem da seta, retirar a mensagem
 	# de transição de área e chamar o procedimento de movimentação adequado
@@ -730,10 +831,15 @@ NAO_SAIR_DA_AREA:
 	mv t5, a0	# salva a0 (tecla apertada) em t5
 		
 	# Limpando o tile onde está a seta de transição no frame 0
-		mv a4, t3		# dos cálculos acima t3 ainda tem o endereço do tile onde a seta 
-					# foi impressa
-		li a5, 0xFF000000	# a5 recebe o endereço base do frame 0		
-		call LIMPAR_TILE
+		mv a0, t3	# dos cálculos acima t3 ainda tem o endereço no frame 0 onde a seta foi impressa
+		call CALCULAR_ENDERECO_DE_TILE	# encontra o endereço do tile onde a seta foi impressa 
+						# e o endereço no frame 0 
+					
+		# o a0 retornado tem o endereço do tile cnde a seta está
+		# o a1 retornado tem o endereço de inicio do tile a0 no frame 0
+		li a2, 1	# a limpeza vai ocorrer em 1 coluna
+		li a3, 1	# a limpeza vai ocorrer em 1 linha 
+		call PRINT_TILES_AREA
 	
 	# Limpando mensagem de transição de área
 		# Para isso é necessário limpar 10 tiles em 2 linhas, eles sempre são os mesmos independente 
@@ -745,19 +851,19 @@ NAO_SAIR_DA_AREA:
 		li a3, 208			# numero da linha
 		call CALCULAR_ENDERECO	
 		
-		mv a5, a0		# move o endereço retornado para a5
+		mv a1, a0		# move o endereço retornado para a1
 		
 		li t0, 13		# t0 recebe 13 * s3 (tamanho de uma linha da matriz de tiles), ou
 		mul t0, t0, s3		# seja, o tamanho de 16 linhas na matriz de tiles
 		addi t0, t0, 15		# move t0 por mais 15 colunas
-		add a4, s2, t0		# a4 tem o endereço do 1o tile a ser limpo
+		add a0, s2, t0		# a0 tem o endereço do 1o tile a ser limpo
 		
 		# Imprime novamente os tiles da área no lugar da mensagem
-	 	# a4 já tem o endereço, na matriz de tiles, de onde começam os tiles a serem impressos
-		# a5 já tem o endereço onde os tiles vão começar a ser impressos
-		li a6, 5		# número de linhas de tiles a serem impressas
-		li a7, 2		# número de linhas de tiles a serem impressas
-		call PRINT_TILES						
+	 	# a0 já tem o endereço, na matriz de tiles, de onde começam os tiles a serem impressos
+		# a1 já tem o endereço onde os tiles vão começar a ser impressos
+		li a2, 5		# número de linhas de tiles a serem impressas
+		li a3, 2		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA						
 																						
 	# Agora é preciso chamar o procedimento de movimentação adequado para a tecla apertada pelo jogador
 	
@@ -784,6 +890,9 @@ NAO_SAIR_DA_AREA:
 	.include "../Imagens/areas/pallet/tiles_pallet.data"
 	.include "../Imagens/areas/pallet/matriz_tiles_pallet.data"
 	.include "../Imagens/areas/pallet/matriz_movimentacao_pallet.data"
+	.include "../Imagens/areas/laboratorio/tiles_laboratorio.data"
+	.include "../Imagens/areas/laboratorio/matriz_tiles_laboratorio.data"
+	.include "../Imagens/areas/laboratorio/matriz_movimentacao_laboratorio.data"
 	
 	.include "../Imagens/areas/transicao_de_areas/seta_transicao_cima.data"
 	.include "../Imagens/areas/transicao_de_areas/seta_transicao_baixo.data"
