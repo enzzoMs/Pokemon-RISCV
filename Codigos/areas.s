@@ -41,6 +41,7 @@
 #		PP = 01 -> Entrada pelas escadas							 #
 #	Pallet:												 #
 #		PP = 00 -> Entrada pela casa do RED							 #
+#		PP = 01 -> Entrada pelo laboratorio							 #
 #	Laboratório:											 #
 #		PP = 00 -> Entrada pela porta								 #
 #            												 #	 
@@ -449,10 +450,61 @@ RENDERIZAR_PALLET:
 	# de uma instrução de branch e a saída é pelo ra empilhado por RENDERIZAR_AREA
 	
 	# Primeiro verifica qual o ponto de entrada (PP = a0)		
-	#beq a0, zero, ----		
-		
-	# Se a0 == 01 (ou != 0) então o ponto de entrada é pelas escadas
+	beq a0, zero, PALLET_PP_CASA_RED		
+	# Se a0 == 01 (ou != 0) então o ponto de entrada é pelo laboratorio
 
+	# Atualizando os registradores salvos para essa área
+		# Atualizando o valor de s0 (posição atual do RED no frame 0)
+			li a1, 0xFF000000		# seleciona como argumento o frame 0
+			li a2, 193 			# numero da coluna do RED = 193
+			li a3, 141			# numero da linha do RED = 141
+			call CALCULAR_ENDERECO	
+		
+			mv s0, a0		# move o endereço retornado para s0
+	
+		# Atualizando o valor de s1 (orientação do personagem)
+			li s1, 3	# inicialmente virado para baixo
+		
+		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles ques está sendo 
+		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
+			la s2, matriz_tiles_pallet	# carregando em s2 o endereço da matriz
+		
+			lw s3, 0(s2)		# s3 recebe o tamanho de uma linha da matriz
+		
+			addi s2, s2, 8		# pula para onde começa os pixels no .data
+		
+			addi s2, s2, 395	# pula para onde começa a subsecção que será mostrada na tela
+						# (5a coluna e 15a linha da matriz de tiles)
+						
+		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
+			la s4, tiles_pallet				
+			addi s4, s4, 8		# pula para onde começa os pixels no .data			
+		
+		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
+			la t0, matriz_tiles_pallet
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			addi s5, t0, 615		# o RED começa na linha 23 e coluna 17 da matriz
+							# de tiles, então é somado (23 * 26(tamanho de
+							# uma linha da matriz)) + 17		
+																																												
+		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
+		# s7 (tamanho de linha na matriz de movimentação)	
+		la t0, matriz_movimentacao_pallet	
+		
+		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
+				
+		addi t0, t0, 8
+	
+		addi s6, t0, 360	# o personagem começa na linha 16 e coluna 16 da matriz
+					# então é somado o endereço base da matriz (t0) a 
+		addi s6, s6, 16		# 19 (número da linha) * 24 (tamanho de uma linha da matriz) 
+					# e a 16 (número da coluna) 		
+
+		j FIM_RENDERIZAR_PALLET
+
+	PALLET_PP_CASA_RED:
+	# Se a0 == 00 então o ponto de entrada é pela casa do RED
+		
 	# Atualizando os registradores salvos para essa área
 		# Atualizando o valor de s0 (posição atual do RED no frame 0)
 			li a1, 0xFF000000		# seleciona como argumento o frame 0

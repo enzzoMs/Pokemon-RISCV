@@ -1709,10 +1709,41 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 	# movimentação não devem ocorrer
 	
 	li t1, 2						
-	bne t0, t1, VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS
+	bne t0, t1, VERIFICAR_MATRIZ_HISTORIA_LAB
 		call RENDERIZAR_ANIMACAO_PROF_OAK												
 		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
 		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
+		
+	# se t0 == 3 então essa posição indica um momento da história, mas especificamente o momento que o RED
+	# entra no laboratório pela primeira vez
+	# Nesse caso RENDERIZAR_DIALOGO_PROFESSOR_LABORATORIO tem que ser chamado e depois os procedimentos de 
+	# movimentação não devem ocorrer
+	
+	VERIFICAR_MATRIZ_HISTORIA_LAB:
+	
+	li t1, 3																		
+	bne t0, t1, VERIFICAR_MATRIZ_POKEMON_INICIAL
+		call RENDERIZAR_DIALOGO_PROFESSOR_LABORATORIO											
+		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
+		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO	
+	
+	
+	# se 3 < t0 <= 6 então essa posição representa uma das mesas com uma pokebola no laboratorio, 
+	# indicando a escolha de um pokemon inicial
+	# Nesse caso RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL tem que ser chamado e depois os procedimentos de 
+	# movimentação não devem ocorrer
+	
+	VERIFICAR_MATRIZ_POKEMON_INICIAL:
+	
+	li t1, 6																		
+	bgt t0, t1, VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS
+		addi a5, t0, -4		# move para o argumento a5 o valor da posição da matriz em t0 - 5 
+					# de modo que o valor de a5 siga o convencionado no procedimento
+					# (ver descrição de RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL para detalhes)
+		call RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL									
+		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
+		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO	
+	
 	
 	VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS:
 	# se t0 >= 64 então essa posição indica uma transição entre área, nesse caso RENDERIZAR_AREA tem
