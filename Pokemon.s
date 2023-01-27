@@ -1,5 +1,25 @@
 .text
 
+# Especificando o tempo de sleep em ms de cada uma das opções possíveis para o registrador s9 tal como
+# explicado abaixo
+
+.eqv FPGA_OU_RARS 0
+.eqv FPGRARS 20
+
+# ====================================================================================================== #
+#     					        IMPORTANTE!!!!						 #
+# ====================================================================================================== #
+# Antes de iniciar o jogo é necessário definir o valor de s9 de acordo com a plataforma que o jogo vai	 #
+# ser rodado (RARS, FPGRARS ou na FPGA). 								 #
+# Esse registrador precisa ser inicializado corretamente porque é ele que vai definir o tempo de SLEEP   #
+# ideal durante os procedimentos de movimentação da tela (movimentação em pallet) para a plataforma   	 #
+# escolhida.												 #
+# As opções possíveis são:										 #
+#	'FPGRARS' ou 'FPGA_OU_RARS' 									 #
+# Obs: mesmo com a opção 'FPGA_OU_RARS' selecionada o RARS provavelmente não vai conseguir executar a	 #
+# movimentação rápido o suficiente, por isso é melhor usar o FPGRARS					 #
+# ------------------------------------------------------------------------------------------------------ #
+	li s9, FPGA_OU_RARS
 # ====================================================================================================== # 
 # 					Pokémon FireRed/LeafGreen				         #
 # ------------------------------------------------------------------------------------------------------ #
@@ -29,6 +49,8 @@
 #	s8 = determina como será o próximo passo do RED durante as animações de movimento, de modo que   #
 #		[ 0 ] = próximo passo será dado com o pé esquerdo					 #
 #		[ Qualquer outro valor] = próximo passo será dado com o pé direito			 #
+#	s9 = define o tempo de SLEEP durante os procedimentos de movimentação da tela (movimentação	 #
+#		em Pallet). O valor de s9 pode ser trocado acima.					 # 		
 #													 #											 
 # ====================================================================================================== #
 # Observações:											         #
@@ -52,7 +74,6 @@ li a4, 64	# a4 recebe 32, ou 1_0_000_00 em binário, de acordo com a conveção par
 		# 1(indicativo de transição de área)X000(para o quarto do RED)00(Entrando por lugar nenhum) 
 				
 call RENDERIZAR_AREA		# chama o procedimento em areas.s
-		
 
 # Loop principal de gameplay do jogo
 
@@ -63,6 +84,7 @@ LOOP_PRINCIPAL_JOGO:
 				
 
 # ====================================================================================================== #
+
 
 .data
 	.include "Codigos/tela_inicial.s"

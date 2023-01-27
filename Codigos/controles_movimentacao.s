@@ -289,7 +289,7 @@ MOVIMENTACAO_TECLA_W:
 		
 	
 		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
+		mv a0, s9			# sleep por s9 ms de acordo com o definido em Pokemon.s
 		call SLEEP			# chama o procedimento SLEEP	
 		
 		call TROCAR_FRAME	# inverte o frame sendo mostrado		
@@ -445,54 +445,75 @@ MOVIMENTACAO_TECLA_A:
 		# Parte (1) -> move toda a imagem da área que está na tela em um 1 pixel para a direita
 		# Para fazer isso é possível simplesmente trocar os pixels de uma coluna do frame com os pixels
 		# da proxima coluna através do loop abaixo
+		# O loop tem como base uma maneira de realizar as trocas de pixels evitando ao máximo
+		# que os endereços fiquem desalinhados, ao mesmo tempo que tenta executar quase o mesmo 
+		# número de intruções do que os outros procedimentos de movimentação de tela
 		
-		li t0, 240		# número de linhas de um frame, ou seja, a quantidade de loops abaixo
+		li t0, 0		# contador para o numero de linhas feitas
 		
-		li t1, 0xFF00013E	# endereço da penultima coluna da primeira linha do frame 0
-			
-		# Na primeira iteração (t5 == 1) a troca de pixels do frame vai acontecer a partir da penultima
-		# coluna da 1 linha (0xFF00013E), mas nas próximas a troca vai acontecer a partir da 
-		# antepenúltima coluna (0xFF00013D) porque a troca vai ser alternada entre os frame 0 e 1
-		    
-		li t2, 1
-		beq t5, t2, INICIO_MOVER_TELA_A
-			li t1, 0xFF00013D	# endereço da antepenúltima coluna da primeira linha do frame 0
-				
-		INICIO_MOVER_TELA_A:		
+		li t1, 0xFF00013C	# endereço da ultima word de pixels do frame 0
+	
 		add t1, t1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
 					# será impressa	
 								
 		MOVER_TELA_A_LOOP_LINHAS:
-			li t2, 320	# número de colunas de um frame
-			sub t2, t2, t5	# o número de loops é controlado pelo número da iteração atual (t5)
-			
-		MOVER_TELA_A_LOOP_COLUNAS:		
-			lb t3, 0(t1)		# pega 1 pixel do bitmap e coloca em t3
-			
-			# Na 1a iteração os pixels serão armazenados na proxima coluna (1), mas nas 
-			# iterações seguintes serão armzenados 2 colunas para frente (2)
-			
-			li t4, 1
-			beq t5, t4, MOVER_TELA_A_PRIMEIRA_ITERACAO
-				sb t3, 2(t1)	# armazena o pixel de t5 2 colunas para frente (2) do 
-						# endereço apontado por t1
-				j MOVER_TELA_A_PROXIMA_ITERACAO	
-				
-			MOVER_TELA_A_PRIMEIRA_ITERACAO:	
-			sb t3, 1(t1)		# armazena o pixel de t5 na proxima colunas (-1) ao endereço
-						# apontado por t1
+			li t2, 316	# número de colunas de pixels que serão trocados
 						
-			MOVER_TELA_A_PROXIMA_ITERACAO:
-			addi t1, t1, -1		# passa o endereço do bitmap para o pixel anterior
-			addi t2, t2, -1		# decrementa o número de colunas restantes
-			bne t2, zero, MOVER_TELA_A_LOOP_COLUNAS		# reinicia o loop se t2 != 0    
+			# Na primeira iteração (t5 == 1) a troca de pixels do frame vai acontecer a partir de
+			# t1 movendo os pixels em 1 endereço de distancia, mas nas próximas a troca vai acontecer 
+			# movendo os pixels em 2 endereços
+			li t3, 1
+			beq t5, t3, MOVER_TELA_A_PRIMEIRA_ITERACAO
+										
+		MOVER_TELA_A_LOOP_COLUNAS:
+			lh t3, 0(t1)		# pega os dois primeiros pixels de t1
+			sh t3, 2(t1)		# armazena esses pixels nos proximos 2 endereços da word de t1
+			lh t3, -2(t1)		# pega os dois primeiros pixels da word anterior a t1
+			sh t3, 0(t1)		# armazena esses pixels nos primeiros endereços da word de t1
+			addi t1, t1, -4		# passa o endereço do bitmap para a word anterior
+			addi t2, t2, -4		# decrementa o número de colunas restantes
+			bne t2, zero, MOVER_TELA_A_LOOP_COLUNAS	# reinicia o loop se t2 != 0   
+			# O loop acima só é executado 316/4 vezes, mas um frame tem 320 pixels de largura.
+			# Essa word restante tem que ser analisada de modo independente já que não tem mais 
+			# bytes a esquerda de t1 para que fazer a troca de pixels
+			lh t3, 0(t1)		# pega os dois primeiros pixels de t1
+			sh t3, 2(t1)		# armazena esses pixels nos proximos 2 endereços da word de t1	
+			j MOVER_TELA_A_PROXIMA_LINHA							
+						
+			MOVER_TELA_A_PRIMEIRA_ITERACAO:
+			lw t3, 0(t1)		# pega os 4 pixels de t1 e os desloca por 8 bits de modo 
+			slli t3, t3, 8		# que t3 tem apenas os 3 primeiros pixels de t1
+			sw t3, 0(t1)		# armazena esses pixels deslocados em t1
+			lb t3, -1(t1)		# pega o 1o pixel da word anterior a t1 e 
+			sb t3, 0(t1)		# armazena no primeiro endereço de t1 (aquele que foi aberto
+						# pelo deslocamente a esquerda)
+			addi t1, t1, -4		# passa o endereço do bitmap para a word anterior
+			addi t2, t2, -4		# decrementa o número de colunas restantes
+			bne t2, zero, MOVER_TELA_A_PRIMEIRA_ITERACAO	# reinicia o loop se t2 != 0   
+			
+			# O loop acima só é executado 316/4 vezes, mas um frame tem 320 pixels de largura.
+			# Essa word restante tem que ser analisada de modo independente já que não tem mais 
+			# bytes a esquerda de t1 para que fazer a troca de pixels
+			lw t3, 0(t1)		# pega os 4 pixels de t1 e os desloca por 8 bits de modo 
+			slli t3, t3, 8		# que t3 tem apenas os 3 primeiros pixels de t1
+			sw t3, 0(t1)		# armazena esses pixels deslocados em t1
+			
+		MOVER_TELA_A_PROXIMA_LINHA:	 
+			 
+		addi t0, t0, 1		# incrementa o número de linhas feitas
+
+		li t1, 0xFF00013C	# endereço da ultima word de pixels do frame 0
 		
-		li t3, 640		# O loop acima só é feito 320 - t5 vezes, portanto o endereço
-		sub t3, t3, t5		# de t1 precisa ser voltado por 320 - t5 colunas e passado
-		add t1, t1, t3		# para a proxima linha (320)
-						
-		addi t0, t0, -1			# decrementa o número de linhas restantes
-		bne t0, zero, MOVER_TELA_A_LOOP_LINHAS	# reinicia o loop se t0 != 0 
+		add t1, t1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
+					# será impressa	
+					
+		li t3, 320		# 320 é o tamanho de uma linha do frame
+		mul t3, t3, t0		# decide a partir do valor de t0 para qual linha o endereço de t1 vai		
+		add t1, t1, t3							
+							
+		li t3, 240		# número de linhas de um frame																													
+		bne t0, t3, MOVER_TELA_A_LOOP_LINHAS	# reinicia o loop se t0 != 240 
+		
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
 		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
@@ -670,11 +691,11 @@ MOVIMENTACAO_TECLA_A:
 		
 	
 		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
+		mv a0, s9			# sleep por s9 ms de acordo com o definido em Pokemon.s
 		call SLEEP			# chama o procedimento SLEEP	
 		
 		call TROCAR_FRAME	# inverte o frame sendo mostrado		
-				
+
 		li t0, 0x00100000	# fazendo essa operação xor se t4 for 0 ele recebe 0x0010000
 		xor t6, t6, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
 					# trocar entre esses valores
@@ -988,7 +1009,7 @@ MOVIMENTACAO_TECLA_S:
 		
 	
 		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
+		mv a0, s9			# sleep por s9 ms de acordo com o definido em Pokemon.s
 		call SLEEP			# chama o procedimento SLEEP	
 		
 		call TROCAR_FRAME	# inverte o frame sendo mostrado		
@@ -1148,52 +1169,78 @@ MOVIMENTACAO_TECLA_D:
 		# Para fazer isso é possível simplesmente trocar os pixels de uma coluna do frame com os pixels
 		# da coluna anterior através do loop abaixo
 		
-		li t0, 240		# número de linhas de um frame, ou seja, a quantidade de loops abaixo
+		li t0, 0		# contador para o numero de linhas feitas
 		
-		li t1, 0xFF000001	# endereço da coluna 1 do frame 0
-		
-		# Na primeira iteração (t5 == 1) a troca de pixels do frame vai acontecer a partir da 1a coluna
-		# (0xFF000001), mas nas próximas a troca vai acontecer a partir da 2a coluna (0xFF000002) 
-		# porque a troca vai ser alternada entre os frame 0 e 1
-		    
-		li t2, 1
-		beq t5, t2, INICIO_MOVER_TELA_D
-			li t1, 0xFF000002		# endereço da coluna 2 do frame 0
-				
-		INICIO_MOVER_TELA_D:
-		
+		li t1, 0xFF000000	# endereço da primaira word de pixels do frame 0
+	
 		add t1, t1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
 					# será impressa	
 								
 		MOVER_TELA_D_LOOP_LINHAS:
-			li t2, 320	# número de colunas de um frame
-			sub t2, t2, t5	# o número de loops é controlado pelo número da iteração atual (t5)
-			
-		MOVER_TELA_D_LOOP_COLUNAS:		
-			lb t3, 0(t1)		# pega 1 pixel do bitmap e coloca em t3
-			
-			# Na 1a iteração os pixels serão armazenados na coluna anterior (-1), mas nas 
-			# iterações seguintes serão armzenados 2 colunas para trás (-2)
-			
-			li t4, 1
-			beq t5, t4, MOVER_TELA_D_PRIMEIRA_ITERACAO
-				sb t3, -2(t1)	# armazena o pixel de t5 na 2 colunas para trás (-2) do 
-						# endereço apontado por t1
-				j MOVER_TELA_D_PROXIMA_ITERACAO	
-				
-			MOVER_TELA_D_PRIMEIRA_ITERACAO:	
-			sb t3, -1(t1)		# armazena o pixel de t5 na colunas anterior (-1) ao endereço
-						# apontado por t1
+			li t2, 316	# número de colunas de pixels que serão trocados
 						
-			MOVER_TELA_D_PROXIMA_ITERACAO:
-			addi t1, t1, 1		# passa o endereço do bitmap para o próximo pixel
-			addi t2, t2, -1		# decrementa o número de colunas restantes
-			bne t2, zero, MOVER_TELA_D_LOOP_COLUNAS		# reinicia o loop se t2 != 0    
+			# Na primeira iteração (t5 == 1) a troca de pixels do frame vai acontecer a partir de
+			# t1 movendo os pixels em 1 endereço de distancia, mas nas próximas a troca vai acontecer 
+			# movendo os pixels em 2 endereços
+			li t3, 1
+			beq t5, t3, MOVER_TELA_D_PRIMEIRA_ITERACAO
+										
+		MOVER_TELA_D_LOOP_COLUNAS:
+			lh t3, 2(t1)		# pega os 2 ultimos pixels de t1
+			sh t3, 0(t1)		# armazena esses pixels nos primeiros 2 endereços da word de t1
+			lh t3, 4(t1)		# pega os dois primeiros pixels da proxima word de t1
+			sh t3, 2(t1)		# armazena esses pixels nos 2 ultimos endereços da word de t1			
+			addi t1, t1, 4		# passa o endereço do bitmap para a proxima word
+			addi t2, t2, -4		# decrementa o número de colunas restantes
+			bne t2, zero, MOVER_TELA_D_LOOP_COLUNAS	# reinicia o loop se t2 != 0   
+			# O loop acima só é executado 316/4 vezes, mas um frame tem 320 pixels de largura.
+			# Essa word restante tem que ser analisada de modo independente já que não tem mais 
+			# bytes a esquerda de t1 para que fazer a troca de pixels
+			lh t3, 2(t1)		# pega os 2 ultimos pixels de t1
+			sh t3, 0(t1)		# armazena esses pixels nos primeiros 2 endereços da word de t1		
+			j MOVER_TELA_D_PROXIMA_LINHA							
+						
+			MOVER_TELA_D_PRIMEIRA_ITERACAO:
+			#lw t3, 0(t1)		# pega os 4 pixels de t1 e os desloca por 8 bits de modo 
+			#slli t3, t3, 8		# que t3 tem apenas os 3 primeiros pixels de t1
+			#sw t3, 0(t1)		# armazena esses pixels deslocados em t1
+			#lb t3, -1(t1)		# pega o 1o pixel da word anterior a t1 e 
+			#sb t3, 0(t1)		# armazena no primeiro endereço de t1 (aquele que foi aberto
+			
+			lw t3, 0(t1)		# pega os 4 pixels de t1 e os desloca por 8 bits de modo 
+			srli t3, t3, 8		# que t3 tem apenas os 3 primeiros pixels de t1
+			sw t3, 0(t1)		# armazena esses pixels deslocados em t1
+			lb t3, 4(t1)		# pega o 1o pixel da proxima word a t1 e 
+			sb t3, 3(t1)		# armazena no ultimo endereço de t1 (aquele que foi aberto
+						# pelo deslocamento a direita
+																																																																																																																																																																																																																																												# pelo deslocamente a esquerda)
+			addi t1, t1, 4		# passa o endereço do bitmap para a proxima word
+			addi t2, t2, -4		# decrementa o número de colunas restantes
+			bne t2, zero, MOVER_TELA_D_PRIMEIRA_ITERACAO	# reinicia o loop se t2 != 0   
+			
+			# O loop acima só é executado 316/4 vezes, mas um frame tem 320 pixels de largura.
+			# Essa word restante tem que ser analisada de modo independente já que não tem mais 
+			# bytes a direita de t1 para que fazer a troca de pixels
+			lw t3, 0(t1)		# pega os 4 pixels de t1 e os desloca por 8 bits de modo 
+			srli t3, t3, 8		# que t3 tem apenas os 3 primeiros pixels de t1
+			sw t3, 0(t1)		# armazena esses pixels deslocados em t1
+			
+		MOVER_TELA_D_PROXIMA_LINHA:	 
+			 
+		addi t0, t0, 1		# incrementa o número de linhas feitas
+
+		li t1, 0xFF000000	# endereço da primaira word de pixels do frame 0
 		
-		add t1, t1, t5		# O loop acima só é feito 320 - t5 vezes, portanto o endereço
-					# de t1 precisa ser atualizado pelas t5 colunas não impressas	
-		addi t0, t0, -1			# decrementa o número de linhas restantes
-		bne t0, zero, MOVER_TELA_D_LOOP_LINHAS	# reinicia o loop se t0 != 0 
+		add t1, t1, t6		# decide a partir do valor de t6 qual o frame onde a imagem
+					# será impressa	
+					
+		li t3, 320		# 320 é o tamanho de uma linha do frame
+		mul t3, t3, t0		# decide a partir do valor de t0 para qual linha o endereço de t1 vai		
+		add t1, t1, t3							
+							
+		li t3, 240		# número de linhas de um frame																													
+		bne t0, t3, MOVER_TELA_D_LOOP_LINHAS	# reinicia o loop se t0 != 240 
+
 		
 		# Parte (2) -> limpar o sprite antigo do RED do frame
 		# Diferente dos outros casos a limpeza do sprite vai acontecer por outra abordagem.
@@ -1372,7 +1419,7 @@ MOVIMENTACAO_TECLA_D:
 		
 	
 		# Espera alguns milisegundos	
-		li a0, 20			# sleep 20 ms
+		mv a0, s9			# sleep por s9 ms de acordo com o definido em Pokemon.s
 		call SLEEP			# chama o procedimento SLEEP	
 		
 		call TROCAR_FRAME	# inverte o frame sendo mostrado		
