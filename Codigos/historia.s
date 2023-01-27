@@ -517,7 +517,7 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 		# Imprimindo no frame 0 a caixa com a imagem do pokemon 
 			# Calcula o endereço de onde imprimir a caixa (ele sempre é fixo independente do pokemon)
 			li a1, 0xFF000000		# seleciona como argumento o frame 0
-			li a2, 53 			# numero da coluna 
+			li a2, 52 			# numero da coluna 
 			li a3, 125			# numero da linha
 			call CALCULAR_ENDERECO	
 		
@@ -674,7 +674,7 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 		
 		# Calcula o endereço de onde foi impresso a caixa com o pokemon no frame 0
 		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		li a2, 53 			# numero da coluna 
+		li a2, 52 			# numero da coluna 
 		li a3, 125			# numero da linha
 		call CALCULAR_ENDERECO	
 		
