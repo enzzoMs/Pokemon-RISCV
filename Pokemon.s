@@ -64,14 +64,16 @@
 
 # Inicializando menus, história e área iniciais 
 
-call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
+#call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
 
-call INICIALIZAR_INTRO_HISTORIA		# Chama o procedimento em intro_historia.s
+#call INICIALIZAR_INTRO_HISTORIA		# Chama o procedimento em intro_historia.s
 
 li a4, 64	# a4 recebe 32, ou 1_0_000_00 em binário, de acordo com a conveção para a codificação
 		# de transições de áreas (ver detalhes em areas.s)
 		# Dessa forma a0 codifica: 
 		# 1(indicativo de transição de área)X000(para o quarto do RED)00(Entrando por lugar nenhum) 				
+
+call RENDERIZAR_AREA
 
 # Loop principal de gameplay do jogo
 
