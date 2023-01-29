@@ -524,4 +524,93 @@ PRINT_SETA_DIALOGO:
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret
+	
+# ====================================================================================================== #	
+
+PRINT_TEXTO:
+	# Procedimento similar a PRINT_DIALOGOS que usa uma matriz de tiles para imprimir 1 linha
+	# de texto em algum frame.
+	# A diferença entre um e outro é que PRINT_TEXTO só imprime uma linha e em um endereço arbitrário
+	# na tela
+	# Cada texto de um dialogo é codificado em uma matriz de tiles, a diferença é que enquanto 
+	# normalmente os tiles do jogo tem 16 x 16, os tiles dos textos tem 8 x 15.
+	# Todos os textos são construidos com os tiles em "../Imagens/historia/dialogos/tiles_alfabeto".
+	# Para renderizar o dialogo é necessário fornecer uma matriz de tiles, onde cada tile
+	# é uma letra desse alfebeto.
+	# Esse procedimento só imprime 2 linhas da matriz de tiles do dialogo.
+	# 
+	# Argumentos:
+	# 	a1 = endereço onde começar a imprimir o texto
+	#	a4 = matriz de tiles condificando o texto do dialogo de acordo com tiles_alfabeto
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra
+
+	la t3, tiles_alfabeto	# carrega a imagem com os tiles do alfabeto
+	addi t3, t3, 8		# pula para onde começa os pixels no .data
+
+	lw t4, 0(a4)		# t4 recebe o numero de elementos que serão impresso
+	addi a4, a4, 8		# pula para onde começa os tiles no .data
+				
+	PRINT_TEXTO_COLUNAS:
+		lb t0, 0(a4)	# pega 1 elemento da matriz de tiles e coloca em t0
+		
+		# um tile com valor -1 significa um fim de linha, eles são usados porque cada
+		# dialogo precisa ter linhas de mesmo tamanho, então tiles com valor -1 completam
+		# as linhas para que esse criterio seja cumprido, porém eles não são renderizados
+		li t1, -1
+		beq t0, t1, PROXIMO_TILE_TEXTO
+		
+		li t1, 120	# t1 recebe 8 * 15 = 120, ou seja, a área de um tile do alfabeto							
+		mul t0, t0, t1	# t0 (número do tile) * (8 * 15) etorna quantos pixels esse tile
+				# está do começo da imagem dos tiles do alfabeto
+			
+		add a0, t0, t3	# a0 recebe o endereço da imagem do tile a ser impresso
+		# a1 tem o endereço de onde imprimir a letra			
+		li a2, 8		# numero de colunas de um tile do alfabeto
+		li a3, 15		# numero de linhas de um tile do alfabeto
+		call PRINT_IMG	
+			
+		li t0, 4800		# t1 recebe 15 (altura de um tile do alfabeto) * 320 
+					# (tamanho de uma linha do frame)
+		sub a1, a1, t0		# volta o endereço de a1 pelas linhas impressas			
+		addi a1, a1, 8		# pula 8 colunas no bitmap já que o tile impresso tem
+					# 8 colunas de tamanho 
+			
+		# Na verdade os tiles do alfabeto não estão ordenados em ordem alfabética, mas sim
+		# em determinados grupos.
+		# Nem todas as letras tem exatamente 8 x 15 pixels, na verdade esse tamanho é apenas
+		# um limite definido pelo tamanho do maior simbolo nesse alfabeto. 
+		# Por isso certos tiles acabam ficando com um excesso de colunas em branco, então
+		# as letras estão arranjadas em grupos que indicam quantos pixels é necessário voltar
+		# antes de imprimir o proximo tile para que cada letra fique mais ou menos uma do lado
+		# da outra.
+			
+		lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
+			
+		li t1, 1		# se o numero do tile for menor do que 63		
+		li t2, 63		# então é necessário voltar 1 pixel
+		blt t0, t2, PROXIMO_TILE_TEXTO
+		li t1, 2		# se o numero do tile for maior ou igual a 63 e menor do que 73
+		li t2, 73		# então é necessário voltar 2 pixels
+		blt t0, t2, PROXIMO_TILE_TEXTO
+		li t1, 4		# se o numero do tile for maior que 73 e menor que 75 volta 
+		li t2, 75		# 4 pixels
+		ble t0, t2, PROXIMO_TILE_TEXTO			
+		li t2, 5		# caso contrário volta 5 pixels
+									
+		PROXIMO_TILE_TEXTO:
+			
+		sub a1, a1, t1	# atualiza o endereço onde o proximo tile será impresso de acordo com
+				# o valor de t1 decidido acima		
+						
+		addi a4, a4, 1		# vai para o próximo elemento da matriz de tiles
+									
+		addi t4, t4, -1			# decrementando o numero de colunas de tiles restantes
+		bne t4, zero, PRINT_TEXTO_COLUNAS	# reinicia o loop se t4 != 0
+					
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret
 																											

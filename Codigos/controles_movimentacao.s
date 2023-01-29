@@ -24,9 +24,9 @@
 # 													 #
 # ====================================================================================================== #
 
-VERIFICAR_TECLA_MOVIMENTACAO:
-	# Este procedimento é responsável por coordenar a movimentação do personagem,
-	# ele chama VERIFICAR_TECLA e decide a partir do retorno os procedimentos adequados
+VERIFICAR_TECLA_JOGO:
+	# Este procedimento verifica se alguma tecla relacionada a movimentação (w, a, s ou d) ou
+	# inventario (i) foi apertada e decide a partir do retorno os procedimentos adequados
 
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
@@ -35,7 +35,8 @@ VERIFICAR_TECLA_MOVIMENTACAO:
 	
 	ESCOLHER_PROCEDIMENTO_DE_MOVIMENTACAO:
 	
-	# Verifica se alguma tecla (a, w, s ou d) foi apertada, chamando o procedimento adequado
+		# Verifica se alguma tecla de movimentação (a, w, s ou d) foi apertada, chamando o
+		# procedimento adequado
 		li t0, 'w'
 		beq a0, t0, MOVIMENTACAO_TECLA_W
 		li t0, 'a'
@@ -44,8 +45,11 @@ VERIFICAR_TECLA_MOVIMENTACAO:
 		beq a0, t0, MOVIMENTACAO_TECLA_S
 		li t0, 'd'
 		beq a0, t0, MOVIMENTACAO_TECLA_D
-	
-	
+		
+		# Verifica se a tecla do inventario (i) foi apertada 	
+		li t0, 'i'
+		beq a0, t0, MOSTRAR_INVENTARIO
+
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	

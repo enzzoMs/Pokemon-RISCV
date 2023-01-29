@@ -1,0 +1,3 @@
+matriz_texto_charmander: .word 10, 1
+.byte 
+36,33,39,35,27,39,28,34,22,35

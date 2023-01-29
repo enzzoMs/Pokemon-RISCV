@@ -19,7 +19,7 @@
 # Obs: mesmo com a opção 'FPGA_OU_RARS' selecionada o RARS provavelmente não vai conseguir executar a	 #
 # movimentação rápido o suficiente, por isso é melhor usar o FPGRARS					 #
 # ------------------------------------------------------------------------------------------------------ #
-	li s9, FPGA_OU_RARS
+	li s9, FPGRARS
 # ====================================================================================================== # 
 # 					Pokémon FireRed/LeafGreen				         #
 # ------------------------------------------------------------------------------------------------------ #
@@ -71,14 +71,13 @@ call INICIALIZAR_INTRO_HISTORIA		# Chama o procedimento em intro_historia.s
 li a4, 64	# a4 recebe 32, ou 1_0_000_00 em binário, de acordo com a conveção para a codificação
 		# de transições de áreas (ver detalhes em areas.s)
 		# Dessa forma a0 codifica: 
-		# 1(indicativo de transição de área)X000(para o quarto do RED)00(Entrando por lugar nenhum) 
-				
-call RENDERIZAR_AREA		# chama o procedimento em areas.s
+		# 1(indicativo de transição de área)X000(para o quarto do RED)00(Entrando por lugar nenhum) 				
 
 # Loop principal de gameplay do jogo
 
 LOOP_PRINCIPAL_JOGO:
-	call VERIFICAR_TECLA_MOVIMENTACAO
+	# Verifica se alguma tecla relacionada a movimentação (w, a, s ou d) ou inventario (i) foi apertada
+	call VERIFICAR_TECLA_JOGO
 	
 	j  LOOP_PRINCIPAL_JOGO
 				
@@ -92,4 +91,5 @@ LOOP_PRINCIPAL_JOGO:
 	.include "Codigos/historia.s"	
 	.include "Codigos/areas.s"
 	.include "Codigos/controles_movimentacao.s"	
+	.include "Codigos/inventario.s"		
 	.include "Codigos/procedimentos_auxiliares.s"

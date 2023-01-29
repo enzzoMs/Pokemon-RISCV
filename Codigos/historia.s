@@ -539,7 +539,7 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 			mv t5, a0		# salva em t5 o endereço retornado
 			
 			# Imprimindo o pokemon no frame 0		
-			la a0, pokemons_menu	# carrega a imagem dos pokemons
+			la a0, pokemons		# carrega a imagem dos pokemons
 			addi a0, a0, 8		# pula para onde começa os pixels no .data
 			
 			li t0, 1482 		# t0 recebe o tamanho de uma imagem de um pokemon
@@ -566,7 +566,7 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 			call PRINT_TILES
 		
 			# Imprimindo o pokemon no frame 1		
-			la a0, pokemons_menu	# carrega a imagem dos pokemons
+			la a0, pokemons		# carrega a imagem dos pokemons
 			addi a0, a0, 8		# pula para onde começa os pixels no .data
 			
 			li t0, 1482 		# t0 recebe o tamanho de uma imagem de um pokemon
@@ -626,10 +626,15 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 		li t1, 10		# 10 é código do ENTER	
 		bne a0, t1, LOOP_TECLA_ESCOLHER_POKEMON_INICIAL	
 		
-	# a5 vai receber o numero do frame que está na tela, representando a escolha do jogador (0 = Sim, 1 = Nao)	
+	# t0 vai receber o numero do frame que está na tela, representando a escolha do jogador (0 = Sim, 1 = Nao)	
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
-	lb a5, (t0)			# a5 = valor armazenado em t0 = qual o frame (0 ou 1) que está na tela			
-											
+	lb t0, (t0)			# t0 = qual o frame (0 ou 1) que está na tela			
+	
+	# se o frame 1 foi escolhido então a5 recebe -1 para representar que o jogador escolher Não
+	beq t0, zero, ESCOLHER_POKEMON_LIMPAR_TELA
+		li a5, -1
+	
+	ESCOLHER_POKEMON_LIMPAR_TELA:																				
 	# Independente do escolhido é necessário limpar a tela
 	# Não é possivel saber no final qual dos dois frame é que está sendo mostrado
 	# Sendo assim, a limpeza da tela vai acontecer do seguinte modo:
@@ -740,9 +745,23 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 		li t0, 0xFF200604		# t0 = endereço para escolher frames 
 		sb zero, (t0)			# armazena 0 no endereço de t0
 	
-	bne a5, zero, FIM_ESCOLHA_DE_POKEMON_INICIAL	
-	# Caso o jogador tem escolhido a opção SIM é necessário renderizar o próximo dialogo do professor	
-	# e atualizar a matriz de movimentação para que não seja possível escolher um pokemon novamente
+	li t0, -1					
+	beq a5, t0, FIM_ESCOLHA_DE_POKEMON_INICIAL	
+	# Caso o jogador tem escolhido a opção SIM é necessário renderizar o próximo dialogo do professor,	
+	# atualizar a matriz de movimentação para que não seja possível escolher um pokemon novamente e
+	# atualizar o inventario do RED com o novo pokemon
+		# Atualizando o inventario com o codigo dos pokemons de acordo com a5
+		li t0, 1089	# codigo do BULBASAUR				
+		beq a5, zero, ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO
+		li t0, 138	# codigo do CHARMANDER			
+		li t1, 1				
+		beq a5, t1, ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO
+		li t0, 531	# codigo do SQUIRTLE		
+	
+		ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO:
+		
+		la t1, POKEMONS_DO_RED	
+		sw t0, 0(t1)
 		
 		# Imprime o dialogo do professor
 		la a4, matriz_dialogo_oak_laboratorio_2	# carrega a matriz de tiles do dialogo
@@ -929,7 +948,7 @@ RENDERIZAR_DIALOGOS:
 
 PRINT_DIALOGO:
 	# Procedimento auxiliar a RENDERIZAR_DIALOGOS que usa uma matriz de tiles para imprimir duas 
-	# linhas de um dialogo no frame 0.
+	# linhas de um dialogo no frame.
 	# Cada texto de um dialogo é codificado em uma matriz de tiles, a diferença é que enquanto 
 	# normalmente os tiles do jogo tem 16 x 16, os tiles dos textos tem 8 x 15.
 	# Todos os textos são construidos com os tiles em "../Imagens/historia/dialogos/tiles_alfabeto".
@@ -998,14 +1017,14 @@ PRINT_DIALOGO:
 			
 			lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
 			
-			li t1, 1		# se o numero do tile for menor do que 63		
-			li t2, 63		# então é necessário voltar 1 pixel
+			li t1, 1		# se o numero do tile for menor do que 64		
+			li t2, 64		# então é necessário voltar 1 pixel
 			blt t0, t2, PROXIMO_TILE_DIALOGO
-			li t1, 2		# se o numero do tile for maior ou igual a 63 e menor do que 73
-			li t2, 73		# então é necessário voltar 2 pixels
+			li t1, 2		# se o numero do tile for maior ou igual a 64 e menor do que 74
+			li t2, 74		# então é necessário voltar 2 pixels
 			blt t0, t2, PROXIMO_TILE_DIALOGO
-			li t1, 4		# se o numero do tile for maior que 73 e menor que 75 volta 
-			li t2, 75		# 4 pixels
+			li t1, 4		# se o numero do tile for maior que 74 e menor que 76 volta 
+			li t2, 76		# 4 pixels
 			ble t0, t2, PROXIMO_TILE_DIALOGO			
 			li t2, 5		# caso contrário volta 5 pixels
 									
@@ -1096,7 +1115,7 @@ PRINT_CAIXA_DE_DIALOGO:
 	.include "../Imagens/historia/escolha_pokemon_inicial/matriz_tiles_caixa_escolha_pokemon.data"	
 	.include "../Imagens/historia/escolha_pokemon_inicial/tiles_caixa_escolha_pokemon.data"	
 			
-	.include "../Imagens/pokemons/pokemons_menu.data"	
+	.include "../Imagens/pokemons/pokemons.data"	
 				
 	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_pallet_1.data"	
 	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_pallet_2.data"	
