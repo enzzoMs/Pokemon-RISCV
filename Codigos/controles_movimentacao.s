@@ -48,7 +48,10 @@ VERIFICAR_TECLA_JOGO:
 		
 		# Verifica se a tecla do inventario (i) foi apertada 	
 		li t0, 'i'
-		beq a0, t0, MOSTRAR_INVENTARIO
+		bne a0, t0, FIM_VERIFICAR_TECLA_JOGO
+			j MOSTRAR_INVENTARIO
+	
+	FIM_VERIFICAR_TECLA_JOGO:	
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -244,6 +247,43 @@ MOVIMENTACAO_TECLA_W:
 			addi a0, a0, 8		# pula para onde começa os pixels no .data	
 			call PRINT_IMG	
 		
+		# Se o RED estiver indo para um tile de grama é preciso imprimir uma pequena animação
+		# de folhas subindo enquanto ele estiver indo para o tile		
+		beq s10, zero, MOVER_TELA_W_PARTE_4
+			
+			la t0, tiles_grama_animacao	
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			
+			# t2 vai receber a quantidade de pixels que será pulada em tiles_grama_animacao para
+			# encontrar a imagem certa para imprimir de acordo com a iteração atual (t5)
+			li t2, 0		
+			li t1, 11			
+			bge t5, t1, MOVER_TELA_W_PRINT_GRAMA
+			li t2, 256
+			li t1, 6			
+			bge t5, t1, MOVER_TELA_W_PRINT_GRAMA	
+			li t2, 512
+			li t1, 2
+			bge t5, t1, MOVER_TELA_W_PRINT_GRAMA
+			li t2, 0
+									
+			MOVER_TELA_W_PRINT_GRAMA:
+			add a0, t0, t2		# a0 recebe o endereço da imagem da grama a ser impressa
+			mv a1, s0		# O endereço onde esse tile será impresos onde o RED está
+			addi a1, a1, 959	# (s0), 3 linhas para baixo e uma coluna para a esquerda	
+						# (959 = 320 * 3 - 1)
+			add a1, a1, t6		# decide a partir do valor de t5 qual o frame onde a imagem
+						# será impressa	
+			li t0, 320		# a linha do endereço também será decidia pelo numero
+			mul t0, t0, t5		# da iteração atual (t5), no caso da MOVER_TELA_W o endereço
+			add a1, a1, t0		# será atualizado algumas linhas para baixo
+			
+			li a2, 16		# numero de colunas do tile
+			li a3, 16		# numero de linhas do tile
+			call PRINT_IMG				
+		
+		MOVER_TELA_W_PARTE_4:
+		
 		# Parte (4) -> imprime a linha anterior da subsecção da área 1 pixel para baixo
 		# O que tem que ser feito é imprimir os tiles dessa linha de modo que só vão ser impressas uma 
 		# parte da imagem de cada tile de forma a dar a impressão de que a linha desceu 1 pixel e que
@@ -359,7 +399,9 @@ MOVIMENTACAO_TECLA_W:
 				# será direito e vice-versa
 																								
 	FIM_MOVIMENTACAO_W:
-													
+
+	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
+																											
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -622,6 +664,43 @@ MOVIMENTACAO_TECLA_A:
 			lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
 			addi a0, a0, 8		# pula para onde começa os pixels no .data	
 			call PRINT_IMG	
+			
+		# Se o RED estiver indo para um tile de grama é preciso imprimir uma pequena animação
+		# de folhas subindo enquanto ele estiver indo para o tile		
+		beq s10, zero, MOVER_TELA_A_PARTE_4
+			
+			la t0, tiles_grama_animacao	
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			
+			# t2 vai receber a quantidade de pixels que será pulada em tiles_grama_animacao para
+			# encontrar a imagem certa para imprimir de acordo com a iteração atual (t5)
+			li t2, 0		
+			li t1, 11			
+			bge t5, t1, MOVER_TELA_A_PRINT_GRAMA
+			li t2, 256
+			li t1, 6			
+			bge t5, t1, MOVER_TELA_A_PRINT_GRAMA	
+			li t2, 512
+			li t1, 2
+			bge t5, t1, MOVER_TELA_A_PRINT_GRAMA
+			li t2, 0
+									
+			MOVER_TELA_A_PRINT_GRAMA:
+			add a0, t0, t2		# a0 recebe o endereço da imagem da grama a ser impressa
+			mv a1, s0		# O endereço onde esse tile será impresos onde o RED está
+			addi a1, a1, 959	# (s0), 3 linhas para baixo e uma coluna para a esquerda	
+						# (959 = 320 * 3 - 1)
+			add a1, a1, t6		# decide a partir do valor de t5 qual o frame onde a imagem
+						# será impressa	
+			add a1, a1, t5		# a coluna do endereço também será decidia pelo numero
+						# da iteração atual (t5), no caso da MOVER_TELA_A o endereço
+						# será atualizado algumas colunas para frente
+			
+			li a2, 16		# numero de colunas do tile
+			li a3, 16		# numero de linhas do tile
+			call PRINT_IMG				
+		
+		MOVER_TELA_A_PARTE_4:
 		
 		# Parte (4) -> imprime a coluna anterior da subsecção da área 1 pixel para a direita
 		# O que tem que ser feito é imprimir os tiles dessa coluna de modo que só vão ser impressas uma 
@@ -759,7 +838,9 @@ MOVIMENTACAO_TECLA_A:
 				# será direito e vice-versa
 																																	
 	FIM_MOVIMENTACAO_A:
-													
+
+	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
+																											
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -962,6 +1043,45 @@ MOVIMENTACAO_TECLA_S:
 			lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
 			addi a0, a0, 8		# pula para onde começa os pixels no .data	
 			call PRINT_IMG	
+			
+		# Se o RED estiver indo para um tile de grama é preciso imprimir uma pequena animação
+		# de folhas subindo enquanto ele estiver indo para o tile		
+		beq s10, zero, MOVER_TELA_S_PARTE_4
+			# porém somente se o tile abaixo do RED for um tile de grama
+			add t0, s6, s7		# verifica a posição abaixo do RED (s6) na matriz 
+			lbu t0, 0(t0)		# de movimentação (s7 = tamanho de uma linha da matriz) e
+			li t1, 7		# checa se ele é igual a 7 (codigo do tile de grama)
+			bne t1, t0, MOVER_TELA_S_PARTE_4
+			
+			la t0, tiles_grama_animacao	
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			
+			# t2 vai receber a quantidade de pixels que será pulada em tiles_grama_animacao para
+			# encontrar a imagem certa para imprimir de acordo com a iteração atual (t5)
+			li t2, 512
+			li t1, 6
+			bge t5, t1, MOVER_TELA_S_PRINT_GRAMA
+			li t2, 0
+									
+			MOVER_TELA_S_PRINT_GRAMA:
+			add a0, t0, t2		# a0 recebe o endereço da imagem da grama a ser impressa
+			mv a1, s0		# O endereço onde esse tile será impresos onde o RED está
+			addi a1, a1, 959	# (s0), 3 linhas para baixo e uma coluna para a esquerda	
+						# (959 = 320 * 3 - 1)
+			add a1, a1, t6		# decide a partir do valor de t5 qual o frame onde a imagem
+						# será impressa	
+			li t0, 5120		# no caso do MOVER_TELA_S a grama será impressa no tile abaixo
+			add a1, a1, t0		# do RED (5120 = 16 linhas * 320)
+			
+			li t0, 320		# a coluna do endereço também será decidia pelo numero
+			mul t0, t0, t5		# da iteração atual (t5), no caso da MOVER_TELA_S o endereço
+			sub a1, a1, t0		# será atualizado algumas linhas para tras
+	
+			li a2, 16		# numero de colunas do tile
+			li a3, 16		# numero de linhas do tile
+			call PRINT_IMG				
+		
+		MOVER_TELA_S_PARTE_4:
 		
 		# Parte (4) -> imprime a próxima linha da subsecção da área 1 pixel para cima
 		# O que tem que ser feito é imprimir os tiles dessa linha de modo que só vão ser impressas uma 
@@ -969,9 +1089,9 @@ MOVIMENTACAO_TECLA_S:
 		# uma nova parte da área está sendo lentamente revelada
 						
 		li t3, 0		# contador para o número de tiles impressos
-		li t4, 0xFF012AC0	# t4 vai guardar o endereço de onde os tiles vão ser impressos, sendo
+		li t4, 0xFF012C00	# t4 vai guardar o endereço de onde os tiles vão ser impressos, sendo
 					# que ele é incrementado a cada loop abaixo. Esse endereço aponta
-					# para o começo da última linha do frame 0
+					# para o endereço depois da última linha do frame 0
 		add t4, t4, t6		# decide a partir do valor de t6 qual o frame onde a imagem
 					# será impressa		
 							
@@ -1079,7 +1199,9 @@ MOVIMENTACAO_TECLA_S:
 				# será direito e vice-versa
 					
 	FIM_MOVIMENTACAO_S:
-				
+
+	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
+									
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 
@@ -1205,12 +1327,6 @@ MOVIMENTACAO_TECLA_D:
 			j MOVER_TELA_D_PROXIMA_LINHA							
 						
 			MOVER_TELA_D_PRIMEIRA_ITERACAO:
-			#lw t3, 0(t1)		# pega os 4 pixels de t1 e os desloca por 8 bits de modo 
-			#slli t3, t3, 8		# que t3 tem apenas os 3 primeiros pixels de t1
-			#sw t3, 0(t1)		# armazena esses pixels deslocados em t1
-			#lb t3, -1(t1)		# pega o 1o pixel da word anterior a t1 e 
-			#sb t3, 0(t1)		# armazena no primeiro endereço de t1 (aquele que foi aberto
-			
 			lw t3, 0(t1)		# pega os 4 pixels de t1 e os desloca por 8 bits de modo 
 			srli t3, t3, 8		# que t3 tem apenas os 3 primeiros pixels de t1
 			sw t3, 0(t1)		# armazena esses pixels deslocados em t1
@@ -1350,6 +1466,43 @@ MOVIMENTACAO_TECLA_D:
 			addi a0, a0, 8		# pula para onde começa os pixels no .data	
 			call PRINT_IMG	
 		
+		# Se o RED estiver indo para um tile de grama é preciso imprimir uma pequena animação
+		# de folhas subindo enquanto ele estiver indo para o tile		
+		beq s10, zero, MOVER_TELA_D_PARTE_4
+			
+			la t0, tiles_grama_animacao	
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			
+			# t2 vai receber a quantidade de pixels que será pulada em tiles_grama_animacao para
+			# encontrar a imagem certa para imprimir de acordo com a iteração atual (t5)
+			li t2, 0		
+			li t1, 11			
+			bge t5, t1, MOVER_TELA_D_PRINT_GRAMA
+			li t2, 256
+			li t1, 6			
+			bge t5, t1, MOVER_TELA_D_PRINT_GRAMA	
+			li t2, 512
+			li t1, 2
+			bge t5, t1, MOVER_TELA_D_PRINT_GRAMA
+			li t2, 0
+									
+			MOVER_TELA_D_PRINT_GRAMA:
+			add a0, t0, t2		# a0 recebe o endereço da imagem da grama a ser impressa
+			mv a1, s0		# O endereço onde esse tile será impresos onde o RED está
+			addi a1, a1, 959	# (s0), 3 linhas para baixo e uma coluna para a esquerda	
+						# (959 = 320 * 3 - 1)
+			add a1, a1, t6		# decide a partir do valor de t5 qual o frame onde a imagem
+						# será impressa	
+			sub a1, a1, t5		# a coluna do endereço também será decidia pelo numero
+						# da iteração atual (t5), no caso da MOVER_TELA_D o endereço
+						# será atualizado algumas colunas para tras
+			
+			li a2, 16		# numero de colunas do tile
+			li a3, 16		# numero de linhas do tile
+			call PRINT_IMG				
+		
+		MOVER_TELA_D_PARTE_4:
+		
 		# Parte (4) -> imprime a próxima coluna da subsecção da área 1 pixel para a esquerda
 		# O que tem que ser feito é imprimir os tiles dessa coluna de modo que só vão ser impressas uma 
 		# parte da imagem de cada tile de forma a dar a impressão de que a coluna voltou 1 pixel e que
@@ -1487,7 +1640,9 @@ MOVIMENTACAO_TECLA_D:
 				# será direito e vice-versa
 																	
 	FIM_MOVIMENTACAO_D:
-													
+
+	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  	
+																																							
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -1524,7 +1679,7 @@ MUDAR_ORIENTACAO_RED:
 		li a3, 3	# a limpeza vai ocorrer em 3 linhas (2 onde o RED está e mais 1 de folga)
 		call PRINT_TILES_AREA
 				
-	# Agora imprime a nova imagem do RED no frame 0
+	# Agora imprime a nova imagem do RED no frame 1
 		mv a0, a4		# a4 tem o endereço da imagem a ser impressa
 		mv a1, s0		# s0 possui o endereço do RED no frame 0
 		li t0, 0x00100000 	# através da soma com t0 o endereço de a1 passa para o frame 1
@@ -1533,7 +1688,7 @@ MUDAR_ORIENTACAO_RED:
 		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
 		call PRINT_IMG	
-	
+				
 	call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 1
 	
 	# Imprimindo os tiles e limpando a tela no frame 0
@@ -1551,9 +1706,13 @@ MUDAR_ORIENTACAO_RED:
 		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
 		call PRINT_IMG	
-					
+								
+	FIM_MUDAR_ORIENTACAO_RED:
+	 
 	call TROCAR_FRAME		# inverte o frame sendo mostrado, ou seja, mostra o frame 0
-							
+	
+	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
+														
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 
@@ -1699,7 +1858,40 @@ MOVER_PERSONAGEM:
 			lw a3, 4(a0)		# numero de linhas de uma imagem do personagem	
 			addi a0, a0, 8		# pula para onde começa os pixels no .data	
 			call PRINT_IMG	
-						
+		
+		# Se o RED estiver indo para um tile de grama é preciso imprimir uma pequena animação
+		# de folhas subindo enquanto ele estiver indo para o tile		
+		beq s10, zero, LOOP_MOVER_PERSONAGEM_PROXIMA_ITERACAO
+			la t0, tiles_grama_animacao	
+			addi t0, t0, 8			# pula para onde começa os pixels no .data
+			
+			# t2 vai receber a quantidade de pixels que será pulada em tiles_grama_animacao para
+			# encontrar a imagem certa para imprimir de acordo com a iteração atual (t4)
+			li t2, 0		
+			li t1, 11			
+			bge t4, t1, LOOP_MOVER_PERSONAGEM_PRINT_GRAMA
+			li t2, 256
+			li t1, 6			
+			bge t4, t1, LOOP_MOVER_PERSONAGEM_PRINT_GRAMA			
+			li t2, 512
+			li t1, 2
+			bge t4, t1, LOOP_MOVER_PERSONAGEM_PRINT_GRAMA
+			li t2, 0
+									
+			LOOP_MOVER_PERSONAGEM_PRINT_GRAMA:
+			add a0, t0, t2		# a0 recebe o endereço da imagem da grama a ser impressa
+			mv a1, s0		# O endereço onde esse tile será impresos onde o RED está
+			addi a1, a1, 959	# (s0), 3 linhas para baixo e uma coluna para a esquerda	
+						# (959 = 320 * 3 - 1)
+			add a1, a1, t5		# decide a partir do valor de t5 qual o frame onde a imagem
+						# será impressa	
+			
+			li a2, 16		# numero de colunas do tile
+			li a3, 16		# numero de linhas do tile
+			call PRINT_IMG				
+		
+		LOOP_MOVER_PERSONAGEM_PROXIMA_ITERACAO:
+										
 		# Espera alguns milisegundos	
 		li a0, 20			# sleep 20 ms
 		call SLEEP			# chama o procedimento SLEEP	
@@ -1712,10 +1904,15 @@ MOVER_PERSONAGEM:
 					
 		addi t4, t4, -1		# decrementa o número de loops restantes			
 		bge t4, zero, LOOP_MOVER_PERSONAGEM	# reinicia o loop se t4 >= 0
-	
+
+
 	call TROCAR_FRAME		# o loop acima sempre termina mostrando o frame 1, portanto
-					# é necessário trocar mais uma vez o frame	
-																																																																																																																																																	
+					# é necessário trocar mais uma vez o frame		
+		
+	FIM_MOVER_PERSONAGEM:	
+																																																																																																																																																																																																																																																																																									
+	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
+	
 	mv a0, a6	# move para a0 o endereço de a6 atualizado durante o loop acima	
 				
 	lw ra, (sp)		# desempilha ra
@@ -1743,8 +1940,8 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
 
-	lbu t0, (a0)		# le o valor do endereço da matriz de movimentação
-
+	lbu t0, 0(a0)		# le o valor do endereço da matriz de movimentação
+	
 	# se t0 == -1 então essa posição da matriz está ocupada e a movimentação não deve ocorrer
 	li a0, -1			
 	beq t0, zero, FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO
@@ -1795,6 +1992,8 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 		li a0, -1		# a0 = -1 porque a movimentação não tem que acontecer	
 		j FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO	
 	
+	# se t0 != 7 então essa posição representa um tile que não é de grama, portanto é necessário atualizar
+	# o valor de s10 indicando que o RED não vai para um tile de grama
 	
 	VERIFICAR_MATRIZ_TRANSICAO_ENTRE_AREAS:
 	# se t0 >= 64 então essa posição indica uma transição entre área, nesse caso RENDERIZAR_AREA tem
@@ -1806,15 +2005,72 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 		call RENDERIZAR_AREA												
 		li a0, 0		# a0 = 0 porque a movimentação tem que acontecer
 																										
-	FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO:				
+	FIM_VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 
 	ret
 
-# ====================================================================================================== #									
+# ====================================================================================================== #
+	
+PRINT_FAIXA_DE_GRAMA:
+	# Procedimento que usa o valor de s10 para saber se o RED está indo para um tile de grama ou não
+	# Caso ele esteja (s10 != 0) então é imprime uma pequena faixa de grama sobre o sprite do RED nos 
+	# frames 0 e 1
+		
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
 
+	# Inicialmente s10 == 0 representando que o RED não vai para um tile de grama, caso isso não seja 
+	# verdade o valor de s10 vai ser atualizado corretamente mais adiante 
+	li s10, 0
+
+	# Antes de tudo é conveniente atualizar o valor de s10 indicando se o RED 
+	# está ou não em um tile de grama e a partir disso imprimir ou não a faixa de grama
+	lbu t0, 0(s6)		# s6 é a posicao do RED na matriz de movimentação
+	li t1, 7		# 7 é o codigo de um tile de grama
+	bne t0, t1, FIM_PRINT_FAIXA_DE_GRAMA
+		li s10, 1		# indica que o RED está em um tile de grama
+		
+		# Imprimindo faixa no frame 0
+		la a0, tiles_pallet	# para encontrar a faixa de grama que será impressa pode ser usado o
+		addi a0, a0, 8		# tilles pallet, partindo do fato de que essa imagem vai estar 
+		li t0, 22688		# na linha 1418 (22688 = 1418 * 16 (largura de uma linha de tiles_pallet))
+		add a0, a0, t0
+		
+		mv t3, a0		# salva o endereço de a0 em t3
+		
+		mv a1, s0		# O endereço onde essa faixa será impressa é no novo endereço do
+		li t0, 4160		# personagem (s0), 13 linhas para baixo (4160 = 13 * 320) e uma coluna
+		add a1, a1, t0		# para a esquerda (-1)
+		addi a1, a1, -1
+		
+		mv t4, a1		# salva o endereço de a1 em t4
+					
+		li a2, 16		# numero de colunas da faixa de grama	
+		li a3, 6		# numero de linhas da faixa de grama	
+		call PRINT_IMG	
+		
+		# Imprimindo faixa no frame 1
+		mv a0, t3		# t3 ainda tem salvo o endereço da imagem da grama	
+			
+		li t0, 0x00100000
+		add a1, t4, t0 		# passa o endereço de t4 (onde imprimir a grama) para o frame 1	
+						
+		li a2, 16		# numero de colunas da faixa de grama	
+		li a3, 6		# numero de linhas da faixa de grama	
+		call PRINT_IMG			
+	
+	FIM_PRINT_FAIXA_DE_GRAMA:
+			
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret
+																																		
+# ====================================================================================================== #
+									
 .data
 	.include "../Imagens/red/red_direita.data"
 	.include "../Imagens/red/red_direita_passo_esquerdo.data"
@@ -1828,3 +2084,6 @@ VERIFICAR_MATRIZ_DE_MOVIMENTACAO:
 	.include "../Imagens/red/red_esquerda.data"
 	.include "../Imagens/red/red_esquerda_passo_esquerdo.data"
 	.include "../Imagens/red/red_esquerda_passo_direito.data"	
+
+	.include "../Imagens/outros/tiles_grama_animacao.data"	
+	

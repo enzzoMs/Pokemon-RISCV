@@ -495,9 +495,9 @@ RENDERIZAR_PALLET:
 				
 		addi t0, t0, 8
 	
-		addi s6, t0, 360	# o personagem começa na linha 16 e coluna 16 da matriz
+		addi s6, t0, 504	# o personagem começa na linha 21 e coluna 16 da matriz
 					# então é somado o endereço base da matriz (t0) a 
-		addi s6, s6, 16		# 19 (número da linha) * 24 (tamanho de uma linha da matriz) 
+		addi s6, s6, 16		# 21 (número da linha) * 24 (tamanho de uma linha da matriz) 
 					# e a 16 (número da coluna) 		
 
 		j FIM_RENDERIZAR_PALLET
@@ -547,9 +547,9 @@ RENDERIZAR_PALLET:
 				
 		addi t0, t0, 8
 	
-		addi s6, t0, 216	# o personagem começa na linha 7 e coluna 6 da matriz
+		addi s6, t0, 360	# o personagem começa na linha 15 e coluna 6 da matriz
 					# então é somado o endereço base da matriz (t0) a 
-		addi s6, s6, 6		# 9 (número da linha) * 24 (tamanho de uma linha da matriz) 
+		addi s6, s6, 6		# 15 (número da linha) * 24 (tamanho de uma linha da matriz) 
 					# e a 6 (número da coluna) 		
 	
 	FIM_RENDERIZAR_PALLET:
@@ -847,7 +847,7 @@ TRANSICAO_ENTRE_AREAS:
 		
 		# Calcula o endereço de onde a mensagem está
 		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		li a2, 241			# numero da coluna 
+		li a2, 240			# numero da coluna 
 		li a3, 208			# numero da linha
 		call CALCULAR_ENDERECO	
 		

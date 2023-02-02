@@ -3,7 +3,7 @@
 # Inicializando os itens do inventario
 
 NUMERO_DE_POKEBOLAS: .byte 0
-POKEMONS_DO_RED: .word 0,0,0,0,0
+POKEMONS_DO_RED: .word 1089,138,531,100,541
 # O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PP, onde:
 # 	PP -> número do pokemon, de modo que:
 #		[ 001 ] -> BULBASAUR
@@ -40,7 +40,7 @@ MOSTRAR_INVENTARIO:
 	# necessário e fazendo alterações no menu de acordo com os inputs do jogador
 	
 	# OBS: não é necessário empilhar o valor de ra pois a chegada a este procedimento é por meio
-	# de uma instrução de branch e a saida é pelo ra empilhado em VERIFICAR_TECLA_JOGO
+	# de uma instrução de jump e a saida é pelo ra empilhado em VERIFICAR_TECLA_JOGO
 
 	# Primeiro imprime a imagem base do inventario, ou seja, a imagem sem nunhum pokemon, nome ou outra
 	# informação, só com os placeholders necessários  	
@@ -334,7 +334,8 @@ MOSTRAR_INVENTARIO:
 				la a0, pokemons_tipos	# carrega a imagem 
 				addi a0, a0, 8		# pula para onde começa os pixels no .data
 				
-				andi t0, t6, 3584	# o andi 3584 (111_000_000_000) deixa só os bits de t6 que 
+				li t0, 3584
+				and t0, t6, t0		# o andi 3584 (111_000_000_000) deixa só os bits de t6 que 
 							# correspondem a fraqueza do pokemon intactos
 				srli t0, t0, 9		# desloca 9 bits de t0 de modo que a fraqueza do pokemon 
 							# começa cai em um intervalo de 0 a 4 ao inves de 4 a 20							
@@ -519,6 +520,27 @@ MOSTRAR_INVENTARIO:
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
 		call PRINT_IMG	
 		
+		# Se for necessário também é preciso imprimir a faixa de grama no frame 1 de acordo com s10
+		beq s10, zero, FIM_INVENTARIO
+		la a0, tiles_pallet	# para encontrar a faixa de grama que será impressa pode ser usado o
+		addi a0, a0, 8		# tilles pallet, partindo do fato de que essa imagem vai estar 
+		li t0, 22688		# na linha 1418 (22688 = 1418 * 16 (largura de uma linha de tiles_pallet))
+		add a0, a0, t0
+		
+		mv a1, a6		# O endereço onde essa faixa será impressa é no novo endereço do
+		li t0, 4160		# personagem (a6), 13 linhas para baixo (4160 = 13 * 320) e uma coluna
+		add a1, a1, t0		# para a esquerda (-1)
+		addi a1, a1, -1
+		
+		li t0, 0x00100000	# passa o endereço de a1 para o frame 1
+		add a1, a1, t0		
+			
+		li a2, 16		# numero de colunas da faixa de grama	
+		li a3, 6		# numero de linhas da faixa de grama	
+		call PRINT_IMG	
+
+	FIM_INVENTARIO:
+				
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 
