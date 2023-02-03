@@ -3,7 +3,7 @@
 # Inicializando os itens do inventario
 
 NUMERO_DE_POKEBOLAS: .byte 0
-POKEMONS_DO_RED: .word 1089,138,531,100,541
+POKEMONS_DO_RED: .word 0,0,0,0,0
 # O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PP, onde:
 # 	PP -> número do pokemon, de modo que:
 #		[ 001 ] -> BULBASAUR
