@@ -1,3 +1,0 @@
-matriz_texto_inventario: .word 10, 1
-.byte 
-57,7,11,4,7,71,19,69,77,8

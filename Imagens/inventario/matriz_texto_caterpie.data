@@ -1,3 +1,0 @@
-matriz_texto_caterpie: .word 8, 1
-.byte 
-36,39,60,22,35,24,57,22

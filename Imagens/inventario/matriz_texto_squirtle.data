@@ -1,3 +1,0 @@
-matriz_texto_squirtle: .word 8, 1
-.byte 
-30,59,40,57,35,60,38,22

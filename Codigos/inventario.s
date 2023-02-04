@@ -1,5 +1,28 @@
 .data
 
+# Matrizes de texto
+# Uma matriz de texto é uma matriz em que cada elemento representa um tile de tiles_alfabeto.data, sendo usados
+# para imprimir um nome geralmente curto na tela. Os labels estão no formato matriz_texto_Y, onde Y é o texto
+# que a matriz se refere
+
+matriz_texto_bulbasaur: .word 9, 1 
+			.byte 37,40,38,37,39,30,39,40,35
+			
+matriz_texto_caterpie: .word 8, 1 
+		       .byte 36,39,60,22,35,24,57,22
+		       
+matriz_texto_charmander: .word 10, 1 
+			 .byte 36,33,39,35,27,39,28,34,22,35
+			 
+matriz_texto_diglett: .word 7, 1 
+		      .byte 34,57,61,38,22,60,60
+		      
+matriz_texto_squirtle: .word 8, 1 
+		       .byte 30,59,40,57,35,60,38,22
+
+matriz_texto_inventario: .word 10, 1
+			 .byte 57,7,11,4,7,71,19,69,77,8
+
 # Inicializando os itens do inventario
 
 NUMERO_DE_POKEBOLAS: .byte 0
@@ -600,14 +623,6 @@ SELECIONAR_OPCAO_INVENTARIO:
 	.include "../Imagens/inventario/tiles_numeros.data"
 	
 	.include "../Imagens/inventario/pokebola_inventario.data"
-	
-	.include "../Imagens/inventario/matriz_texto_inventario.data"
-	
-	.include "../Imagens/inventario/matriz_texto_bulbasaur.data"
-	.include "../Imagens/inventario/matriz_texto_charmander.data"
-	.include "../Imagens/inventario/matriz_texto_squirtle.data"
-	.include "../Imagens/inventario/matriz_texto_caterpie.data"
-	.include "../Imagens/inventario/matriz_texto_diglett.data"
-				
+
 	.include "../Imagens/inventario/pokemons_tipos.data"
 	.include "../Imagens/inventario/seta_tipo_forte_fraco.data"

@@ -1,3 +1,0 @@
-matriz_texto_diglett: .word 7, 1
-.byte 
-34,57,61,38,22,60,60
