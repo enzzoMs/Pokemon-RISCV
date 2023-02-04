@@ -119,12 +119,12 @@ PRINT_TILES_AREA:
 					# retorna quantos pixels esse tile está do começo da imagem
 			
 			add t1, t1, s4	# t1 recebe o endereço do tile a ser impresso
-	
-			# O loop abaixo emula um PRINT_IMG, a diferença é que como PRINT_IMG pode imprimir
-			# imagens com uma tamanho arbitrário de colunas e linhas ele tem que utlizar instruções
-			# load e store byte, mas como cada tile sempre tem 16 x 16 de tamanho é possível usar
-			# load e store word para agilizar o processo
-			
+						
+			# O modo de impressao se baseia em um loop que emula um PRINT_IMG, a diferença é que
+			# como PRINT_IMG pode imprimir imagens com uma tamanho arbitrário de colunas e linhas 
+			# ele tem que utlizar instruções load e store byte, mas como cada tile sempre tem 
+			# 16 x 16 de tamanho é possível usar load e store word para agilizar o processo
+		
 			li t2, 256	# numero de pixels de um tile (16 x 16)
 			
 			PRINT_TILE_AREA_COLUNAS:
@@ -403,7 +403,23 @@ SLEEP:
 	ret
 				
 # ====================================================================================================== #
-		
+
+ENCONTRAR_NUMERO_RANDOMICO:	
+	# Procedimento que encontra um numero "randomico" entre 0 e a0 (nao inclusivo)
+	# Argumentos:
+	# 	a0 = limite superior para o numero randomico (nao inclusivo)
+	# Retorno:
+	# 	a0 = número "rândomico" entre 0 e a0 - 1
+ 		
+	csrr t0, time	# le o tempo atual do sistema
+	
+	remu a0, t0, a0		# encontra o resto da divisão do tempo do sistema por a0 de modo que a0 
+				# tem um numero entre 0 e a0 - 1 
+			
+	ret
+	
+# ====================================================================================================== #
+			
 PRINT_DIALOGOS:
 	# Procedimento que imprime uma quantidade variavel de caixas de dialogo em ambos os frames
 	# Os dialogos são sempre renderizados em uma área fixa da tela
@@ -506,7 +522,7 @@ PRINT_SETA_DIALOGO:
 		addi a1, a1, -640	# sobe o endereço de a1 em duas linhas
 	
 	# Imprime a seta no frame 1
-		la a0, seta_dialogo	# carrega a imagem
+		#la a0, seta_dialogo	# carrega a imagem
 		# a1 tem o endereço onde a seta será renderizada
 		lw a2, 0(a0)		# a1 = numero de colunas da imagem
 		lw a3, 4(a0)		# a2 = numero de linhas da imagem
@@ -514,7 +530,7 @@ PRINT_SETA_DIALOGO:
 		call PRINT_IMG
 
 	# Imprime a seta no frame 0
-		la a0, seta_dialogo	# carrega a imagem
+		#la a0, seta_dialogo	# carrega a imagem
 		mv a1, t6		# a1 tem o endereço onde a seta será renderizada
 		# os valores de a2 (coluna) e a3 (linha) continuam os mesmos 
 		addi a0, a0, 8		# pula para onde começa os pixels no .data
@@ -588,14 +604,14 @@ PRINT_TEXTO:
 			
 		lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
 			
-		li t1, 1		# se o numero do tile for menor do que 63		
-		li t2, 63		# então é necessário voltar 1 pixel
+		li t1, 1		# se o numero do tile for menor do que 65	
+		li t2, 65		# então é necessário voltar 1 pixel
 		blt t0, t2, PROXIMO_TILE_TEXTO
-		li t1, 2		# se o numero do tile for maior ou igual a 63 e menor do que 73
-		li t2, 73		# então é necessário voltar 2 pixels
+		li t1, 2		# se o numero do tile for maior ou igual a 65 e menor do que 75
+		li t2, 75		# então é necessário voltar 2 pixels
 		blt t0, t2, PROXIMO_TILE_TEXTO
-		li t1, 4		# se o numero do tile for maior que 73 e menor que 75 volta 
-		li t2, 75		# 4 pixels
+		li t1, 4		# se o numero do tile for maior que 75 e menor que 77 volta 
+		li t2, 77		# 4 pixels
 		ble t0, t2, PROXIMO_TILE_TEXTO			
 		li t2, 5		# caso contrário volta 5 pixels
 									

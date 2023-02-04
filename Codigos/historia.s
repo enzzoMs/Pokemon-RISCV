@@ -12,7 +12,7 @@ NOVA_LINHA_DE_TILES_PALLET: .byte 4,5,103,104,104,105,76,67,67,53,103,106,107,10
 # ------------------------------------------------------------------------------------------------------ #
 # 													 #
 # Código com os procedimentos necessários para renderizar os momentos de história do jogo, incluindo	 #
-# imprimir caixas de diálogo e executar algumas animações 						 #
+# imprimir caixas de diálogo e executar algumas animações. 						 #
 #													 #
 # Esse arquivo possui 3 procedimentos principais, um para cada momento de história do jogo:		 #
 #	RENDERIZAR_ANIMACAO_PROF_OAK, RENDERIZAR_DIALOGO_PROFESSOR_LABORATORIO,				 #
@@ -36,12 +36,12 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		call SLEEP			# chama o procedimento SLEEP	
 		
 	# Como primeira parte da animaçaõ é necessário imprimir um balão de exclamação sobre a cabeça do RED
-	# no frame 0. O balão funciona que nem um tile normal, a diferença é que tem fundo transparentes
+	# no frame 0. O balão funciona que nem um tile normal, a diferença é que tem fundo transparente
 	
 	mv a0, s0			# calcula o endereço de inicio do tile onde a cabeça do RED está (s0)
 	call CALCULAR_ENDERECO_DE_TILE	
 	
-	# Imprimindo o balão de exclamação no frame 1			
+	# Imprimindo o balão de exclamação no frame 0			
 		la a0, balao_exclamacao		# carrega a imagem
 		addi a0, a0, 8			# pula para onde começa os pixels no .data
 		# do retorno do procedimento CALCULAR_ENDERECO_DE_TILE a1 já tem o endereço de inicio 
@@ -1072,14 +1072,14 @@ PRINT_DIALOGO:
 			
 			lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
 			
-			li t1, 1		# se o numero do tile for menor do que 64		
-			li t2, 64		# então é necessário voltar 1 pixel
+			li t1, 1		# se o numero do tile for menor do que 65		
+			li t2, 65		# então é necessário voltar 1 pixel
 			blt t0, t2, PROXIMO_TILE_DIALOGO
-			li t1, 2		# se o numero do tile for maior ou igual a 64 e menor do que 74
-			li t2, 74		# então é necessário voltar 2 pixels
+			li t1, 2		# se o numero do tile for maior ou igual a 65 e menor do que 75
+			li t2, 75		# então é necessário voltar 2 pixels
 			blt t0, t2, PROXIMO_TILE_DIALOGO
-			li t1, 4		# se o numero do tile for maior que 74 e menor que 76 volta 
-			li t2, 76		# 4 pixels
+			li t1, 4		# se o numero do tile for maior que 75 e menor que 77 volta 
+			li t2, 77		# 4 pixels
 			ble t0, t2, PROXIMO_TILE_DIALOGO			
 			li t2, 5		# caso contrário volta 5 pixels
 									

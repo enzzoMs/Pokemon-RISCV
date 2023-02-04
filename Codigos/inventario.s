@@ -21,7 +21,7 @@ matriz_texto_squirtle: .word 8, 1
 		       .byte 30,59,40,57,35,60,38,22
 
 matriz_texto_inventario: .word 10, 1
-			 .byte 57,7,11,4,7,71,19,69,77,8
+			 .byte 57,7,11,4,7,72,19,70,78,8
 
 # Inicializando os itens do inventario
 
