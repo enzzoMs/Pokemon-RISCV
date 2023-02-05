@@ -27,6 +27,9 @@ matriz_texto_inventario: .word 10, 1
 
 NUMERO_DE_POKEBOLAS: .byte 0
 POKEMONS_DO_RED: .word 0,0,0,0,0
+
+.text 
+
 # O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PP, onde:
 # 	PP -> número do pokemon, de modo que:
 #		[ 001 ] -> BULBASAUR
@@ -41,13 +44,17 @@ POKEMONS_DO_RED: .word 0,0,0,0,0
 #		[ 011 ] -> GROUND
 #		[ 100 ] -> BUG
 # Sendo assim o codigo de cada Pokemon pode ser encontrado abaixo:
-# 	BULBASAUR -> 1089
-#	CHARMANDER -> 138
-# 	SQUIRTLE -> 531
-# 	CATERPIE -> 100
-# 	DIGLETT -> 541
+# 	BULBASAUR [Tipo GRASS, Fraco FIRE, Forte WATER]-> 1089
+#	CHARMANDER [Tipo FIRE, Fraco WATER, Forte GRASS] -> 138
+# 	SQUIRTLE [Tipo WATER, Fraco GRASS, Forte FIRE] -> 531
+# 	CATERPIE [Tipo BUG, Fraco FIRE, Forte GRASS] -> 100
+# 	DIGLETT [Tipo GROUND, Fraco GRASS, Forte FIRE] -> 541
 
-.text
+.eqv BULBASAUR 1089
+.eqv CHARMANDER 138
+.eqv SQUIRTLE 531
+.eqv CATERPIE 100
+.eqv DIGLETT 541
 
 # ====================================================================================================== # 
 # 				              INVENTARIO					         #
@@ -409,30 +416,16 @@ MOSTRAR_INVENTARIO:
 			li a3, 70		# numero de colunas de pixels do texto
 			call SELECIONAR_OPCAO_INVENTARIO
 			
-			# Retirando a imagem da seta
-			addi t5, t5, -7		# volta o endereço de t5 por sete colunas de modo que t5
-						# agora tem o endereço de onde a seta está
-			
-			li t0, 191		# t0 tem o valor do fundo do menu do inventario
-			li t1, 11		# numero de linhas da imagem da seta
-	
-			RETIRAR_SETA_LINHAS:
-			li t2, 6		# numero de colunas da imagem da seta
-			
-			RETIRAR_SETA_COLUNAS:
-			sb t0, 0(t5)		# armazena o pixel de t0 em t5
-	
-			addi t2, t2, -1			# decrementa o numero de colunas restantes
-			addi t5, t5, 1			# vai para o próximo pixel do bitmap
-			bne t2, zero, RETIRAR_SETA_COLUNAS	# reinicia o loop se t2 != 0
-			
-			addi t1, t1, -1			# decrementando o numero de linhas restantes
-		
-			addi t5, t5, -6			# volta o endeço do bitmap pelo numero de colunas impressas
-			addi t5, t5, 320		# passa o endereço do bitmap para a proxima linha
-		
-			bne t1, zero, RETIRAR_SETA_LINHAS	# reinicia o loop se t1 != 0
-			
+			# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
+			# de fundo do inventario
+			li a0, 191		# a0 tem o valor do fundo do menu do inventario
+			addi a1, t5, -7		# volta o endereço de t5 por sete colunas de modo que a1
+						# agora tem o endereço de onde a seta está e onde a limpeza
+						# vai acontecer			
+			li a2, 6		# numero de colunas da imagem da seta
+			li a3, 11		# numero de linhas da imagem da seta			
+			call PRINT_COR
+
 		# Limpando a tela
 			# Calculando o endereço de onde começar a limpeza
 				li a1, 0xFF100000		# seleciona como argumento o frame 1

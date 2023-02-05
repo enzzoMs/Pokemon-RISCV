@@ -356,6 +356,37 @@ CALCULAR_ENDERECO_DE_TILE:
 	
 # ====================================================================================================== #
 
+PRINT_COR:
+	# Procedimento que imprime uma área de a2 x a3 pixels com a cor a0 a partir de um endereço em algum frame
+	# Esse procedimento geralamente é usado para "limpar" a tela em alguns momentos, como retirar certas
+	# imagens de menus ou limpar caixas de diálogo, por exemplo.
+	#
+	# Argumentos: 
+	# 	a0 = cor que será impressa 	
+	# 	a1 = endereço de onde, no frame escolhido, a impressao deve começar
+	# 	a2 = numero de colunas da área a ser impressa
+	#	a3 = numero de linhas da área a ser impressa
+		
+	PRINT_COR_LINHAS:
+		mv t0, a2		# copia do numero de a2 para usar no loop de colunas
+			
+		PRINT_COR_COLUNAS:
+			sb a0, 0(a1)			# pega a cor de a0 e coloca no bitmap
+	
+			addi a1, a1, 1			# vai para o próximo pixel do bitmap
+			addi t0, t0, -1			# decrementa o numero de colunas restantes			
+			bne t0, zero, PRINT_COR_COLUNAS	# reinicia o loop se t0 != 0
+			
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
+		
+		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+		
+		bne a3, zero, PRINT_COR_LINHAS	# reinicia o loop se a3 != 0		
+	ret
+
+# ====================================================================================================== #
+
 TROCAR_FRAME:
 	# Procedimento que troca o frame que está sendo mostrado de 0 -> 1 e de 1 -> 0
 	
@@ -411,7 +442,7 @@ ENCONTRAR_NUMERO_RANDOMICO:
 	# Retorno:
 	# 	a0 = número "rândomico" entre 0 e a0 - 1
  		
-	csrr t0, time	# le o tempo atual do sistema
+	csrr t0, time		# le o tempo atual do sistema
 	
 	remu a0, t0, a0		# encontra o resto da divisão do tempo do sistema por a0 de modo que a0 
 				# tem um numero entre 0 e a0 - 1 

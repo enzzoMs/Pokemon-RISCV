@@ -96,9 +96,9 @@ LOOP_PRINCIPAL_JOGO:
 .data
 	#.include "Codigos/tela_inicial.s"
 	#.include "Codigos/intro_historia.s"
+	.include "Codigos/inventario.s"		
 	.include "Codigos/historia.s"	
 	.include "Codigos/areas.s"
 	.include "Codigos/controles_movimentacao.s"	
-	.include "Codigos/inventario.s"		
 	.include "Codigos/combate.s"			
 	.include "Codigos/procedimentos_auxiliares.s"

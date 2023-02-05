@@ -18,7 +18,7 @@ matriz_texto_fugir: .word 5, 1
 		     .byte 62,40,61,57,35
 
 matriz_texto_um: .word 3, 1 
-		     .byte 40,69,77			# inclui espaço no final
+		 .byte 40,69,77			# inclui espaço no final
 		     
 matriz_texto_selvagem: .word 9, 1 
 		     .byte 77,71,4,76,11,0,5,4,69	# inclui espaço no começo     	
@@ -175,40 +175,51 @@ INICIAR_POKEMON_INIMIGO:
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
 	
-	# Primeiro sorteia qual é o pokemon inimigo, atualiza os primeiros bits de s11 com o codigo correto e
-	# t5 recebe o endereço da matriz de texto com o nome do pokemon
+	# Primeiro sorteia qual é o pokemon inimigo, atualiza os primeiros bits de s11 com o codigo correto,
+	# t5 recebe o endereço da matriz de texto com o nome do pokemon e t6 recebe o endereço da imagem do 
+	# pokemon
 	
 	li a0, 5				# encontra um numero randomico entre 0 e 4
 	call ENCONTRAR_NUMERO_RANDOMICO		
 
 	# se a0 == 0 então é pokemon inimigo será o BULBASAUR 
-	li s11, 1089 				# codigo do BULBASAUR
-	la t5, matriz_texto_bulbasaur 		# carrega a matriz com o nome do pokemon	
+	li s11, BULBASAUR 			# codigo do BULBASAUR
+	la t6, matriz_texto_bulbasaur 		# carrega a matriz com o nome do pokemon
+	la t5, pokemons			# t6 tem o inicio da imagem do BULBASAUR
+	addi t5, t5, 8			# pula para onde começa os pixels no .data
 	beq a0, zero, PRINT_TEXTO_POKEMON_INIMIGO
 			
 	# se a0 == 1 então é pokemon inimigo será o CHARMANDER 
 	li t0, 1	
-	li s11, 138 				# codigo do CHARMANDER
-	la t5, matriz_texto_charmander 		# carrega a matriz com o nome do pokemon		
+	li s11, CHARMANDER 			# codigo do CHARMANDER
+	la t6, matriz_texto_charmander 		# carrega a matriz com o nome do pokemon
+	addi t5, t5, 1482			# 1482 = 38 * 39 = tamanho de uma imagem de um pokemon, ou seja,
+						# passa o endereço de t6 para a imagem do CHARMANDER	
 	beq a0, t0, PRINT_TEXTO_POKEMON_INIMIGO
 			
 	# se a0 == 2 então é pokemon inimigo será o SQUIRTLE 
 	li t0, 2	
-	li s11, 531 				# codigo do SQUIRTLE
-	la t5, matriz_texto_squirtle 		# carrega a matriz com o nome do pokemon		
+	li s11, SQUIRTLE 			# codigo do SQUIRTLE
+	la t6, matriz_texto_squirtle 		# carrega a matriz com o nome do pokemon
+	addi t5, t5, 1482			# 1482 = 38 * 39 = tamanho de uma imagem de um pokemon, ou seja,
+						# passa o endereço de t6 para a imagem do SQUIRTLE			
 	beq a0, t0, PRINT_TEXTO_POKEMON_INIMIGO
 										
 	# se a0 == 3 então é pokemon inimigo será o CATERPIE 
 	li t0, 3	
-	li s11, 100 				# codigo do CATERPIE
-	la t5, matriz_texto_caterpie 		# carrega a matriz com o nome do pokemon		
+	li s11, CATERPIE 			# codigo do CATERPIE
+	la t6, matriz_texto_caterpie 		# carrega a matriz com o nome do pokemon	
+	addi t5, t5, 1482			# 1482 = 38 * 39 = tamanho de uma imagem de um pokemon, ou seja,
+						# passa o endereço de t6 para a imagem do CATERPIE			
 	beq a0, t0, PRINT_TEXTO_POKEMON_INIMIGO
 	
 	# se a0 == 4 então é pokemon inimigo será o DIGLETT 
 	li t0, 4	
-	li s11, 541 				# codigo do DIGLETT
-	la t5, matriz_texto_diglett 		# carrega a matriz com o nome do pokemon	
-
+	li s11, DIGLETT 			# codigo do DIGLETT
+	la t6, matriz_texto_diglett 		# carrega a matriz com o nome do pokemon	
+	addi t5, t5, 1482			# 1482 = 38 * 39 = tamanho de uma imagem de um pokemon, ou seja,
+						# passa o endereço de t6 para a imagem do DIGLETT	
+	
 	PRINT_TEXTO_POKEMON_INIMIGO:
 	# Agora imprime o texto "Um YYY selvagem apareceu!", onde YYY é o nome do pokemon
 		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
@@ -229,7 +240,7 @@ INICIAR_POKEMON_INIMIGO:
 		# Imprime o texto com o nome do Pokemon
 		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
 		# de modo que está na posição exata do proximo texto
-		mv a4, t5		# a4 recebe a matriz de texto do pokemon decidido acima
+		mv a4, t6		# a4 recebe a matriz de texto do pokemon decidido acima
 		call PRINT_TEXTO
 
 		# Imprime o texto com o ' selvagem'
@@ -250,9 +261,189 @@ INICIAR_POKEMON_INIMIGO:
 		# a1 já tem o endereço de onde imprimir o texto					
 		la a4, matriz_texto_apareceu 	
 		call PRINT_TEXTO
-								
+			
+		# Por fim, imprime uma pequena seta indicando que o jogador pode apertar ENTER para avançar
+		# o dialogo						
+			# Calculando o endereço de onde imprimir a seta no frame 0
+			li a1, 0xFF000000	# seleciona o frame 0
+			li a2, 159		# numero da coluna 
+			li a3, 207		# numero da linha
+			call CALCULAR_ENDERECO											
+			
+			mv t3, a0		# move o retorno para t3		
+						
+			# Imprimindo a imagem da seta no frame 0
+			la a0, seta_proximo_dialogo_combate		# carrega a imagem				
+			mv a1, t3		# t3 tem o endereço de onde imprimir a imagem
+			lw a2, 0(a0)		# numero de colunas da imagem
+			lw a3, 4(a0)		# numero de linhas da imagem
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG																							
+																																																											
 		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+	
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_POKEMON_INIMIGO:
+		call VERIFICAR_TECLA
 		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_POKEMON_INIMIGO
+	
+	# Limpa a caixa de dialogo no frame 0 somente para indicar que o não mais necessário apertar ENTER					
+		# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
+		# de fundo do inventario
+		li a0, 0xFF		# a0 tem o valor do fundo do menu da caixa de dialogo (branco)
+		mv a1, t3		# t3 ainda tem o endereço de onde a seta está		
+		li a2, 10		# numero de colunas da imagem da seta
+		li a3, 6		# numero de linhas da imagem da seta	
+		call PRINT_COR						
+							
+	# Imprime a imagem do pokemon inimigo aparecendo na tela no frame 0	
+		# Calculando o endereço de onde imprimir o pokemon inimigo
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 204		# numero da coluna 
+		li a3, 43		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv t3, a0		# move o retorno para t3
+		
+		# Imprime a silhueta do pokemon inimigo		
+		mv a0, t5	# t5 ainda tem a imagem do pokemon inimigo que foi decidido no inicio procedimento				
+		mv a1, t3	# t3 tem o endereço de onde imprimir a imagem
+		li a2, 38	# numero de colunas da imagem
+		li a3, 39	# numero de linhas da imagem
+		call PRINT_POKEMON_SILHUETA
+	
+		# Espera alguns milisegundos	
+		li a0, 800			# sleep 800 ms
+		call SLEEP			# chama o procedimento SLEEP	
+			
+		# Imprime a imagem completa do pokemon inimigo		
+		mv a0, t5	# t5 ainda tem a imagem do pokemon inimigo que foi decidido no inicio procedimento				
+		mv a1, t3	# t3 tem o endereço de onde imprimir a imagem
+		li a2, 38	# numero de colunas da imagem
+		li a3, 39	# numero de linhas da imagem
+		call PRINT_IMG
+			
+					
+	# Imprime a imagem da caixa com as informações do pokemon inimigo (nome, vida, etc) no frame 0
+		# Calculando o endereço de onde imprimir a caixa
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 32		# numero da coluna 
+		li a3, 32		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv a2, a0		# move o retorno para a2
+		
+		# Imprime a caixa do pokemon inimigo
+		la a0, matriz_tiles_caixa_pokemon_combate	# carrega a matriz de tiles
+		la a1, tiles_caixa_pokemon_combate		# carrega a imagem com os tiles
+		# a2 já tem o endereço de onde imprimir os tiles
+		call PRINT_TILES
+	
+		# Imprime uma pequena seta indicando a orientação dessa caixa 
+		# Calculando o endereço de onde imprimir a seta
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 154		# numero da coluna 
+		li a3, 55		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime a seta 
+		la a0, seta_direcao_caixa_pokemon_combate	# carrega a imagem
+		addi a0, a0, 8					# pula para onde começa os pixels no .data		
+		# a1 já tem o endereço de onde imprimir a imagem
+		li a2, 15	# numero de colunas da imagem
+		li a3, 9	# numero de linhas da imagem
+		call PRINT_IMG
+		
+		# Imprime o nome do pokemon inimigo na caixa
+		# Calculando o endereço de onde imprimir o nome na caixa
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 37		# numero da coluna 
+		li a3, 35		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime o texto com o nome do Pokemon
+		# a1 tem o endereço de onde imprimir o nome
+		mv a4, t6	# a4 recebe a matriz de texto do pokemon decidido anteriormente no procedimento	
+		call PRINT_TEXTO							
+			
+		# Imprime a barra de vida
+		# Calculando o endereço de onde imprimir a barra
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 48		# numero da coluna 
+		li a3, 50		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime a imagem da barra de vida
+		la a0, combate_barra_de_vida	# carrega a imagem
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)	# numero de colunas da imagem
+		lw a3, 4(a0)	# numero de linhas da imagem
+		addi a0, a0, 8			# pula para onde começa os pixels no .data				
+		call PRINT_IMG		
+		
+		# Imprime a vida do pokemon inimigo
+		# Todos os pokemons tem uma vida de 45 pontos
+		
+		# Calculando o endereço de onde imprimir o primeiro numero (4)
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 122		# numero da coluna 
+		li a3, 37		# numero da linha
+		call CALCULAR_ENDERECO			
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# O loop começa imprimindo o numero 4
+		la a0, tiles_numeros	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		addi a0, a0, 240 	# 240 = 60 (area de uma imagem de um numero) * 4, ou seja,
+					# a0 passa para o inico do tile com o numero 4
+					
+		li t3, 5		# numero de simbolos a serem impressos 	
+				
+		LOOP_POKEMON_INIMIGO_PRINT_VIDA:
+		# Imprimindo o numero 
+		# a0 já tem o endereço da imagem do numero (ou /)			
+		# a1 já tem o endereço de onde imprimir o numero
+		li a2, 6		# numero de colunas dos tiles a serem impressos
+		li a3, 10		# numero de linhas dos tiles a serem impressos	
+		call PRINT_IMG										
+
+		addi t3, t3, -1		# decrementa o numero de simbolos restantes
+
+		# Pelo PRINT_IMG o endereço de a0 já está no inicio da imagem do 5
+		# pelo PRINT_IMG acima a1 está naturalmente a -10 linhas +7 colunas de onde imprimir o proximo
+		# numero
+		li t0, -3193		# -3193 = -10 * 320 + 7
+		add a1, a1, t0	
+		
+		# Pelo PRINT_IMG o endereço de a0 já está no inicio da imagem do 5				
+		li t0, 4
+		beq t3, t0, LOOP_POKEMON_INIMIGO_PRINT_VIDA	# se t3 == 4 imprime o 5
+		
+		la a0, caractere_barra	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data							
+		li t0, 3		
+		beq t3, t0, LOOP_POKEMON_INIMIGO_PRINT_VIDA	# se t3 == 3 imprime uma imagem de uma barra (/)
+			
+		la a0, tiles_numeros	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		addi a0, a0, 240 	# 240 = 60 (area de uma imagem de um numero) * 4, ou seja,
+					# a0 passa para o inico do tile com o numero 4
+		li t0, 2
+		beq t3, t0, LOOP_POKEMON_INIMIGO_PRINT_VIDA	# se t3 == 2 imprime o 4	
+				
+		addi a0, a0, 60 	# Pelos calculos acima o endereço de a0 está a 60 pixels do inicio 
+					# da imagem do 5
+		bne t3, zero, LOOP_POKEMON_INIMIGO_PRINT_VIDA	# se t3 == 1 imprime o 5
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																											
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -260,6 +451,55 @@ INICIAR_POKEMON_INIMIGO:
 
 # ====================================================================================================== #
 
+PRINT_POKEMON_SILHUETA:
+	# Procedimento que imprime a silhueta de um pokemon na tela. Por silhueta entende-se uma imagem	
+	# de um pokemon em pokemons.bmp, só que ao inves de imprimir a imagem normalmente o pokemon será
+	# impresso apenas com pixels rosa, imprimindo só o "formato" do pokemon
+	#
+	# Argumentos: 
+	# 	a0 = endereço da imagem	do pokemon	
+	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
+	# 	a2 = numero de colunas da imagem
+	#	a3 = numero de linhas da imagem
+	
+	PRINT_POKEMON_SILHUETA_LINHAS:
+		mv t1, a2		# copia do numero de a2 para usar no loop de colunas
+			
+		PRINT_POKEMON_SILHUETA_COLUNAS:
+			lbu t2, 0(a0)			# pega 1 pixel do .data e coloca em t2
+			
+			# Se o valor do pixel do .data (t2) for 0xC7 (pixel transparente), 
+			# o novo pixel não é armazenado no bitmap, de modo que somente serão impressos os pixels
+			# de cor t0 no lugar dos pixels que fazem parte da imagem do pokemon em si
+			li t0, 0xC7		# cor do pixel transparente
+			beq t2, t0, NAO_IMPRIMIR_PIXEL_DO_POKEMON
+				li t0, 231		# t0 tem o valor da cor (rosa) que será usada para fazer a
+							# impressão do pokemon
+				sb t0, 0(a1)		# pega o pixel de t0 (cor rosa) e coloca no bitmap
+	
+			NAO_IMPRIMIR_PIXEL_DO_POKEMON:
+			addi t1, t1, -1			# decrementa o numero de colunas restantes
+			addi a0, a0, 1			# vai para o próximo pixel da imagem
+			addi a1, a1, 1			# vai para o próximo pixel do bitmap
+			bne t1, zero, PRINT_POKEMON_SILHUETA_COLUNAS	# reinicia o loop se t1 != 0
+			
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
+		
+		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+		
+		bne a3, zero, PRINT_POKEMON_SILHUETA_LINHAS	# reinicia o loop se a3 != 0
+			
+	ret
+	
+# ====================================================================================================== #
+
 .data
 	.include "../Imagens/combate/matriz_tiles_tela_combate.data"
 	.include "../Imagens/combate/tiles_tela_combate.data"				
+	.include "../Imagens/combate/seta_proximo_dialogo_combate.data"				
+	.include "../Imagens/combate/tiles_caixa_pokemon_combate.data"	
+	.include "../Imagens/combate/matriz_tiles_caixa_pokemon_combate.data"					
+	.include "../Imagens/combate/seta_direcao_caixa_pokemon_combate.data"									
+	.include "../Imagens/combate/combate_barra_de_vida.data"																		
+	.include "../Imagens/outros/caractere_barra.data"																		

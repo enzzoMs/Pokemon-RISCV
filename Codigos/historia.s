@@ -762,12 +762,12 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 	# atualizar o inventario do RED com o novo pokemon, liberar a saida de pallet e atualizar a matriz de
 	# tiles de pallet
 		# Atualizando o inventario com o codigo dos pokemons de acordo com a5
-		li t0, 1089	# codigo do BULBASAUR				
+		li t0, BULBASAUR	# codigo do BULBASAUR				
 		beq a5, zero, ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO
-		li t0, 138	# codigo do CHARMANDER			
+		li t0, CHARMANDER	# codigo do CHARMANDER			
 		li t1, 1				
 		beq a5, t1, ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO
-		li t0, 531	# codigo do SQUIRTLE		
+		li t0, SQUIRTLE		# codigo do SQUIRTLE		
 	
 		ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO:
 		
@@ -900,9 +900,9 @@ RENDERIZAR_DIALOGOS:
 		mul t0, t0, t1		# multiplica o bit de t0 por 0x00100000 e soma com a0 de modo que o				
 		add a0, a0, t0		# endereço de a0 vai para o frame que não está sendo mostrado
 		call PRINT_CAIXA_DE_DIALOGO
-			
-		# Impreme o dialogo
-			
+		
+		# Imprime o dialogo
+				
 		# a4 já tem a matriz de tiles do dialogo
 		# a6 já tem tamanho de uma linha da matriz de tiles	
 		li a7, 0xFF000000	# a7 tem o endereço base do frame 0
