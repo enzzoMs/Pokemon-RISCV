@@ -49,7 +49,8 @@ VERIFICAR_TECLA_JOGO:
 		# Verifica se a tecla do inventario (i) foi apertada 	
 		li t0, 'i'
 		bne a0, t0, FIM_VERIFICAR_TECLA_JOGO
-			j MOSTRAR_INVENTARIO
+			li a5, 0		# a5 = 0 porque o inventario foi mostrado através da tecla 'i'
+			call MOSTRAR_INVENTARIO
 	
 	FIM_VERIFICAR_TECLA_JOGO:	
 

@@ -86,7 +86,7 @@ call RENDERIZAR_AREA
 LOOP_PRINCIPAL_JOGO:
 	# Verifica se alguma tecla relacionada a movimentação (w, a, s ou d) ou inventario (i) foi apertada
 	call VERIFICAR_TECLA_JOGO
-	
+
 	j  LOOP_PRINCIPAL_JOGO
 				
 

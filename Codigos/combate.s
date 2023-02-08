@@ -25,7 +25,11 @@ matriz_texto_selvagem: .word 9, 1
 		     
 matriz_texto_apareceu: .word 9, 1 
 		     .byte 0,9,0,70,4,2,4,73,74		# inclui exclamação no final 
-		     		     
+
+matriz_escolha_o_seu_pokemon : .word 22, 1 		# inclui exclamação no final 
+		     .byte 22,71,2,8,76,6,0,77,8,77,71,4,73,77,24,25,26,29,27,25,28,74	
+
+
 .text
 		     			 			 
 # ====================================================================================================== # 
@@ -73,6 +77,8 @@ EXECUTAR_COMBATE:
 
 	call INICIAR_POKEMON_INIMIGO	# imprime os sprites e outros elementos relacionados ao pokemon inimigo
 
+	call INICIAR_POKEMON_RED	# imprime os sprites e outros elementos relacionados ao pokemon do RED
+	
 	a: j a
 	
 # ====================================================================================================== #
@@ -106,24 +112,49 @@ INICIAR_TELA_DE_COMBATE:
 	# Espera alguns milisegundos	
 		li a0, 1200			# sleep 1.2 s
 		call SLEEP			# chama o procedimento SLEEP	
-	
-	li t6, 0x00000000		# t6 vai ser usado no loop abaixo para imprimir as mesmas coisas
-					# nos dois frames
-					
-	LOOP_IMPRIMIR_TELA_DE_COMBATE_FRAMES:
-	
-	# Agora imprime a tela de combate no frame 0 e 1 com os textos necessários
-		# Imprimindo a tela no frame 1
+
+	call TROCAR_FRAME	# troca o frame sendo mostrado, mostrando o frame 1
+
+	# De inicio é necessário imprimir alguns retangulos com a cor 190, isso porque os tiles do inventario
+	# e combate são compartilhados para economizar memoria, então especificamente os cantos da caixa
+	# onde os dialogos e menu de ação estarão são transparentes, mas o ideal é que apareça a cor do fundo
+	# da tela de combate (190)
+
+	# Calculando o endereço de onde imprimir o primeiro retangulo
+		li a1, 0xFF000000		# seleciona como argumento o frame 0
+		li a2, 16 			# numero da coluna 
+		li a3, 176			# numero da linha
+		call CALCULAR_ENDERECO		
+			
+		mv a1, a0	# move o retorno para a1
+			
+		# Imprimindo o rentangulo com a cor
+		li a0, 190		# a0 tem o valor do fundo do menu da tela do combate
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 4		# numero de colunas da imagem da seta
+		li a3, 48		# numero de linhas da imagem da seta			
+		call PRINT_COR
+
+		# Imprimindo o rentangulo com a cor
+		li a0, 182		# a0 tem o valor do fundo do menu do inventario
+		li a0, 190		# a0 tem o valor do fundo do menu da tela do combate
+		li t0, -15075 		# -15075 = -48 * 320 + 285			
+		add a1, a1, t0		# o proximo retangulo começa a -48 linhas e 285 colunas de onde o ultimo
+					# terminou de ser impresso
+		li a2, 4		# numero de colunas da imagem da seta
+		li a3, 48		# numero de linhas da imagem da seta			
+		call PRINT_COR
+		
+	# Agora imprime a tela de combate no frame 0 com os textos necessários
+		# Imprimindo a tela no frame 0
 		la a0, matriz_tiles_tela_combate	# carrega a matriz de tiles
-		la a1, tiles_tela_combate		# carrega a imagem com os tiles
+		la a1, tiles_combate_e_inventario	# carrega a imagem com os tiles
 		li a2, 0xFF000000			# os tile serão impressos no frame indicado por t6
-		add a2, a2, t6
 		call PRINT_TILES
 
-		# Imprimindo os textos do menu de combate no frame 1
-			# Calculando o endereço de onde imprimir o primeiro texto (ATACAR) no frame 1
-			li a1, 0xFF000000	# seleciona o frame indicado por t6
-			add a1, a1, t6
+		# Imprimindo os textos do menu de combate no frame 0
+			# Calculando o endereço de onde imprimir o primeiro texto (ATACAR) no frame 0
+			li a1, 0xFF000000	# seleciona o frame 0
 			li a2, 195		# numero da coluna 
 			li a3, 185		# numero da linha
 			call CALCULAR_ENDERECO	
@@ -154,12 +185,7 @@ INICIAR_TELA_DE_COMBATE:
 			la a4, matriz_texto_item 	
 			call PRINT_TEXTO
 												
-		call TROCAR_FRAME		# inverte o frame sendo mostrado
-
-		li t0, 0x00100000	# fazendo essa operação xor se t6 for 0 ele recebe 0x0010000
-		xor t6, t6, t0		# e se for 0x0010000 ele recebe 0, ou seja, com isso é possível
-					# trocar entre esses valores
-		bne t6, zero, LOOP_IMPRIMIR_TELA_DE_COMBATE_FRAMES
+	call TROCAR_FRAME	# troca o frame sendo mostrado, mostrando o frame 0
 
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -443,7 +469,11 @@ INICIAR_POKEMON_INIMIGO:
 		addi a0, a0, 60 	# Pelos calculos acima o endereço de a0 está a 60 pixels do inicio 
 					# da imagem do 5
 		bne t3, zero, LOOP_POKEMON_INIMIGO_PRINT_VIDA	# se t3 == 1 imprime o 5
-																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																											
+	
+	# Espera alguns milisegundos	
+		li a0, 800			# sleep 800 ms
+		call SLEEP			# chama o procedimento SLEEP	
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																					
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -451,6 +481,140 @@ INICIAR_POKEMON_INIMIGO:
 
 # ====================================================================================================== #
 
+INICIAR_POKEMON_RED:
+	# Procedimento que atualiza o valor de s11 com o pokemon do RED e imprime todos os sprites,
+	# animações e textos relacionados a esse pokemon aparecendo na tela
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+
+	li a0, 0xFF000000	# copia o frame 0 no frame 1
+	li a1, 0xFF100000
+	li a2, 320		# numero de colunas a serem copiadas
+	li a3, 240		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME
+
+	call TROCAR_FRAME	# inverte o frame sendo mostrado, mostrando o frame 1
+
+	# Primeiro limpa a caixa de dialogo	
+		# Calculando o endereço de onde começar a limpeza no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv t5, a0		# move o retorno para t5
+
+		# Imprimindo o rentangulo com a cor de fundo da caixa no frame 0
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		mv a1, t5		# t5 tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR
+					
+	# Agora imprime o texto "Escolha o seu POKÉMON!"
+		mv a1, t5	# o texto será impresso no mesmo endereço onde a limpeza foi feita acima
+		la a4, matriz_escolha_o_seu_pokemon 	
+		call PRINT_TEXTO	
+
+		# Por fim, imprime uma pequena seta indicando que o jogador pode apertar ENTER para avançar
+		# o dialogo						
+		# Calculando o endereço de onde imprimir a seta no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 159		# numero da coluna 
+		li a3, 207		# numero da linha
+		call CALCULAR_ENDERECO											
+		
+		mv t3, a0		# move o retorno para t3		
+									
+		# Imprimindo a imagem da seta no frame 0
+		la a0, seta_proximo_dialogo_combate		# carrega a imagem				
+		mv a1, t3 		# t3 tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da imagem
+		lw a3, 4(a0)		# numero de linhas da imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+
+	call TROCAR_FRAME	# inverte o frame sendo mostrado, mostrando o frame 0
+
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_POKEMON_RED:
+		call VERIFICAR_TECLA
+		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_POKEMON_RED
+	
+	# Antes é necessário preparar o frame 1 para mostrar o inventario
+		# Limpa a caixa de dialogo no frame 0 somente para indicar que não mais necessário apertar ENTER					
+		# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
+		# de fundo do inventario
+		li a0, 0xFF		# a0 tem o valor do fundo do menu da caixa de dialogo (branco)
+		mv a1, t3		# t3 ainda tem o endereço de onde a seta está		
+		li a2, 10		# numero de colunas da imagem da seta
+		li a3, 6		# numero de linhas da imagem da seta	
+		call PRINT_COR	
+	
+		# De inicio copia o que acabou de ser impresso no frame 0 (o texto na caixa de dialogo) para
+		# o frame 1
+		mv a0, t5	# a copia se inicio no frame 0 no mesmo endereço onde o texto foi impresso
+		li t0, 0x00100000
+		add a1, t5, t0	# a copia vai para o endereço de a0, mas no frame 1
+		li a2, 148		# numero de colunas a serem copiadas
+		li a3, 32		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME	
+		
+		# Depois limpa algumas partes do frame de modo que só o que vai aparecer é a caixa de dialogo
+		# e o inventario
+			# Calculando o endereço de onde começar a limpeza no frame 1
+			li a1, 0xFF100000	# seleciona o frame 1
+			li a2, 32		# numero da coluna 
+			li a3, 32		# numero da linha
+			call CALCULAR_ENDERECO	
+
+			mv a1, a0		# move o retorno para a1
+
+			# Imprimindo o rentangulo com a cor de fundo da tela de combate no frame 1
+			li a0, 190		# a0 tem o valor do fundo do menu da tela do combate
+			# a1 já tem o endereço de onde começar a impressao		
+			li a2, 128		# numero de colunas da area a ser impressa
+			li a3, 4		# numero de linhas da area a ser impressa		
+			call PRINT_COR	
+						
+			# Imprimindo o rentangulo com a cor de fundo da tela de combate no frame 1
+			li a0, 190		# a0 tem o valor do fundo do menu da tela do combate
+			# a1 já tem o endereço de onde começar a impressao		
+			li a2, 26		# numero de colunas da area a ser impressa
+			li a3, 28		# numero de linhas da area a ser impressa		
+			call PRINT_COR
+							
+			# Imprimindo o rentangulo com a cor de fundo da tela de combate no frame 1
+			li a0, 190		# a0 tem o valor do fundo do menu da tela do combate
+			li t0, 24017		# 24017 = 75 * 320 + 17
+			add a1, a1, t0		# o proximo retangulo começa a 75 linhas e 17 colunas de 
+						# onde o ultimo terminou de ser impresso
+			li a2, 7		# numero de colunas da area a ser impressa
+			li a3, 12		# numero de linhas da area a ser impressa		
+			call PRINT_COR											
+
+			# Imprimindo o rentangulo com a cor de fundo da tela de combate no frame 1
+			li a0, 190		# a0 tem o valor do fundo do menu da tela do combate
+			li t0, -27305		# -27305 = -86 * 320 + 215
+			add a1, a1, t0		# o proximo retangulo começa a -86 linhas e 215 colunas de 
+						# onde o ultimo terminou de ser impresso
+			li a2, 23		# numero de colunas da area a ser impressa
+			li a3, 28		# numero de linhas da area a ser impressa	
+			call PRINT_COR	
+																																					
+	li a5, 1		# a5 = 1 porque o inventario foi mostrado através do combate
+	call MOSTRAR_INVENTARIO	
+			
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret 
+	
+# ====================================================================================================== #																																			
+	
 PRINT_POKEMON_SILHUETA:
 	# Procedimento que imprime a silhueta de um pokemon na tela. Por silhueta entende-se uma imagem	
 	# de um pokemon em pokemons.bmp, só que ao inves de imprimir a imagem normalmente o pokemon será
@@ -496,7 +660,6 @@ PRINT_POKEMON_SILHUETA:
 
 .data
 	.include "../Imagens/combate/matriz_tiles_tela_combate.data"
-	.include "../Imagens/combate/tiles_tela_combate.data"				
 	.include "../Imagens/combate/seta_proximo_dialogo_combate.data"				
 	.include "../Imagens/combate/tiles_caixa_pokemon_combate.data"	
 	.include "../Imagens/combate/matriz_tiles_caixa_pokemon_combate.data"					

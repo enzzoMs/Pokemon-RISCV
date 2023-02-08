@@ -366,7 +366,9 @@ PRINT_COR:
 	# 	a1 = endereço de onde, no frame escolhido, a impressao deve começar
 	# 	a2 = numero de colunas da área a ser impressa
 	#	a3 = numero de linhas da área a ser impressa
-		
+	# Obs: por algum motivo esse procedimento não funciona no RARS exceto se o endereço de a1 estiver
+	# especificamente no frame que está na tela
+
 	PRINT_COR_LINHAS:
 		mv t0, a2		# copia do numero de a2 para usar no loop de colunas
 			
@@ -383,6 +385,43 @@ PRINT_COR:
 		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
 		
 		bne a3, zero, PRINT_COR_LINHAS	# reinicia o loop se a3 != 0		
+	ret
+
+# ====================================================================================================== #
+
+REPLICAR_FRAME:
+	# Procedimento que faz uma copia de uma área em um frame para outro frame
+	# 
+	# Argumentos: 
+	# 	a0 = endereço no frame do inicio da area que será copiada
+	#	a1 = endereço no frame que vai receber a copia
+	#	a2 = numero de colunas que serão copiadas de a0 para a1
+	#	a3 = numero de linhas que serão copiadas de a0 para a1	
+	# 
+	# OBS: se parte do pressuposto que a0 e a1 estão alinhados para usar lw e sw, e que a área a ser copiada
+	# tem largura e altura (a2 e a3) multiplos de 4
+	
+	REPLICAR_FRAME_LINHAS:
+		mv t0, a2	# copia do numero de colunas para o loop abaixo
+			
+		REPLICAR_FRAME_COLUNAS:
+			lw t1, 0(a0)			# pega 4 pixels do frame em a0
+			sw t1, 0(a1)			# armazena os 4 pixels no frame a1	
+	
+			addi a0, a0, 4			# vai para os próximos pixels do bitmap a0
+			addi a1, a1, 4			# vai para os próximos pixels do bitmap a1
+						
+			addi t0, t0, -4			# decrementa o numero de colunas de pixels restantes			
+			bne t0, zero, REPLICAR_FRAME_COLUNAS	# reinicia o loop se t0 != 0
+
+		sub a0, a0, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a0, a0, 320		# passa o endereço do bitmap para a proxima linha
+		
+		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+														
+		addi a3, a3, -1			# decrementando o numero de linhas restantes	
+		bne a3, zero, REPLICAR_FRAME_LINHAS	# reinicia o loop se t0 != 0		
 	ret
 
 # ====================================================================================================== #
