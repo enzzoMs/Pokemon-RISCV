@@ -473,6 +473,51 @@ REPLICAR_FRAME:
 
 # ====================================================================================================== #
 
+SELECIONAR_OPCAO_MENU:							
+	# Procedimento auxiliar que tem por objetivo selecionar ou retirar a seleção de um item de um menu,
+	# trocando os pixels de um texto por pixels azuis ou pixels cinza dependendo do argumento
+	# O texto deve ter sido impresso usando os tiles em tiles_alfabeto.data
+	# 
+	# Argumentos:
+	# 	a0 = [ 0 ] -> selecionar uma opção, ou seja, trocar os pixels do texto de cinza para azul
+	#	     [ != 0 ] -> retirar a seleção de uma opção, ou seja, trocar os pixels de azul para cinza
+	#	a1 = endereço onde o texto está
+	#	a2 = numero de linhas de pixels do texto
+	#	a3 = numero de colunas de pixels do texto
+	
+	li t0,	91		# t0 = cor do texto quando ele não está selecionado	
+	li t1,	192		# t1 = cor que vai "selecionar" o texto
+		
+	# Se a0 != 0 então o procedimento vai retirar a seleção de um item								
+	beq a0, zero, SELECIONAR_OPCAO_LINHAS	
+		li t0,	192		# t0 = cor do texto quando ele está selecionada	
+		li t1,	91		# t1 = cor que vai retirar a seleção do texto
+					
+	SELECIONAR_OPCAO_LINHAS:
+		mv t2, a3		# copia do numero de colunas no loop abaixo
+			
+		SELECIONAR_OPCAO_COLUNAS:
+			lbu t3, 0(a1)			# pega 1 pixel do bitmap e coloca em t3
+			
+			# Se t3 != t0 então o pixel não sera modificado,
+			# dessa forma somente o texto do item será modificados					
+			bne t3, t0, NAO_MODIFICAR_OPCAO
+				sb t1, 0(a1)
+			
+			NAO_MODIFICAR_OPCAO:
+			addi a1, a1, 1				# vai para o próximo pixel do bitmap
+			addi t2, t2, -1				# decrementando o numero de colunas restantes
+			bne t2, zero, SELECIONAR_OPCAO_COLUNAS	# reinicia o loop se t2 != 0
+			
+		sub a1, a1, a3				# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
+		addi a2, a2, -1				# decrementando o numero de linhas restantes		
+		bne a2, zero, SELECIONAR_OPCAO_LINHAS	# reinicia o loop se a2 != 0
+			
+	ret
+
+# ====================================================================================================== #
+
 TROCAR_FRAME:
 	# Procedimento que troca o frame que está sendo mostrado de 0 -> 1 e de 1 -> 0
 	

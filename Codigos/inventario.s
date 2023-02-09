@@ -318,7 +318,7 @@ MOSTRAR_INVENTARIO:
 			mv a1, t5		# t5 tem o endereço de onde o texto está
 			li a2, 10		# numero de linhas de pixels do texto
 			li a3, 70		# numero de colunas de pixels do texto
-			call SELECIONAR_OPCAO_INVENTARIO
+			call SELECIONAR_OPCAO_MENU
 	
 		# Imprime a imagem do pokemon, seu tipo e pontos pontes e fracos
 			# O primeiro passo é encontrar qual o pokemon correspondente a essa opção
@@ -332,7 +332,7 @@ MOSTRAR_INVENTARIO:
 							# t1 intactos para a analise
 			
 				# se t3 == 0 então não tem um pokemon nessa posição
-				beq t3, zero, LOOP_SELECIONAR_OPCAO	
+				beq t3, zero, LOOP_SELECIONAR_OPCAO_MENU	
 			
 			# Calcula o endereço de onde imprimir a imagem do pokemon 
 				li a1, 0xFF100000		# seleciona como argumento o frame 1
@@ -443,28 +443,28 @@ MOSTRAR_INVENTARIO:
 				li a3, 12	# a3 = numero de linhas da imagem 
 				call PRINT_IMG				
 
-		LOOP_SELECIONAR_OPCAO:
+		LOOP_SELECIONAR_OPCAO_MENU:
 		
 		# Agora é incrementado ou decrementado o valor de t4 de acordo com o input do jogador
 		call VERIFICAR_TECLA
 		
 		addi t4, t4, -1	
 		li t1, -1	# se o valor de t4 atualizado for -1 então o não dá para subir mais no menu
-		beq t4, t1, SELECIONAR_OPCAO_S
+		beq t4, t1, SELECIONAR_OPCAO_S_INVENTARIO
 		li t0, 'w'		
-		beq a0, t0, OPCAO_TROCADA
+		beq a0, t0, OPCAO_TROCADA_INVENTARIO
 		
-		SELECIONAR_OPCAO_S:
+		SELECIONAR_OPCAO_S_INVENTARIO:
 		addi t4, t4, 2		# mais 2 porque foi subtraido 1 acima				
 		li t1, 5	# se o valor de t4 atualizado for 5 então o não dá para descer mais no menu
-		beq t4, t1, FIM_LOOP_SELECIONAR_OPCAO
+		beq t4, t1, FIM_LOOP_SELECIONAR_OPCAO_MENU
 		li t0, 's'
-		beq a0, t0, OPCAO_TROCADA
+		beq a0, t0, OPCAO_TROCADA_INVENTARIO
 		
-		FIM_LOOP_SELECIONAR_OPCAO:
+		FIM_LOOP_SELECIONAR_OPCAO_MENU:
 		addi t4, t4, -1		# memos 1 para voltar t4 para o valor que ele tinha antes das verificações
 		
-		beq a5, zero, SELECIONAR_OPCAO_I
+		beq a5, zero, SELECIONAR_OPCAO_I_INVENTARIO
 		# se a5 != 0 então a entrada é pelo combate então a sáida será por ENTER e somente se uma 
 		# posição válida (com pokemon) estiver selecionada		
 			# Primeiro é verificado se a opção atual tem um pokemon
@@ -473,23 +473,23 @@ MOSTRAR_INVENTARIO:
 			add t0, t0, t1		# e passa o endereço de t0 para a opção atual
 			lw t0, 0(t0)		# verifica a posição atualmente selecionada em POKEMONS_DO_RED
 			
-			beq t0, zero, LOOP_SELECIONAR_OPCAO	# se t0 == 0 então a posição não tem pokemon e
-								# não é valida
+			# se t0 == 0 então a posição não tem pokemon e não é valida			
+			beq t0, zero, LOOP_SELECIONAR_OPCAO_MENU	
 								
 			# se for valida verifica se o jogador apertou ENTER
 			li t0, 10		# 10 = codigo do ENTER 
 			beq a0, t0, FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO													
 					
-		j LOOP_SELECIONAR_OPCAO
+		j LOOP_SELECIONAR_OPCAO_MENU
 						
-		SELECIONAR_OPCAO_I:
+		SELECIONAR_OPCAO_I_INVENTARIO:
 		# se a5 == 0 então a entrada é pela tecla 'i' então a sáida também será pela tecla 'i'		
 		li t0, 'i'		# se 'i' foi apertado então é preciso fechar o inventário
 		beq a0, t0, FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO
 		
-		j LOOP_SELECIONAR_OPCAO
+		j LOOP_SELECIONAR_OPCAO_MENU
 		
-		OPCAO_TROCADA:
+		OPCAO_TROCADA_INVENTARIO:
 		# Se ocorreu uma troca de opção é necessário retirar a seleção da opção atual e limpar a tela
 			# Retirando a seleção da opção
 			li a0, 1		# a0 == 1 -> retirar seleção
@@ -497,7 +497,7 @@ MOSTRAR_INVENTARIO:
 						# selecionada está
 			li a2, 10		# numero de linhas de pixels do texto
 			li a3, 70		# numero de colunas de pixels do texto
-			call SELECIONAR_OPCAO_INVENTARIO
+			call SELECIONAR_OPCAO_MENU
 			
 			# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
 			# de fundo do inventario
@@ -644,51 +644,6 @@ MOSTRAR_INVENTARIO:
 
 	ret
 			
-# ====================================================================================================== #
-									
-SELECIONAR_OPCAO_INVENTARIO:
-	# Procedimento auxiliar que tem por objetivo selecionar ou retirar a seleção de um item do inventario
-	# trocando os pixels de um texto por pixels azuis ou pixels cinza dependendo do argumento
-	# O texto deve ter sido impresso usando os tiles em tiles_alfabeto.data
-	# 
-	# Argumentos:
-	# 	a0 = [ 0 ] -> selecionar uma opção, ou seja, trocar os pixels do texto de cinza para azul
-	#	     [ != 0 ] -> retirar a seleção de uma opção, ou seja, trocar os pixels de azul para cinza
-	#	a1 = endereço onde o texto está
-	#	a2 = numero de linhas de pixels do texto
-	#	a3 = numero de colunas de pixels do texto
-	
-	li t0,	91		# t0 = cor do texto quando ele não está selecionado	
-	li t1,	192		# t1 = cor que vai "selecionar" o texto
-		
-	# Se a0 != 0 então o procedimento vai retirar a seleção de um item								
-	beq a0, zero, SELECIONAR_OPCAO_LINHAS	
-		li t0,	192		# t0 = cor do texto quando ele está selecionada	
-		li t1,	91		# t1 = cor que vai retirar a seleção do texto
-					
-	SELECIONAR_OPCAO_LINHAS:
-		mv t2, a3		# copia do numero de colunas no loop abaixo
-			
-		SELECIONAR_OPCAO_COLUNAS:
-			lbu t3, 0(a1)			# pega 1 pixel do bitmap e coloca em t3
-			
-			# Se t3 != t0 então o pixel não sera modificado,
-			# dessa forma somente o texto do item será modificados					
-			bne t3, t0, NAO_MODIFICAR_OPCAO
-				sb t1, 0(a1)
-			
-			NAO_MODIFICAR_OPCAO:
-			addi a1, a1, 1				# vai para o próximo pixel do bitmap
-			addi t2, t2, -1				# decrementando o numero de colunas restantes
-			bne t2, zero, SELECIONAR_OPCAO_COLUNAS	# reinicia o loop se t2 != 0
-			
-		sub a1, a1, a3				# volta o endeço do bitmap pelo numero de colunas impressas
-		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
-		addi a2, a2, -1				# decrementando o numero de linhas restantes		
-		bne a2, zero, SELECIONAR_OPCAO_LINHAS	# reinicia o loop se a2 != 0
-			
-	ret
-
 # ====================================================================================================== #
 
 .data

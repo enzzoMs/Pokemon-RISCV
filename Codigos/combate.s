@@ -30,8 +30,17 @@ matriz_texto_escolha_o_seu_pokemon: .word 22, 1 		# inclui exclamação no final
 		     .byte 22,71,2,8,76,6,0,77,8,77,71,4,73,77,24,25,26,29,27,25,28,74	
 			
 matriz_texto_escolhido: .word 11, 1 		# inclui espaço no começo e ponto no final
-		.byte 77,4,71,2,8,76,6,78,3,8,54	
-				
+		.byte 77,4,71,2,8,76,6,78,3,8,54
+		
+matriz_texto_o_que_o: .word 8, 1 		# inclui espaço no final
+		.byte 25,77,10,73,4,77,8,77		
+
+matriz_texto_vai: .word 4, 1 		# inclui espaço no começo
+		.byte 77,11,0,78
+		
+matriz_texto_fazer: .word 6, 1 		# inclui interrogação no final
+		.byte 66,0,15,4,70,55
+										
 .text
 		     			 			 
 # ====================================================================================================== # 
@@ -80,7 +89,9 @@ EXECUTAR_COMBATE:
 	call INICIAR_POKEMON_INIMIGO	# imprime os sprites e outros elementos relacionados ao pokemon inimigo
 
 	call INICIAR_POKEMON_RED	# imprime os sprites e outros elementos relacionados ao pokemon do RED
-	
+
+	call TURNO_JOGADOR
+			
 	a: j a
 	
 # ====================================================================================================== #
@@ -463,32 +474,40 @@ INICIAR_POKEMON_RED:
 
 	mv t6, a0	# salva o numero do pokemon escolhido em t6
 
-	# Primeiro a matriz de texto correta com o nome do pokemon (t5)
+	# Primeiro encontra a matriz de texto correta com o nome do pokemon (t5) e atualiza o valor de s11
+	# com o codigo do pokemon do RED
 
 	# se a0 == 0 então é pokemon escolhido é o BULBASAUR 
 	la t5, matriz_texto_bulbasaur		# carrega a matriz de texto do pokemon
+	li t1, BULBASAUR
 	beq a0, zero, PRINT_TEXTO_POKEMON_RED
 			
 	# se a0 == 1 então é pokemon escolhido é o CHARMANDER 
 	li t0, 1	
 	la t5, matriz_texto_charmander		# carrega a matriz de texto do pokemon	
+	li t1, CHARMANDER	
 	beq a0, t0, PRINT_TEXTO_POKEMON_RED
 			
 	# se a0 == 2 então é pokemon escolhido é o SQUIRTLE 
 	li t0, 2	
-	la t5, matriz_texto_squirtle		# carrega a matriz de texto do pokemon				
+	la t5, matriz_texto_squirtle		# carrega a matriz de texto do pokemon	
+	li t1, SQUIRTLE					
 	beq a0, t0, PRINT_TEXTO_POKEMON_RED
 										
 	# se a0 == 3 então é pokemon escolhido é o CATERPIE 
 	li t0, 3	
-	la t5, matriz_texto_caterpie		# carrega a matriz de texto do pokemon			
+	la t5, matriz_texto_caterpie		# carrega a matriz de texto do pokemon
+	li t1, CATERPIE					
 	beq a0, t0, PRINT_TEXTO_POKEMON_RED
 	
 	# se a0 == 4 então é pokemon escolhido é o DIGLETT 
-	li t0, 4	
-	la t5, matriz_texto_diglett		# carrega a matriz de texto do pokemon		
+	la t5, matriz_texto_diglett		# carrega a matriz de texto do pokemon	
+	li t1, DIGLETT							
 	
 	PRINT_TEXTO_POKEMON_RED:
+	
+	slli t1, t1, 11		# coloca o codigo do pokemon escolhido depois dos 11 bits do pokemon inimgo
+	add s11, s11, t1	# em s11
 	
 	# Agora imprime o texto "O YYY foi escolhido.", onde YYY é o nome do pokemon
 	
@@ -646,8 +665,8 @@ RENDERIZAR_POKEMON:
 		beq a5, zero, RENDERIZAR_POKEMON_PRINT_SPRITE
 		
 		# Onde o pokemon do RED deve ser impresso
-		li a2, 77		# numero da coluna 
-		li a3, 105		# numero da linha
+		li a2, 76		# numero da coluna 
+		li a3, 107		# numero da linha
 				
 		RENDERIZAR_POKEMON_PRINT_SPRITE:
 		
@@ -863,9 +882,268 @@ RENDERIZAR_POKEMON:
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret	
-																																																																																																																																																																																																																																																																																									
+																																																																																																																																																																																																																																																																																										
 # ====================================================================================================== #
-																																			
+
+TURNO_JOGADOR:
+	# Procedimento que coordena o turno do jogador, fazendo chamadas a ....
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+		
+	# Primeiro encontra a matriz de texto com o nome do pokemon escolhido pelo RED
+	srli t0, s11, 11	# os primeiros 11 bits de s11 são o codigo do pokemon inimigo e os proximos 11
+				# são do pokemon do RED
+
+	# Transforma o codigo do pokemon em uma matriz de texto
+	la t5, matriz_texto_bulbasaur		# carrega a matriz de texto do pokemon
+	li t1, BULBASAUR
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
+			
+	la t5, matriz_texto_charmander		# carrega a matriz de texto do pokemon	
+	li t1, CHARMANDER	
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
+			
+	la t5, matriz_texto_squirtle		# carrega a matriz de texto do pokemon	
+	li t1, SQUIRTLE				
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
+										
+	la t5, matriz_texto_caterpie		# carrega a matriz de texto do pokemon	
+	li t1, CATERPIE		
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
+	
+	la t5, matriz_texto_diglett		# carrega a matriz de texto do pokemon	
+	
+	TURNO_JOGADOR_PRINT_TEXTO:
+	
+	# Agora imprime o texto "O que o YYY deve fazer?", onde YYY é o nome do pokemon
+		# Primeiro limpa a caixa de dialogo	
+		# Calculando o endereço de onde começar a limpeza no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv a1, a0		# move o retorno para a1
+
+		# Imprimindo o rentangulo com a cor de fundo da caixa no frame 0
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+	
+		# Replica o frame 0 no frame 1 para que os dois estejam iguais
+		li a0, 0xFF000000	# copia o frame 0 no frame 1
+		li a1, 0xFF100000
+		li a2, 320		# numero de colunas a serem copiadas
+		li a3, 240		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME
+			
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+
+		# Calculando o endereço de onde imprimir o primeiro texto ('O que o ') no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+			
+		mv a1, a0		# move o retorno para a1
+
+		# Imprime o texto com o 'O que o  '
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_o_que_o 	
+		call PRINT_TEXTO
+		
+		# Imprime o texto com o nome do Pokemon
+		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+		# de modo que está na posição exata do proximo texto
+		mv a4, t5		# a4 recebe a matriz de texto do pokemon decidido acima
+		call PRINT_TEXTO
+
+		# Imprime o texto com o ' vai'
+		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+		# de modo que está na posição exata do proximo texto
+		la a4, matriz_texto_vai	
+		call PRINT_TEXTO
+		
+		# Calculando o endereço de onde imprimir o ultimo texto ('fazer?') no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 201		# numero da linha
+		call CALCULAR_ENDERECO	
+			
+		mv a1, a0		# move o retorno para a1
+				
+		# Imprime o texto com o ('fazer?')
+		# a1 já tem o endereço de onde imprimir o texto					
+		la a4, matriz_texto_fazer 	
+		call PRINT_TEXTO
+	
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+			
+	call RENDERIZAR_MENU_DE_COMBATE
+																			
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret	
+
+# ====================================================================================================== #
+
+RENDERIZAR_MENU_DE_COMBATE:
+	# Procedimento que torna o menu de combate responsivo aos controles do jogador. Quando chamado o 
+	# procedimento vai imprimir uma seta que pode ser movida pelo jogador entre as 4 opções do menu,
+	# e com ENTER essa opeção pode ser selecionada.
+	#
+	# Retorno:
+	#	a0 = número de 0 a 3 representado a opção que o jogador selecionou, onde
+	#		[ 0 ] -> ATACAR 
+	#		[ 1 ] -> FUGIR
+	#		[ 2 ] -> DEFESA  
+	#		[ 3 ] -> ITEM  			  
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+	
+	li t4, 0		# o menu começa com a primeira opção selecionada (ATACAR)
+	
+	LOOP_SELECIONAR_OPCAO_MENU_DE_COMBATE:
+		# Primeiro imprime uma imagem de uma seta indicando a opção selecionada		
+	   		# Calculando o endereço de onde a seta será impressa
+			li a1, 0xFF000000	# seleciona o frame 0
+			li a2, 187		# numero da coluna onde a seta da primeira opção está
+			li a3, 185		# numero da linha onde a seta da primeira opção está	
+			
+			# O numero da coluna e linha onde a seta será impressa é dependente da opção selecionada
+			li t0, 1
+			beq t4, t0, COMBATE_SETA_OPCOES_1_3
+			li t0, 3
+			beq t4, t0, COMBATE_SETA_OPCOES_1_3
+			j COMBATE_SETA_CHECAR_OPCAO_2_3
+			
+			COMBATE_SETA_OPCOES_1_3:
+			# Caso a opção selecionada for a 1 ou 3 então a coluna é movida por +60 pixels		
+			addi a2, a2, 60
+			
+			COMBATE_SETA_CHECAR_OPCAO_2_3: 
+			li t0, 2
+			blt t4, t0, COMBATE_SETA_CALCULAR_ENDEREÇO
+			
+			# Caso a opção selecionada for a 2 ou 3 então a linha é movida por +17											
+			addi a3, a3, 17
+			
+			COMBATE_SETA_CALCULAR_ENDEREÇO:
+			call CALCULAR_ENDERECO		
+				
+			mv t3, a0		# move o retorno para t3
+			
+			# Imprimindo a seta		
+			la a0, tiles_alfabeto	
+			addi a0, a0, 8		# pula para onde começa os pixels no .data
+			li t0, 6720		# a imagem dessa seta pode ser encontrada em tiles_alfabeto
+			add a0, a0, t0		# a 6720 (8 (tamanho de uma linha da imagem) * 840 (numero da 
+						# linha onde esse tile começa)) pixels de distancia do começo
+			mv a1, t3		# t3 tem o endereço de onde imprimir a seta
+			li a2, 8		# numero de colunas da imagem 
+			li a3, 15		# numero de linhas da imagem 	
+			call PRINT_IMG	
+		
+		# Agora seleciona a opção mudando os pixels do texto da opção por pixels azuis
+			# Via de regra o endereço de onde o texto está sempre fica a 9 colunas e 2 linhas 
+			# de distancia da seta
+			
+			addi t5, t3, 649	# t5 recebe o endereço de onde o texto está a partir do 
+						# endereço da seta (t3)
+						# 649 = (320 * 2 linhas) + 9 colunas
+			
+			# Selecionado a opção
+			li a0, 0		# a0 == 0 -> selecionar a opção
+			mv a1, t5		# t5 tem o endereço de onde o texto está
+			li a2, 9		# numero de linhas de pixels do texto
+			li a3, 41		# numero de colunas de pixels do texto
+			call SELECIONAR_OPCAO_MENU
+	
+		LOOP_SELECIONAR_OPCAO_COMBATE:
+		
+		# Agora é incrementado ou decrementado o valor de t4 de acordo com o input do jogador
+		call VERIFICAR_TECLA
+		
+		li t0, 'w'
+		beq a0, t0, OPCAO_W_COMBATE
+		
+		li t0, 'a'
+		beq a0, t0, OPCAO_A_COMBATE
+		
+		li t0, 's'
+		beq a0, t0, OPCAO_S_COMBATE
+		
+		li t0, 'd'
+		beq a0, t0, OPCAO_D_COMBATE										
+		
+		j LOOP_SELECIONAR_OPCAO_COMBATE				
+																				
+		OPCAO_W_COMBATE:
+		# se a opção atual for 0 ou 1 então não é possivel subir mais no menu
+		li t0, 1
+		ble t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, -2			# passa t4 para a opção acima 
+		j OPCAO_TROCADA_COMBATE	
+		
+		OPCAO_A_COMBATE:
+		# se a opção atual for 0 ou 2 então não é possivel ir mais para a esquerda no menu
+		beq t4, zero, LOOP_SELECIONAR_OPCAO_COMBATE		
+		li t0, 2
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, -1			# passa t4 para a opção a esquerda 
+		j OPCAO_TROCADA_COMBATE
+		
+		OPCAO_S_COMBATE:
+		# se a opção atual for 2 ou 3 então não é possivel descer mais no menu
+		li t0, 2
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
+		li t0, 3
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, 2			# passa t4 para a opção abaixo 
+		j OPCAO_TROCADA_COMBATE
+				
+		OPCAO_D_COMBATE:
+		# se a opção atual for 1 ou 3 então não é possivel ir mais para a direita no menu
+		li t0, 1
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
+		li t0, 3
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, 1			# passa t4 para a opção a direita
+
+		OPCAO_TROCADA_COMBATE:
+		# Se ocorreu uma troca de opção é necessário retirar a seleção da opção atual e limpar a tela
+			# Retirando a seleção da opção
+			li a0, 1		# a0 == 1 -> retirar seleção
+			mv a1, t5		# t5 ainda tem o endereço de onde o texto da ultima opção
+						# selecionada está
+			li a2, 9		# numero de linhas de pixels do texto
+			li a3, 41		# numero de colunas de pixels do texto
+			call SELECIONAR_OPCAO_MENU
+			
+			# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
+			# de fundo do menu
+			li a0, 0xFF		# a0 tem o valor do fundo do menu
+			addi a1, t5, -9		# volta o endereço de t5 por 9 colunas de modo que a1
+						# agora tem o endereço de onde a seta está e onde a limpeza
+						# vai acontecer			
+			li a2, 6		# numero de colunas da imagem da seta
+			li a3, 11		# numero de linhas da imagem da seta			
+			call PRINT_COR
+					
+			j LOOP_SELECIONAR_OPCAO_MENU_DE_COMBATE
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret	
+
+# ====================================================================================================== #
+																																	
 PRINT_POKEMON_SILHUETA:
 	# Procedimento que imprime a silhueta de um pokemon na tela. Por silhueta entende-se uma imagem	
 	# de um pokemon em pokemons.bmp, só que ao inves de imprimir a imagem normalmente o pokemon será
@@ -927,7 +1205,7 @@ PRINT_POKEMON_SILHUETA:
 	ret
 	
 # ====================================================================================================== #
-
+	
 .data
 	.include "../Imagens/combate/matriz_tiles_tela_combate.data"
 	.include "../Imagens/combate/seta_proximo_dialogo_combate.data"				
