@@ -79,8 +79,8 @@ MOSTRAR_INVENTARIO:
 	#	     [ 1 ] -> entrada pelos procedimentos de combate, tal como explicado acima
 	#
 	# Retorno:
-	#	a0 = um número de 0 a 4 indicando a ultima opção do inventario que o jogador selecionou
-	#	antes que o inventario fosse fechado
+	#	a0 = um número de 0 a 4 indicando o pokemon que o RED selecionou antes que o inventario fosse 
+	#	fechado. Esse retorno só é util para o caso de a5 == 1
 	
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
@@ -602,7 +602,43 @@ MOSTRAR_INVENTARIO:
 	FIM_INVENTARIO:
 		
 	mv a0, t6	# move para a0 como retorno o valor de t6, ou seja, o valor da ultima opção selecionada			
-								
+	
+	li t0, 4		# Para encontrar o endereço da opção atual em 
+	mul t0, t0, a0		# POKEMONS_DO_RED basta utilizar o valor de a0
+	la t1, POKEMONS_DO_RED	# (numero da opção atual) partindo do fato de 
+	add t1, t1, t0		# de que cada pokemon tem 1 word (4 bytes) de tamanho
+				
+	lw a0, 0(t1)		# le o codigo do pokemon apontado por t1	
+	
+	# Transforma o codigo do pokemon em um numero de 0 a 4
+	
+	# Se o pokemon escolhido foi o BULBASAUR o retorno será 0
+	li t0, 0
+	li t1, BULBASAUR	
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+
+	# Se o pokemon escolhido foi o CHARMANDER o retorno será 1
+	li t0, 1
+	li t1, CHARMANDER			
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+			
+	# Se o pokemon escolhido foi o SQUIRTLE o retorno será 2
+	li t0, 2
+	li t1, SQUIRTLE					
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+										
+	# Se o pokemon escolhido foi o CATERPIE o retorno será 3
+	li t0, 3
+	li t1, CATERPIE							
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+	
+	# Se o pokemon escolhido foi o DIGLETT o retorno será 4 
+	li t0, 4
+		
+	INVENTARIO_RETORNAR_POKEMON:
+	
+	mv a0, t0	# move para a0 o valor de t0 decidido acima
+																	
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 

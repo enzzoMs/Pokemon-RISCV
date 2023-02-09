@@ -78,7 +78,54 @@ PRINT_IMG:
 	ret
 
 # ====================================================================================================== #
+
+PRINT_IMG_INVERTIDA:
+	# Mesma coisa que o PRINT_IMG, exceto que imprime a imagem de maneira espelhada
+	#
+	# Argumentos: 
+	# 	a0 = endereço da imagem		
+	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
+	# 	a2 = numero de colunas da imagem
+	#	a3 = numero de linhas da imagem
+
+	add a0, a0, a2		# como a imagem deve ser impressa de forma invertida então o endereço
+				# de a0 deve estar no final da primeira linha	
+	addi a0, a0, -1		# também é necessario voltar o endereço por 1 coluna (por motivos desconhecidos)	
+				
+	li t0, 0xC7		# t0 tem o valor da cor de um pixel transparente
 	
+	PRINT_IMG_INVERTIDA_LINHAS:
+		mv t1, a2		# copia do numero de a2 para usar no loop de colunas
+			
+		PRINT_IMG_INVERTIDA_COLUNAS:
+			lbu t2, 0(a0)			# pega 1 pixel do .data e coloca em t2
+			
+			# Se o valor do pixel do .data (t2) for 0xC7 (pixel transparente), 
+			# o pixel não é armazenado no bitmap, e por consequência não é renderizado na tela
+			beq t2, t0, NAO_ARMAZENAR_PIXEL_IMG_INVERTIDA
+				sb t2, 0(a1)			# pega o pixel de t2 e coloca no bitmap
+	
+			NAO_ARMAZENAR_PIXEL_IMG_INVERTIDA:
+			addi t1, t1, -1			# decrementa o numero de colunas restantes
+			addi a0, a0, -1			# vai para o próximo pixel anterior da imagem
+			addi a1, a1, 1			# vai para o próximo pixel do bitmap
+			bne t1, zero, PRINT_IMG_INVERTIDA_COLUNAS	# reinicia o loop se t1 != 0
+			
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
+
+		add a0, a0, a2		# como a imagem deve ser impressa de forma invertida então o endereço
+		add a0, a0, a2		# deve estar no final da proxima linha a ser impressa,
+					# o que requer soma a2 duas vezes
+
+		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+		
+		bne a3, zero, PRINT_IMG_INVERTIDA_LINHAS	# reinicia o loop se a3 != 0
+			
+	ret
+	
+# ====================================================================================================== #
+			
 PRINT_TILES_AREA:
 	# Procedimento auxiliar que tem por objetivo usar uma matriz de tiles para imprimir uma imagem
 	# de uma área 
