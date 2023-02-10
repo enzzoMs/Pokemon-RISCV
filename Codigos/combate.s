@@ -40,7 +40,19 @@ matriz_texto_vai: .word 4, 1 		# inclui espaço no começo
 		
 matriz_texto_fazer: .word 6, 1 		# inclui interrogação no final
 		.byte 66,0,15,4,70,55
-										
+
+matriz_texto_tenta_fugir: .word 13, 1 		# inclui espaço no começo e exclamação no final
+		.byte 77,72,4,7,72,0,77,66,73,5,78,70,74
+		
+matriz_texto_tres_pontos: .word 2, 1 		# inclui espaço no final
+		.byte 65,77
+		
+matriz_texto_a_fuga_falhou: .word 14, 1 		# inclui ponto no final
+		.byte 39,77,66,73,5,0,77,66,0,76,6,8,73,54
+		
+matriz_texto_a_fuga_funcionou: .word 17, 1 		# inclui exclamação no final
+		.byte 39,77,66,73,5,0,77,66,73,7,2,78,8,7,8,73,74
+						
 .text
 		     			 			 
 # ====================================================================================================== # 
@@ -72,6 +84,7 @@ VERIFICAR_COMBATE:
 						# 1/5 chance de acontecer cada vez que o RED passa pela grama
 		call EXECUTAR_COMBATE
 	
+	
 	FIM_VERIFICAR_COMBATE:
 	
 	lw ra, (sp)		# desempilha ra
@@ -84,15 +97,38 @@ VERIFICAR_COMBATE:
 EXECUTAR_COMBATE:
 	# Procedimento que vai coordenar o combate do jogo, chamado todos os outros procedimentos necessários
 	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+		
 	call INICIAR_TELA_DE_COMBATE		# inicia a tela de combate
 
 	call INICIAR_POKEMON_INIMIGO	# imprime os sprites e outros elementos relacionados ao pokemon inimigo
 
 	call INICIAR_POKEMON_RED	# imprime os sprites e outros elementos relacionados ao pokemon do RED
 
-	call TURNO_JOGADOR
+	LOOP_TURNOS_COMBATE:
+	
+		call TURNO_JOGADOR
+		# como retorno a0 tem um numero especificando o que fazer (continuar, parar combate, etc)
+		
+		# se a0 == 1 o combate deve parar
+		li t0, 1
+		beq a0, t0, FIM_LOOP_TURNOS_COMBATE
 			
-	a: j a
+		j LOOP_TURNOS_COMBATE
+	
+	FIM_LOOP_TURNOS_COMBATE:
+	# indenpendente do que aconteceu no combate a área e o sprite do RED precisam ser impressos novamente
+	# para que o jogo possa continuar
+	
+	call REIMPRIMIR_RED_E_AREA	
+		
+	FIM_EXECUTAR_COMBATE:
+	
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret 	
 	
 # ====================================================================================================== #
 
@@ -595,12 +631,499 @@ INICIAR_POKEMON_RED:
 		mv a0, t6		# t6 ainda tem o numero do pokemon escolhido
 		li a5, 1		# a5 = 1 para renderizar o pokemon do RED
 		call RENDERIZAR_POKEMON
-																								
+
+	# Replica o frame 0 no frame 1 para que os dois estejam iguais
+		li a0, 0xFF000000	# copia o frame 0 no frame 1
+		li a1, 0xFF100000
+		li a2, 320		# numero de colunas a serem copiadas
+		li a3, 240		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME																								
+																																																																								
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret 
+																																																																																																																																																																																																																																																																																											
+# ====================================================================================================== #
+
+TURNO_JOGADOR:
+	# Procedimento que coordena o turno do jogador, fazendo chamadas aos procedimentos de ação 
+	# (atacar, defender, item e fugir) de acordo com os inputs do jogador
+	#
+	# Retorno:
+	# 	a0 = [ 0 ] se o combate deve continuar
+	#	     [ 1 ] se o combate deve parar  
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+		
+	# Primeiro encontra a matriz de texto com o nome do pokemon escolhido pelo RED
+	srli t0, s11, 11	# os primeiros 11 bits de s11 são o codigo do pokemon inimigo e os proximos 11
+				# são do pokemon do RED
+
+	# Transforma o codigo do pokemon em uma matriz de texto
+	la t6, matriz_texto_bulbasaur		# carrega a matriz de texto do pokemon
+	li t1, BULBASAUR
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
+			
+	la t6, matriz_texto_charmander		# carrega a matriz de texto do pokemon	
+	li t1, CHARMANDER	
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
+			
+	la t6, matriz_texto_squirtle		# carrega a matriz de texto do pokemon	
+	li t1, SQUIRTLE				
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
+										
+	la t6, matriz_texto_caterpie		# carrega a matriz de texto do pokemon	
+	li t1, CATERPIE		
+	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
 	
+	la t6, matriz_texto_diglett		# carrega a matriz de texto do pokemon	
+	
+	TURNO_JOGADOR_PRINT_TEXTO:
+	
+	# Agora imprime o texto "O que o YYY deve fazer?", onde YYY é o nome do pokemon
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+
+		# Primeiro limpa a caixa de dialogo	
+		# Calculando o endereço de onde começar a limpeza no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv a1, a0		# move o retorno para a1
+
+		# Imprimindo o rentangulo com a cor de fundo da caixa no frame 0
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+	
+		# Replica o frame 0 no frame 1 para que os dois estejam iguais
+		li a0, 0xFF000000	# copia o frame 0 no frame 1
+		li a1, 0xFF100000
+		li a2, 320		# numero de colunas a serem copiadas
+		li a3, 240		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME
+			
+		# Calculando o endereço de onde imprimir o primeiro texto ('O que o ') no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+			
+		mv a1, a0		# move o retorno para a1
+
+		# Imprime o texto com o 'O que o  '
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_o_que_o 	
+		call PRINT_TEXTO
+		
+		# Imprime o texto com o nome do Pokemon
+		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+		# de modo que está na posição exata do proximo texto
+		mv a4, t6		# a4 recebe a matriz de texto do pokemon decidido acima
+		call PRINT_TEXTO
+
+		# Imprime o texto com o ' vai'
+		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+		# de modo que está na posição exata do proximo texto
+		la a4, matriz_texto_vai	
+		call PRINT_TEXTO
+		
+		# Calculando o endereço de onde imprimir o ultimo texto ('fazer?') no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 201		# numero da linha
+		call CALCULAR_ENDERECO	
+			
+		mv a1, a0		# move o retorno para a1
+				
+		# Imprime o texto com o ('fazer?')
+		# a1 já tem o endereço de onde imprimir o texto					
+		la a4, matriz_texto_fazer 	
+		call PRINT_TEXTO
+	
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+			
+	call RENDERIZAR_MENU_DE_COMBATE
+
+	# Como retorno de RENDERIZAR_MENU_DE_COMBATE a0 tem o valor da opção selecionada pelo jogador
+	# Então é decidido a partir de a0 qual procedimento do menu chamar
+					
+	li t0, 1
+	bne a0, t0, FIM_TURNO_JOGADOR
+		# se a opção selecionada for 1 então chama a ação de fugir																																																																										
+		call ACAO_FUGIR
+		# como retorno a0 == 0 se o combate deve continuar e 1 caso contrário, esse retorno será
+		# propagado para EXECUTAR_COMBATE
+	
+	FIM_TURNO_JOGADOR:
+
+	# dos procedimentos de ação do jogador chamados acima a0 teve ter um retorno especificando o que 
+	# EXECUTAR_COMBATE deve fazer (continuar combate, terminar combate, etc)
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																													
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret	
+
+# ------------------------------------------------------------------------------------------------------ #
+# Abaixo seguem os procedimentos de ação do jogador, esses procedimentos são chamados através do menu	 #
+# de combate durante TURNO_JOGADOR									 #
+# Todos os procedimentos tem o mesmo retorno, indicando se o combate deve continuar ou não		 #
+# Além disso, todos devem terminar com o frame 0 e frame 1 iguais					 #
+# ------------------------------------------------------------------------------------------------------ #
+
+ACAO_FUGIR:
+	# A ação de fugir tem uma chance de 1/3 de não funcionar, caso funcione simplesmente termina o combate
+	#
+	# Retorno:
+	# 	a0 = [ 0 ] se o combate deve continuar
+	#	     [ 1 ] se o combate deve parar e voltar ao loop do jogo 
+	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+	
+	# Primeiro limpa a caixa de dialogo no frame 1	
+	# Calculando o endereço de onde começar a limpeza no frame 1
+	li a1, 0xFF000000	# seleciona o frame 1
+	li a2, 28		# numero da coluna 
+	li a3, 185		# numero da linha
+	call CALCULAR_ENDERECO	
+
+	mv t5, a0		# move o retorno para t5
+
+	# Imprimindo o rentangulo com a cor de fundo da caixa no frame 1
+	li a0, 0xFF		# a0 tem o valor do fundo da caixa
+	mv a1, t5		# t5 tem o endereço de onde começar a impressao		
+	li a2, 147		# numero de colunas da imagem da seta
+	li a3, 30		# numero de linhas da imagem da seta			
+	call PRINT_COR	
+		
+	# Agora imprime o texto ('YYY tenta fugir!)', onde YYY é o nome do pokemon do RED		
+	# Calculando o endereço de onde imprimir o primeiro texto ('O ') no frame 1
+	li a1, 0xFF100000	# seleciona o frame 1
+	li a2, 28		# numero da coluna 
+	li a3, 185		# numero da linha
+	call CALCULAR_ENDERECO	
+			
+	mv a1, a0		# move o retorno para a1
+
+	# Imprime o texto com o nome do Pokemon
+	# a1 já tem o endereço de onde imprimir o texto
+	mv a4, t6		# t6 ainda tem a matriz de texto do pokemon do RED 
+	call PRINT_TEXTO
+
+	# Imprime o texto com o ' tenta fugir!'
+	# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+	# de modo que está na posição exata do proximo texto
+	la a4, matriz_texto_tenta_fugir	
+	call PRINT_TEXTO			
+
+	# Por fim, imprime uma pequena seta indicando que o jogador pode apertar ENTER para avançar
+	# o dialogo						
+	# Calculando o endereço de onde imprimir a seta no frame 1
+	li a1, 0xFF100000	# seleciona o frame 0
+	li a2, 159		# numero da coluna 
+	li a3, 207		# numero da linha
+	call CALCULAR_ENDERECO											
+		
+	mv a1, a0		# move o retorno para a1		
+									
+	# Imprimindo a imagem da seta no frame 0
+	la a0, seta_proximo_dialogo_combate		# carrega a imagem				
+	# a1 já tem o endereço de onde imprimir a imagem
+	lw a2, 0(a0)		# numero de colunas da imagem
+	lw a3, 4(a0)		# numero de linhas da imagem
+	addi a0, a0, 8		# pula para onde começa os pixels no .data	
+	call PRINT_IMG	
+		
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 1		
+
+	# Replica a caixa de dialogo do frame 1 no frame 0 para que os dois estejam iguais	
+	li t0, 0x00100000
+	add a0, t5, t0		# a0 recebe o endereço de t5 no frame 1		
+	mv a1, t5		# t5 tem o endereço da caixa no frame 0
+	li a2, 264		# numero de colunas a serem copiadas
+	li a3, 32		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME
+														
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_TENTA_FUGIR:
+		call VERIFICAR_TECLA
+		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_TENTA_FUGIR
+			
+	# Imprimindo o rentangulo com a cor de fundo da caixa no frame 1
+	li a0, 0xFF		# a0 tem o valor do fundo da caixa
+	mv a1, t5		# t5 ainda tem o endereço de onde começar a impressao		
+	li a2, 147		# numero de colunas da imagem da seta
+	li a3, 15		# numero de linhas da imagem da seta			
+	call PRINT_COR			
+	
+	# Agora imprime o texto ('... YYY)', onde YYY é a mensagem se a fuga foi bem sucedida ou nao	
+	# Calculando o endereço de onde imprimir o primeiro texto ('...') no frame 0
+	li a1, 0xFF000000	# seleciona o frame 0
+	li a2, 28		# numero da coluna 
+	li a3, 185		# numero da linha
+	call CALCULAR_ENDERECO	
+			
+	mv a1, a0		# move o retorno para a1
+
+	# Imprime o texto ('...')
+	# a1 já tem o endereço de onde imprimir o texto
+	la a4, matriz_texto_tres_pontos
+	call PRINT_TEXTO
+	
+	mv t2, a1		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+				# de modo que está na posição exata do proximo texto
+			
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 0	
+
+	# Replica a caixa de dialogo do frame 0 no frame 1 para que os dois estejam iguais	
+	mv a0, t5		# t5 tem o endereço da caixa no frame 0		
+	li t0, 0x00100000
+	add a1, t5, t0		# a0 recebe o endereço de t5 no frame 1		
+	li a2, 264		# numero de colunas a serem copiadas
+	li a3, 32		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME	
+
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 1	
+													
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_ACAO_FUGIR_TRES_PONTOS:
+		call VERIFICAR_TECLA
+		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_ACAO_FUGIR_TRES_PONTOS
+										
+	# Escolhe um numero randomico de 0 a 2, se o numero for 0 então a fuga nao foi bem sucedida
+	li a0, 2
+	call ENCONTRAR_NUMERO_RANDOMICO
+		
+	bne a0, zero, FUGA_FUNCIONOU
+
+	# -------------------------------------------------------
+
+	# A fuga falhou se a0 == 0
+
+	# Imprime o texto com o ' a fuga falhou' no frame 0
+	mv a1, t2	# pelo PRINT_TEXTO anterior t2 ainda tem salvo o endereço onde o ultimo tile
+			# foi impresso, de modo que está na posição exata do proximo texto
+	la a4, matriz_texto_a_fuga_falhou
+	call PRINT_TEXTO	
+	
+	li t2, 0		# t2 recebe 0 para indicar que o combate deve continuar
+	
+	j FIM_ACAO_FUGA		
+	
+	# -------------------------------------------------------
+	
+	FUGA_FUNCIONOU:		
+	
+	# A fuga falhou se a0 != 0
+
+	# Imprime o texto com o ' a fuga funcionou!' no frame 0
+	mv a1, t2	# pelo PRINT_TEXTO anterior t2 ainda tem salvo o endereço onde o ultimo tile
+			# foi impresso, de modo que está na posição exata do proximo texto
+	la a4, matriz_texto_a_fuga_funcionou
+	call PRINT_TEXTO
+		
+	li t2, 1		# t2 recebe 1 para indicar que o combate não deve continuar
+													
+	# -------------------------------------------------------
+		
+FIM_ACAO_FUGA:
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+	
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_ACAO_FUGIR_FALHOU:
+		call VERIFICAR_TECLA
+	
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_ACAO_FUGIR_FALHOU	
+			
+	# Replica a caixa de dialogo do frame 0 no frame 1 para que os dois estejam iguais	
+	mv a0, t5		# t5 tem o endereço da caixa no frame 0		
+	li t0, 0x00100000
+	add a1, t5, t0		# a0 recebe o endereço de t5 no frame 1		
+	li a2, 264		# numero de colunas a serem copiadas
+	li a3, 32		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME		
+
+	mv a0, t2	# como retorno a0 recebe o valor de t2 decidido anteriormente, indicando se o combate
+			# deve continuar ou não
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret																							
+																																
+# ====================================================================================================== #
+
+RENDERIZAR_MENU_DE_COMBATE:
+	# Procedimento que torna o menu de combate responsivo aos controles do jogador. Quando chamado o 
+	# procedimento vai imprimir uma seta que pode ser movida pelo jogador entre as 4 opções do menu,
+	# e com ENTER essa opeção pode ser selecionada.
+	#
+	# Retorno:
+	#	a0 = número de 0 a 3 representado a opção que o jogador selecionou, onde
+	#		[ 0 ] -> ATACAR 
+	#		[ 1 ] -> FUGIR
+	#		[ 2 ] -> DEFESA  
+	#		[ 3 ] -> ITEM  			  
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+	
+	li t4, 0		# o menu começa com a primeira opção selecionada (ATACAR)
+	
+	LOOP_SELECIONAR_OPCAO_MENU_DE_COMBATE:
+		# Primeiro imprime uma imagem de uma seta indicando a opção selecionada		
+	   		# Calculando o endereço de onde a seta será impressa
+			li a1, 0xFF000000	# seleciona o frame 0
+			li a2, 187		# numero da coluna onde a seta da primeira opção está
+			li a3, 185		# numero da linha onde a seta da primeira opção está	
+			
+			# O numero da coluna e linha onde a seta será impressa é dependente da opção selecionada
+			li t0, 1
+			beq t4, t0, COMBATE_SETA_OPCOES_1_3
+			li t0, 3
+			beq t4, t0, COMBATE_SETA_OPCOES_1_3
+			j COMBATE_SETA_CHECAR_OPCAO_2_3
+			
+			COMBATE_SETA_OPCOES_1_3:
+			# Caso a opção selecionada for a 1 ou 3 então a coluna é movida por +60 pixels		
+			addi a2, a2, 60
+			
+			COMBATE_SETA_CHECAR_OPCAO_2_3: 
+			li t0, 2
+			blt t4, t0, COMBATE_SETA_CALCULAR_ENDEREÇO
+			
+			# Caso a opção selecionada for a 2 ou 3 então a linha é movida por +17											
+			addi a3, a3, 17
+			
+			COMBATE_SETA_CALCULAR_ENDEREÇO:
+			call CALCULAR_ENDERECO		
+				
+			mv t3, a0		# move o retorno para t3
+			
+			# Imprimindo a seta		
+			la a0, tiles_alfabeto	
+			addi a0, a0, 8		# pula para onde começa os pixels no .data
+			li t0, 6720		# a imagem dessa seta pode ser encontrada em tiles_alfabeto
+			add a0, a0, t0		# a 6720 (8 (tamanho de uma linha da imagem) * 840 (numero da 
+						# linha onde esse tile começa)) pixels de distancia do começo
+			mv a1, t3		# t3 tem o endereço de onde imprimir a seta
+			li a2, 8		# numero de colunas da imagem 
+			li a3, 15		# numero de linhas da imagem 	
+			call PRINT_IMG	
+		
+		# Agora seleciona a opção mudando os pixels do texto da opção por pixels azuis
+			# Via de regra o endereço de onde o texto está sempre fica a 9 colunas e 2 linhas 
+			# de distancia da seta
+			
+			addi t5, t3, 649	# t5 recebe o endereço de onde o texto está a partir do 
+						# endereço da seta (t3)
+						# 649 = (320 * 2 linhas) + 9 colunas
+			
+			# Selecionado a opção
+			li a0, 0		# a0 == 0 -> selecionar a opção
+			mv a1, t5		# t5 tem o endereço de onde o texto está
+			li a2, 9		# numero de linhas de pixels do texto
+			li a3, 41		# numero de colunas de pixels do texto
+			call SELECIONAR_OPCAO_MENU
+	
+		LOOP_SELECIONAR_OPCAO_COMBATE:
+		
+		# Agora é incrementado ou decrementado o valor de t4 de acordo com o input do jogador
+		call VERIFICAR_TECLA
+		
+		li t0, 'w'
+		beq a0, t0, OPCAO_W_COMBATE
+		
+		li t0, 'a'
+		beq a0, t0, OPCAO_A_COMBATE
+		
+		li t0, 's'
+		beq a0, t0, OPCAO_S_COMBATE
+		
+		li t0, 'd'
+		beq a0, t0, OPCAO_D_COMBATE	
+		
+		# Se o jogador apertar ENTER ele quer selecionar essa opção
+		li t0, 10		# 10 é o codigo do ENTER
+		beq a0, t0, FIM_RENDERIZAR_MENU_DE_COMBATE																					
+		
+		j LOOP_SELECIONAR_OPCAO_COMBATE				
+																				
+		OPCAO_W_COMBATE:
+		# se a opção atual for 0 ou 1 então não é possivel subir mais no menu
+		li t0, 1
+		ble t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, -2			# passa t4 para a opção acima 
+		j OPCAO_TROCADA_COMBATE	
+		
+		OPCAO_A_COMBATE:
+		# se a opção atual for 0 ou 2 então não é possivel ir mais para a esquerda no menu
+		beq t4, zero, LOOP_SELECIONAR_OPCAO_COMBATE		
+		li t0, 2
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, -1			# passa t4 para a opção a esquerda 
+		j OPCAO_TROCADA_COMBATE
+		
+		OPCAO_S_COMBATE:
+		# se a opção atual for 2 ou 3 então não é possivel descer mais no menu
+		li t0, 2
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
+		li t0, 3
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, 2			# passa t4 para a opção abaixo 
+		j OPCAO_TROCADA_COMBATE
+				
+		OPCAO_D_COMBATE:
+		# se a opção atual for 1 ou 3 então não é possivel ir mais para a direita no menu
+		li t0, 1
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
+		li t0, 3
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		addi t4, t4, 1			# passa t4 para a opção a direita
+
+		OPCAO_TROCADA_COMBATE:
+		# Se ocorreu uma troca de opção é necessário retirar a seleção da opção atual e limpar a tela
+			# Retirando a seleção da opção
+			li a0, 1		# a0 == 1 -> retirar seleção
+			mv a1, t5		# t5 ainda tem o endereço de onde o texto da ultima opção
+						# selecionada está
+			li a2, 9		# numero de linhas de pixels do texto
+			li a3, 41		# numero de colunas de pixels do texto
+			call SELECIONAR_OPCAO_MENU
+			
+			# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
+			# de fundo do menu
+			li a0, 0xFF		# a0 tem o valor do fundo do menu
+			addi a1, t5, -9		# volta o endereço de t5 por 9 colunas de modo que a1
+						# agora tem o endereço de onde a seta está e onde a limpeza
+						# vai acontecer			
+			li a2, 6		# numero de colunas da imagem da seta
+			li a3, 11		# numero de linhas da imagem da seta			
+			call PRINT_COR
+					
+			j LOOP_SELECIONAR_OPCAO_MENU_DE_COMBATE
+
+	FIM_RENDERIZAR_MENU_DE_COMBATE:
+
+	mv a0, t4		# como retorno move para a0 o valor da opção selecioanada
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret	
+
 # ====================================================================================================== #
 
 RENDERIZAR_POKEMON:
@@ -882,268 +1405,9 @@ RENDERIZAR_POKEMON:
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret	
-																																																																																																																																																																																																																																																																																										
+	
 # ====================================================================================================== #
-
-TURNO_JOGADOR:
-	# Procedimento que coordena o turno do jogador, fazendo chamadas a ....
-
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-		
-	# Primeiro encontra a matriz de texto com o nome do pokemon escolhido pelo RED
-	srli t0, s11, 11	# os primeiros 11 bits de s11 são o codigo do pokemon inimigo e os proximos 11
-				# são do pokemon do RED
-
-	# Transforma o codigo do pokemon em uma matriz de texto
-	la t5, matriz_texto_bulbasaur		# carrega a matriz de texto do pokemon
-	li t1, BULBASAUR
-	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
-			
-	la t5, matriz_texto_charmander		# carrega a matriz de texto do pokemon	
-	li t1, CHARMANDER	
-	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
-			
-	la t5, matriz_texto_squirtle		# carrega a matriz de texto do pokemon	
-	li t1, SQUIRTLE				
-	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
-										
-	la t5, matriz_texto_caterpie		# carrega a matriz de texto do pokemon	
-	li t1, CATERPIE		
-	beq t0, t1, TURNO_JOGADOR_PRINT_TEXTO
-	
-	la t5, matriz_texto_diglett		# carrega a matriz de texto do pokemon	
-	
-	TURNO_JOGADOR_PRINT_TEXTO:
-	
-	# Agora imprime o texto "O que o YYY deve fazer?", onde YYY é o nome do pokemon
-		# Primeiro limpa a caixa de dialogo	
-		# Calculando o endereço de onde começar a limpeza no frame 0
-		li a1, 0xFF000000	# seleciona o frame 0
-		li a2, 28		# numero da coluna 
-		li a3, 185		# numero da linha
-		call CALCULAR_ENDERECO	
-
-		mv a1, a0		# move o retorno para a1
-
-		# Imprimindo o rentangulo com a cor de fundo da caixa no frame 0
-		li a0, 0xFF		# a0 tem o valor do fundo da caixa
-		# a1 já tem o endereço de onde começar a impressao		
-		li a2, 147		# numero de colunas da imagem da seta
-		li a3, 30		# numero de linhas da imagem da seta			
-		call PRINT_COR	
-	
-		# Replica o frame 0 no frame 1 para que os dois estejam iguais
-		li a0, 0xFF000000	# copia o frame 0 no frame 1
-		li a1, 0xFF100000
-		li a2, 320		# numero de colunas a serem copiadas
-		li a3, 240		# numero de linhas a serem copiadas
-		call REPLICAR_FRAME
-			
-		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
-
-		# Calculando o endereço de onde imprimir o primeiro texto ('O que o ') no frame 0
-		li a1, 0xFF000000	# seleciona o frame 0
-		li a2, 28		# numero da coluna 
-		li a3, 185		# numero da linha
-		call CALCULAR_ENDERECO	
-			
-		mv a1, a0		# move o retorno para a1
-
-		# Imprime o texto com o 'O que o  '
-		# a1 já tem o endereço de onde imprimir o texto
-		la a4, matriz_texto_o_que_o 	
-		call PRINT_TEXTO
-		
-		# Imprime o texto com o nome do Pokemon
-		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
-		# de modo que está na posição exata do proximo texto
-		mv a4, t5		# a4 recebe a matriz de texto do pokemon decidido acima
-		call PRINT_TEXTO
-
-		# Imprime o texto com o ' vai'
-		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
-		# de modo que está na posição exata do proximo texto
-		la a4, matriz_texto_vai	
-		call PRINT_TEXTO
-		
-		# Calculando o endereço de onde imprimir o ultimo texto ('fazer?') no frame 0
-		li a1, 0xFF000000	# seleciona o frame 0
-		li a2, 28		# numero da coluna 
-		li a3, 201		# numero da linha
-		call CALCULAR_ENDERECO	
-			
-		mv a1, a0		# move o retorno para a1
-				
-		# Imprime o texto com o ('fazer?')
-		# a1 já tem o endereço de onde imprimir o texto					
-		la a4, matriz_texto_fazer 	
-		call PRINT_TEXTO
-	
-		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
-			
-	call RENDERIZAR_MENU_DE_COMBATE
-																			
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret	
-
-# ====================================================================================================== #
-
-RENDERIZAR_MENU_DE_COMBATE:
-	# Procedimento que torna o menu de combate responsivo aos controles do jogador. Quando chamado o 
-	# procedimento vai imprimir uma seta que pode ser movida pelo jogador entre as 4 opções do menu,
-	# e com ENTER essa opeção pode ser selecionada.
-	#
-	# Retorno:
-	#	a0 = número de 0 a 3 representado a opção que o jogador selecionou, onde
-	#		[ 0 ] -> ATACAR 
-	#		[ 1 ] -> FUGIR
-	#		[ 2 ] -> DEFESA  
-	#		[ 3 ] -> ITEM  			  
-
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-	
-	li t4, 0		# o menu começa com a primeira opção selecionada (ATACAR)
-	
-	LOOP_SELECIONAR_OPCAO_MENU_DE_COMBATE:
-		# Primeiro imprime uma imagem de uma seta indicando a opção selecionada		
-	   		# Calculando o endereço de onde a seta será impressa
-			li a1, 0xFF000000	# seleciona o frame 0
-			li a2, 187		# numero da coluna onde a seta da primeira opção está
-			li a3, 185		# numero da linha onde a seta da primeira opção está	
-			
-			# O numero da coluna e linha onde a seta será impressa é dependente da opção selecionada
-			li t0, 1
-			beq t4, t0, COMBATE_SETA_OPCOES_1_3
-			li t0, 3
-			beq t4, t0, COMBATE_SETA_OPCOES_1_3
-			j COMBATE_SETA_CHECAR_OPCAO_2_3
-			
-			COMBATE_SETA_OPCOES_1_3:
-			# Caso a opção selecionada for a 1 ou 3 então a coluna é movida por +60 pixels		
-			addi a2, a2, 60
-			
-			COMBATE_SETA_CHECAR_OPCAO_2_3: 
-			li t0, 2
-			blt t4, t0, COMBATE_SETA_CALCULAR_ENDEREÇO
-			
-			# Caso a opção selecionada for a 2 ou 3 então a linha é movida por +17											
-			addi a3, a3, 17
-			
-			COMBATE_SETA_CALCULAR_ENDEREÇO:
-			call CALCULAR_ENDERECO		
-				
-			mv t3, a0		# move o retorno para t3
-			
-			# Imprimindo a seta		
-			la a0, tiles_alfabeto	
-			addi a0, a0, 8		# pula para onde começa os pixels no .data
-			li t0, 6720		# a imagem dessa seta pode ser encontrada em tiles_alfabeto
-			add a0, a0, t0		# a 6720 (8 (tamanho de uma linha da imagem) * 840 (numero da 
-						# linha onde esse tile começa)) pixels de distancia do começo
-			mv a1, t3		# t3 tem o endereço de onde imprimir a seta
-			li a2, 8		# numero de colunas da imagem 
-			li a3, 15		# numero de linhas da imagem 	
-			call PRINT_IMG	
-		
-		# Agora seleciona a opção mudando os pixels do texto da opção por pixels azuis
-			# Via de regra o endereço de onde o texto está sempre fica a 9 colunas e 2 linhas 
-			# de distancia da seta
-			
-			addi t5, t3, 649	# t5 recebe o endereço de onde o texto está a partir do 
-						# endereço da seta (t3)
-						# 649 = (320 * 2 linhas) + 9 colunas
-			
-			# Selecionado a opção
-			li a0, 0		# a0 == 0 -> selecionar a opção
-			mv a1, t5		# t5 tem o endereço de onde o texto está
-			li a2, 9		# numero de linhas de pixels do texto
-			li a3, 41		# numero de colunas de pixels do texto
-			call SELECIONAR_OPCAO_MENU
-	
-		LOOP_SELECIONAR_OPCAO_COMBATE:
-		
-		# Agora é incrementado ou decrementado o valor de t4 de acordo com o input do jogador
-		call VERIFICAR_TECLA
-		
-		li t0, 'w'
-		beq a0, t0, OPCAO_W_COMBATE
-		
-		li t0, 'a'
-		beq a0, t0, OPCAO_A_COMBATE
-		
-		li t0, 's'
-		beq a0, t0, OPCAO_S_COMBATE
-		
-		li t0, 'd'
-		beq a0, t0, OPCAO_D_COMBATE										
-		
-		j LOOP_SELECIONAR_OPCAO_COMBATE				
-																				
-		OPCAO_W_COMBATE:
-		# se a opção atual for 0 ou 1 então não é possivel subir mais no menu
-		li t0, 1
-		ble t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
-		addi t4, t4, -2			# passa t4 para a opção acima 
-		j OPCAO_TROCADA_COMBATE	
-		
-		OPCAO_A_COMBATE:
-		# se a opção atual for 0 ou 2 então não é possivel ir mais para a esquerda no menu
-		beq t4, zero, LOOP_SELECIONAR_OPCAO_COMBATE		
-		li t0, 2
-		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
-		addi t4, t4, -1			# passa t4 para a opção a esquerda 
-		j OPCAO_TROCADA_COMBATE
-		
-		OPCAO_S_COMBATE:
-		# se a opção atual for 2 ou 3 então não é possivel descer mais no menu
-		li t0, 2
-		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
-		li t0, 3
-		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
-		addi t4, t4, 2			# passa t4 para a opção abaixo 
-		j OPCAO_TROCADA_COMBATE
-				
-		OPCAO_D_COMBATE:
-		# se a opção atual for 1 ou 3 então não é possivel ir mais para a direita no menu
-		li t0, 1
-		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
-		li t0, 3
-		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
-		addi t4, t4, 1			# passa t4 para a opção a direita
-
-		OPCAO_TROCADA_COMBATE:
-		# Se ocorreu uma troca de opção é necessário retirar a seleção da opção atual e limpar a tela
-			# Retirando a seleção da opção
-			li a0, 1		# a0 == 1 -> retirar seleção
-			mv a1, t5		# t5 ainda tem o endereço de onde o texto da ultima opção
-						# selecionada está
-			li a2, 9		# numero de linhas de pixels do texto
-			li a3, 41		# numero de colunas de pixels do texto
-			call SELECIONAR_OPCAO_MENU
-			
-			# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
-			# de fundo do menu
-			li a0, 0xFF		# a0 tem o valor do fundo do menu
-			addi a1, t5, -9		# volta o endereço de t5 por 9 colunas de modo que a1
-						# agora tem o endereço de onde a seta está e onde a limpeza
-						# vai acontecer			
-			li a2, 6		# numero de colunas da imagem da seta
-			li a3, 11		# numero de linhas da imagem da seta			
-			call PRINT_COR
-					
-			j LOOP_SELECIONAR_OPCAO_MENU_DE_COMBATE
-
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret	
-
-# ====================================================================================================== #
-																																	
+																																																																			
 PRINT_POKEMON_SILHUETA:
 	# Procedimento que imprime a silhueta de um pokemon na tela. Por silhueta entende-se uma imagem	
 	# de um pokemon em pokemons.bmp, só que ao inves de imprimir a imagem normalmente o pokemon será

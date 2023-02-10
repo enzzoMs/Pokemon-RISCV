@@ -312,8 +312,118 @@ PRINT_TILES:
 	ret
 
 		
-# ====================================================================================================== #																																																									
-																																																																																																																																																																									
+# ====================================================================================================== #
+			
+REIMPRIMIR_RED_E_AREA:
+	# Procedimento que renderiza novamente os tiles da área atual (seguindo o apontado por s2) e o
+	# sprite do RED com a orientação correta (seguindo s1) em ambos os frames
+	# Para funcionar é necessário garantir que os dois frame estão identicos antes de chamar esse 
+	# procedimento
+	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra	
+	
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 1
+
+	# Escolhe a imagem do RED de acordo com s1 (orientação)
+		la t4, red_esquerda				
+		beq s1, zero, INICIO_REIMPRIMIR_RED_E_AREA
+		la t4, red_direita	
+		li t0, 1				
+		beq s1, t0, INICIO_REIMPRIMIR_RED_E_AREA
+		la t4, red_cima	
+		li t0, 2				
+		beq s1, t0, INICIO_REIMPRIMIR_RED_E_AREA
+		la t4, red_baixo
+	
+	INICIO_REIMPRIMIR_RED_E_AREA:				
+	# Imprimindo as imagens da área e o sprite do RED no frame 0					
+		# Imprimindo a imagem do quarto do RED no frame 0
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA				
+						
+		# Imprimindo a imagem do RED no frame 0
+		mv a0, t4		# t4 tem a imagem do RED na orientação correta 				
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+	
+		# Verifica se o RED está em um tile de grama e imprime a faixa caso necessario
+		lbu t0, 0(s6)		# s6 é a posicao do RED na matriz de movimentação
+		li t1, 7		# 7 é o codigo de um tile de grama
+		bne t0, t1, REIMPRIMIR_RED_E_AREA_FRAME_1
+		
+		# Imprimindo faixa no frame 0
+		la a0, tiles_pallet	# para encontrar a faixa de grama que será impressa pode ser usado o
+		addi a0, a0, 8		# tilles pallet, partindo do fato de que essa imagem vai estar 
+		li t0, 22688		# na linha 1418 (22688 = 1418 * 16 (largura de uma linha de tiles_pallet))
+		add a0, a0, t0
+		
+		mv t5, a0		# salva o endereço de a0 em t5
+		
+		mv a1, s0		# O endereço onde essa faixa será impressa é no novo endereço do
+		li t0, 4160		# personagem (s0), 13 linhas para baixo (4160 = 13 * 320) e uma coluna
+		add a1, a1, t0		# para a esquerda (-1)
+		addi a1, a1, -1
+		
+		mv t6, a1		# salva o endereço de a1 em t6
+					
+		li a2, 16		# numero de colunas da faixa de grama	
+		li a3, 6		# numero de linhas da faixa de grama	
+		call PRINT_IMG	
+
+	REIMPRIMIR_RED_E_AREA_FRAME_1:		
+	# Imprimindo a imagem da área no frame 1	
+		# Imprimindo a imagem do quarto do RED no frame 1
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA		
+										
+		# Imprimindo a imagem do RED no frame 0
+		
+		mv a0, t4		# t4 tem a imagem do RED na orientação correta 				
+			
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		li t0, 0x00100000	# passando o endereço de s0 para o seu endereço correspondente no
+		add a1, a1, t0		# frame 1
+		
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+	
+		# Verifica se o RED está em um tile de grama e imprime a faixa caso necessario
+		lbu t0, 0(s6)		# s6 é a posicao do RED na matriz de movimentação
+		li t1, 7		# 7 é o codigo de um tile de grama
+		bne t0, t1, FIM_REIMPRIMIR_RED_E_AREA
+		
+		# Imprimindo faixa no frame 1
+		mv a0, t5		# t5 ainda tem salvo o endereço da imagem da grama	
+			
+		li t0, 0x00100000
+		add a1, t6, t0 		# passa o endereço de t6 (onde imprimir a grama) para o frame 1	
+						
+		li a2, 16		# numero de colunas da faixa de grama	
+		li a3, 6		# numero de linhas da faixa de grama	
+		call PRINT_IMG	
+						
+	FIM_REIMPRIMIR_RED_E_AREA:
+			
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 0																																																																																																																				
+	
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret 																																																																																																																																																																					
+# ====================================================================================================== #	
+																																																																																																																																																																																																																																
 CALCULAR_ENDERECO:
 	# Procedimento que calcula um endereço no frame de escolha ou em uma imagem
 	# Argumentos: 
