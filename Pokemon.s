@@ -54,8 +54,8 @@
 #	s10 = [ 0 ] -> se o RED não estiver indo ou não está em um tile de grama 			 #
 #	      [ Qualquer outro valor] = caso estiver indo para um tile de grama	 			 #
 #	s11 = usado no combate para guardar o codigo do pokemon inimigo e o pokemon escolhido pelo 	 #
-#		jogador. O valor é convencionado no formato [11 bits do pokemon do RED][11 bits do 	 #
-#		pokemon inimigo], onde os 11 bits se referem ao codigo do pokemon. Para consulta os	 #
+#		jogador. O valor é convencionado no formato [12 bits do pokemon do RED][12 bits do 	 #
+#		pokemon inimigo], onde os 12 bits se referem ao codigo do pokemon. Para consulta os	 #
 #		codigos válidos podem ser encontrados em data.s						 #
 #													 #											 
 # ====================================================================================================== #
@@ -80,7 +80,6 @@ li a4, 64	# a4 recebe 32, ou 1_0_000_00 em binário, de acordo com a conveção par
 		# 1(indicativo de transição de área)X000(para o quarto do RED)00(Entrando por lugar nenhum) 				
 
 call RENDERIZAR_AREA
-
 
 # Loop principal de gameplay do jogo
 

@@ -30,8 +30,8 @@ POKEMONS_DO_RED: .word 0,0,0,0,0
 
 .text 
 
-# O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PP, onde:
-# 	PP -> número do pokemon, de modo que:
+# O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PPP, onde:
+# 	PPP -> número do pokemon, de modo que:
 #		[ 001 ] -> BULBASAUR
 #		[ 010 ] -> CHARMANDER
 #		[ 011 ] -> SQUIRTLE
@@ -598,7 +598,7 @@ MOSTRAR_INVENTARIO:
 		li a2, 16		# numero de colunas da faixa de grama	
 		li a3, 6		# numero de linhas da faixa de grama	
 		call PRINT_IMG	
-
+		
 	FIM_INVENTARIO:
 		
 	mv a0, t6	# move para a0 como retorno o valor de t6, ou seja, o valor da ultima opção selecionada			
