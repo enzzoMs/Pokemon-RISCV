@@ -74,11 +74,19 @@ matriz_texto_de_dano: .word 8, 1 		# inclui ponto no final
 matriz_texto_vitoria: .word 7, 1 		
 		.byte 31,57,60,25,35,57,39		
 
-												
+matriz_texto_derrota: .word 7, 1 		
+		.byte 34,22,35,35,25,60,39
+		
+matriz_texto_voce_ganhou: .word 12, 1 		# inclui dois pontos no final	
+		.byte 31,8,2,20,77,5,0,7,6,8,73,77
+		
+matriz_texto_pokebola: .word 8, 1 		
+		.byte 24,25,26,29,37,25,38,39						
+														
 # Essa matriz de tiles em especial representa uma parte da tela de combate e será usada durante a ação de ataque
 # para limpar o sprite do pokemon inimigo e do RED da tela
 matriz_tiles_combate_limpar_pokemon:
-		.word 4, 4 		# inclui espaço no começo e exclamação no final
+		.word 4, 4 		
 		.byte 2,2,2,2,
 		      2,2,2,2,
 		      5,6,7,8,
@@ -145,18 +153,28 @@ EXECUTAR_COMBATE:
 		# se a0 == 1 o combate deve parar
 		li t0, 1
 		beq a0, t0, FIM_LOOP_TURNOS_COMBATE
-		j COMBATE_RED_GANHOU
+
 		# se a0 == 2 o RED venceu
 		li t0, 2
 		beq a0, t0, COMBATE_RED_GANHOU
-			
+
+		call TURNO_COMPUTADOR	
+		
+		# se a0 == 1 o computador ganhou
+		li t0, 1
+		beq a0, t0, COMBATE_COMPUTADOR_GANHOU
+																							
 		j LOOP_TURNOS_COMBATE
 	
 	COMBATE_RED_GANHOU:
-		call RED_GANHOU
-
+		li a5, 0		# a5 == 0 porque o RED ganhou
+		call COMBATE_VITORIA_OU_DERROTA
+		j FIM_LOOP_TURNOS_COMBATE
 	
-	
+	COMBATE_COMPUTADOR_GANHOU:
+		li a5, 1		# a5 == 1 porque o computador ganhou	
+		call COMBATE_VITORIA_OU_DERROTA
+			
 	FIM_LOOP_TURNOS_COMBATE:
 	# indenpendente do que aconteceu no combate a área e o sprite do RED precisam ser impressos novamente
 	# para que o jogo possa continuar
@@ -290,9 +308,14 @@ INICIAR_TELA_DE_COMBATE:
 
 # ====================================================================================================== #	
 
-RED_GANHOU:
-	# Procedimento simples para a vitoria do RED, renderizando o pokemon inimigo desaparencendo e 
-	# uma mensagem de vitoria na caixa de dialoho																																		
+COMBATE_VITORIA_OU_DERROTA:
+	# Procedimento simples para a vitoria ou derrota do RED, renderizando o pokemon do RED ou o 
+	# pokemon inimigo desaparencendo, uma mensagem de vitoria ou derrota na caixa de dialogo e 
+	# caso seja uma vitoria o jogador recebe 1 pokebola
+	# 
+	# Argumentos:
+	# 	a5 = [ 0 ] se o RED ganhou
+	#	     [ 1 ] se o RED perdeu
 	
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
@@ -301,11 +324,20 @@ RED_GANHOU:
 		li a0, 1000			# sleep 1 s
 		call SLEEP			# chama o procedimento SLEEP	
 						
-	# Primeiro encontra a imagem do pokemon escolhido inimigo
+	# Primeiro encontra a imagem do pokemon do RED ou o inimigo dependendo de a5
 	andi t0, s11, 7		# faz o andi com 7 para deixar somente os bits que fazem parte do tipo
 				# do pokemon inimigo intactos
+	beq a5, zero, VITORIA_OU_DERROTA_ENCONTRAR_IMAGEM
+	
+	# Caso a5 != 0 o RED perdeu e encontra a imagem do pokemon dele		
+	li t0, 28672
+	and t0, s11, t0		# faz o andi com t0 para deixar somente os bits que fazem parte do tipo
+				# do pokemon do RED intactos
+	srli t0, t0, 12		# move os bits do tipo para o começo de t0
+	
+	VITORIA_OU_DERROTA_ENCONTRAR_IMAGEM:						
 	addi t0, t0, -1		# -1 porque o tipo do pokemon começa em 1
-		
+			
 	la t1, pokemons			# t1 tem o inicio da imagem do BULBASAUR
 	addi t1, t1, 8			# pula para onde começa os pixels no .data	
 	li t2, 1482			# 1482 = 38 * 39 = tamanho de uma imagem de um pokemon, ou seja,
@@ -314,21 +346,33 @@ RED_GANHOU:
 	
 	call TROCAR_FRAME		# inverte o frame, mostrando o frame 1																																																																																																																																																																																															
 																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																														
-	# Imprime a imagem do pokemon desaparecendo da tela no frame 0	
-		# Calculando o endereço de onde imprimir o pokemon inimigo
+	# Imprime a imagem do pokemon desaparecendo da tela no frame 0
+		# Calculando o endereço de onde imprimir o pokemon de acordo com a5
 		li a1, 0xFF000000	# seleciona o frame 0
+		
+		# Onde imprimir o pokemon inimigo			
 		li a2, 204		# numero da coluna 
 		li a3, 43		# numero da linha
-		call CALCULAR_ENDERECO	
+		li a4, 0	# a silhueta será impressa na orientação normal		
+		beq a5, zero, VITORIA_OU_DERROTA_PRINT_POKEMON
+						
+		# Onde imprimir o pokemon do RED
+		li a2, 76		# numero da coluna 
+		li a3, 107		# numero da linha	
+		li a4, 1	# a silhueta será impressa na orientação invertida	
 		
+		VITORIA_OU_DERROTA_PRINT_POKEMON:			
+		
+		call CALCULAR_ENDERECO			
+	
 		mv a1, a0		# move o retorno para a1
 		
-		# Imprime a silhueta do pokemon	inimigo	no frame 0
+		# Imprime a silhueta do pokemon	no frame 0
 		mv a0, t3	# t3 tem a imagem do pokemon que foi decidido no inicio procedimento				
 		# a1 já tem o endereço de onde imprimir a imagem
 		li a2, 38	# numero de colunas da imagem
 		li a3, 39	# numero de linhas da imagem
-		li a4, 0	# a silhueta será impressa na orientação normal
+		# a4 já tem o valor da orientação da silhueta
 		call PRINT_POKEMON_SILHUETA
 		
 		call TROCAR_FRAME		# inverte o frame, mostrando o frame 0	
@@ -339,15 +383,25 @@ RED_GANHOU:
 
 		# Remove o sprite do pokemon o que pode ser feito imprimindo novamente os
 		# tiles onde ele está
-		# Calculando o endereço de onde imprimir os tiles no frame 1
-		li a1, 0xFF100000	# seleciona o frame 1	
+		# Calculando o endereço de onde imprimir os tiles no frame 1 de acordo com a5
+		li a1, 0xFF100000	# seleciona o frame 0
+		
+		# Onde imprimir os tiles no pokemon inimigo 			
 		li a2, 192		# numero da coluna 
 		li a3, 32		# numero da linha
+		beq a5, zero, VITORIA_OU_DERROTA_PRINT_TILES
+						
+		# Onde imprimir os tiles no pokemon do RED 
+		li a2, 64		# numero da coluna 
+		li a3, 96		# numero da linha	
+		
+		VITORIA_OU_DERROTA_PRINT_TILES:	
+		
 		call CALCULAR_ENDERECO	
 		
 		mv t6, a0		# move o retorno para t6
 				
-		# Agora novamente no frame 1 os tiles onde o pokemon inimigo está
+		# Agora novamente no frame 1 os tiles onde o pokemon está
 		la a0, matriz_tiles_combate_limpar_pokemon	# carrega a matriz de tiles
 		la a1, tiles_combate_e_inventario	# carrega a imagem com os tiles
 		mv a2, t6				# t6 tem o endereço onde os tile serão impressos
@@ -355,7 +409,7 @@ RED_GANHOU:
 		
 		call TROCAR_FRAME		# inverte o frame, mostrando o frame 1	
 		
-		# Agora novamente no frame 0 os tiles onde o pokemon inimigo está
+		# Agora novamente no frame 0 os tiles onde o pokemon está
 		la a0, matriz_tiles_combate_limpar_pokemon	# carrega a matriz de tiles
 		la a1, tiles_combate_e_inventario	# carrega a imagem com os tiles
 		mv a2, t6				# t6 tem o endereço onde os tile serão impressos
@@ -367,7 +421,7 @@ RED_GANHOU:
 		li a0, 1000			# sleep 1 s
 		call SLEEP			# chama o procedimento SLEEP	
 
-	# Agora imprime a mensagem vitoria na caixa de dialogo em ambos os frames
+	# Agora imprime a mensagem vitoria ou derrota na caixa de dialogo em ambos os frames
 		# Primeiro limpa a caixa de dialogo	
 		# Calculando o endereço de onde começar a limpeza no frame 0
 		li a1, 0xFF000000	# seleciona o frame 0
@@ -384,7 +438,7 @@ RED_GANHOU:
 		li a3, 30		# numero de linhas da imagem da seta			
 		call PRINT_COR	
 		
-		# Imprimindo o texto de vitoria
+		# Imprimindo o texto de vitoria ou derrota de acordo com a5
 		# Calculando o endereço de onde imprimir o texto no frame 0
 		li a1, 0xFF000000	# seleciona o frame 0
 		li a2, 75		# numero da coluna 
@@ -392,10 +446,16 @@ RED_GANHOU:
 		call CALCULAR_ENDERECO	
 			
 		mv a1, a0		# move o retorno para a1
-
-		# Imprime o texto com 'VITÓRIA'
-		# a1 já tem o endereço de onde imprimir o texto
+	
 		la a4, matriz_texto_vitoria 	
+		beq a5, zero, VITORIA_OU_DERROTA_PRINT_MENSAGEM 
+			la a4, matriz_texto_derrota
+			
+		VITORIA_OU_DERROTA_PRINT_MENSAGEM:
+					
+		# Imprime o texto com a mensagem
+		# a1 já tem o endereço de onde imprimir o texto
+		# a4 tem a matriz com a mensagem
 		call PRINT_TEXTO
 				
 	call TROCAR_FRAME		# inverte o frame, mostrando o frame 0
@@ -409,16 +469,82 @@ RED_GANHOU:
 	call REPLICAR_FRAME	
 	
 	# Espera alguns milisegundos	
-		li a0, 3500			# sleep 3,5 s
+		li a0, 2500			# sleep 2,5 s
 		call SLEEP			# chama o procedimento SLEEP	
-										
+		
+	# se o RED venceu ele pode ganhar 1 pokebola
+	bne a5, zero, FIM_COMBATE_VITORIA_DERROTA
+		la t0, NUMERO_DE_POKEBOLAS
+		lb t0, 0(t0)
+		
+		# O jogador só ganha uma pokebola caso ele não tenha 9 pokebolas ainda
+		li t1, 9
+		beq t0, t1, FIM_COMBATE_VITORIA_DERROTA
+		
+		call TROCAR_FRAME		# troca o frame, mostrando o frame 1
+		
+		# Agora imprime o texto ("Você ganhou 1 x POKEBOLA!")
+		# Primeiro limpa a caixa de dialogo, imprimindo o rentangulo com a cor de fundo da 
+		# caixa no frame 0
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		mv a1, t5		# t5 ainda tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+		
+		# Calculando o endereço de onde imprimir o texto ('Você ganhou ') no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+			
+		mv a1, a0		# move o retorno para a1
+		la a4, matriz_texto_voce_ganhou	
+		call PRINT_TEXTO
+		
+		# Imprime o numero 1	
+		addi a1, a1, 641	# 641 = 320 * 2 + 1
+		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+		# de modo que está a +2 linhas e 1 coluna de onde imprimir o numero	
+		li a0, 1		# numero a ser impresso
+		call PRINT_NUMERO
+		
+		# Imprime o ultimo texto ("POKEBOLA!")	
+		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o numero,
+		# de modo que está a -12 linhas e 9 colunas de onde imprimir o proximo texto
+		li t0, -3831	# -3831 = -12 * 320 + 9
+		add a1, a1, t0
+		la a4, matriz_texto_pokebola		
+		call PRINT_TEXTO
+				
+		call TROCAR_FRAME		# inverte o frame, mostrando o frame 1
+		
+		# Replica a caixa de dialogo do frame 0 no frame 1 para que os dois estejam iguais				
+		mv a0, t5		# t5 ainda tem o endereço da caixa no frame 0
+		li t0, 0x00100000
+		add a1, t5, t0		# a1 recebe o endereço de t5 no frame 1		
+		li a2, 264		# numero de colunas a serem copiadas
+		li a3, 32		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME
+									
+	# Espera alguns milisegundos	
+		li a0, 4500			# sleep 4,5 s
+		call SLEEP			# chama o procedimento SLEEP	
+	
+	# Incrementa o numero de pokebolas atual
+	la t0, NUMERO_DE_POKEBOLAS
+	lb t1, 0(t0)
+	addi t1, t1, 1
+	sb t1, 0(t0)
+					
+	FIM_COMBATE_VITORIA_DERROTA:																																
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret 																																																																				
-																																																																																																																																								
+
 # ====================================================================================================== #	
-																																		
+																																	
 INICIAR_POKEMON_INIMIGO:
 	# Procedimento que atualiza o valor de s11 com o pokemon inimigo e imprime todos os sprites,
 	# animações e textos relacionados a esse pokemon aparecendo na tela
@@ -847,7 +973,8 @@ TURNO_JOGADOR:
 	# Retorno:
 	# 	a0 = [ 0 ] se o combate deve continuar
 	#	     [ 1 ] se o combate deve parar  
-
+	#	     [ 2 ] se o RED ganhou
+	
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
 		
@@ -941,10 +1068,12 @@ TURNO_JOGADOR:
 	# Então é decidido a partir de a0 qual procedimento do menu chamar
 		
 	bne a0, zero, COMBATE_VERIFICAR_ACAO_FUGIR
-		# se a opção selecionada for 0 então chama a ação de atacar																																																																										
+		# se a opção selecionada for 0 então chama a ação de atacar	
+		li a6, 0		# a6 == 0 porque quem está atacando é o RED																																																																									
 		call ACAO_ATACAR
-		# como retorno a0 == 0 se o combate deve continuar e 1 caso contrário, esse retorno será
-		# propagado para EXECUTAR_COMBATE
+		# como retorno a0 == 0 se o combate deve continuar e 1 caso o RED tenha vencido
+		beq a0, zero, FIM_TURNO_JOGADOR
+			li a0, 2		# a0 == 2 porque o RED ganhou
 		j FIM_TURNO_JOGADOR
 	
 	COMBATE_VERIFICAR_ACAO_FUGIR:																														
@@ -1093,16 +1222,54 @@ FIM_ACAO_FUGA:
 ACAO_ATACAR:
 	# A ação de atacar inclui decidir o dano que o pokemon vai dar, chamado todos os procedimentos
 	# necessarios para mostrar esse dano sendo feito na tela
+	# No caso dessa ação especifica ela pode ser usada pelo computador e pelo jogador
 	#
+	# Argumentos:
+	# 	a6 = [ 0 ] se quem está atacando é pokemon do RED
+	#	     [ 1 ] se quem está atacando é pokemon inimigo
 	# Retorno:
 	# 	a0 = [ 0 ] se o combate deve continuar
-	#	     [ 2 ] se o combate deve parar e o RED venceu 
-	
+	#	     [ 1 ] se o combate deve parar porque o pokemon atacante venceu
+	#		
+
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
 
-	# Imprime a mensagem inicial ('YYY ataca!'), onde YYY é o nome do pokemon do RED
-	mv a4, t6		# t6 ainda tem a matriz de texto do pokemon do RED decidida em TURNO_JOGADOR
+	# Encontra o codigo do pokemon que esta atacando (t5) e do pokemon inimigo (t6)
+	srli t5, s11, 12	# t5 recebe o codigo do pokemon do RED	
+	li t0, 4095	
+	and t6, s11, t0		# faz com o andi com t0 de modo que t6 tem somente os bits que fazem parte
+				# do codigo do pokemon inimigo em s11 intactos
+					
+	beq a6, zero, ACAO_ATACAR_ENCONTRAR_TEXTO
+	# caso a6 != 0 o pokemon atacante é o pokemon do RED
+	mv t0, t5
+	mv t5, t6	# troca os codigo do pokemon atacante e do que está sendo atacado
+	mv t6, t0
+	
+	# Transforma o codigo do pokemon atacante em uma matriz de texto
+	ACAO_ATACAR_ENCONTRAR_TEXTO:
+	la t4, matriz_texto_bulbasaur		# carrega a matriz de texto do pokemon
+	li t1, BULBASAUR
+	beq t5, t1, ACAO_ATACAR_PRINT_TEXTO
+			
+	la t4, matriz_texto_charmander		# carrega a matriz de texto do pokemon	
+	li t1, CHARMANDER	
+	beq t5, t1, ACAO_ATACAR_PRINT_TEXTO
+			
+	la t4, matriz_texto_squirtle		# carrega a matriz de texto do pokemon	
+	li t1, SQUIRTLE				
+	beq t5, t1, ACAO_ATACAR_PRINT_TEXTO
+										
+	la t4, matriz_texto_caterpie		# carrega a matriz de texto do pokemon	
+	li t1, CATERPIE		
+	beq t5, t1, ACAO_ATACAR_PRINT_TEXTO
+	
+	la t4, matriz_texto_diglett		# carrega a matriz de texto do pokemon	
+	
+	ACAO_ATACAR_PRINT_TEXTO:
+	# Imprime a mensagem inicial ('YYY ataca!'), onde YYY é o nome do pokemon
+	mv a4, t4		# t4 tem a matriz de texto do pokemon do RED decidida acima
 	la a5, matriz_texto_ataca	# mensagem inicial
 	call PRINT_MENSAGEM_INICIAL_DE_ACAO
 
@@ -1126,22 +1293,37 @@ ACAO_ATACAR:
 	li a0, 8
 	call ENCONTRAR_NUMERO_RANDOMICO
 	
-	# Agora é necessário verificar se o pokemon do RED é fraco ou forte contra o pokemon inimigo
-		li a6, -1		# a6 recebe -1 primeiramente para indicar caso o pokemon
+	# Agora é necessário verificar se o pokemon é fraco ou forte contra o pokemon inimigo
+		mv a5, a6		# move o argumento de a6 para a5
+	
+		li a6, -1		# a6 recebe -1 primeiramente para indicar o caso que o pokemon
 					# não for nem fraco nem forte contra o pokemon inimigo
 					# a6 pode ser atualizado com uma matriz de texto logo a frente
-	
+					
+		# Encontra o codigo do pokemon que esta atacando (t5) e do pokemon inimigo (t6)
+		srli t5, s11, 12	# t5 recebe o codigo do pokemon do RED	
+		li t0, 4095	
+		and t6, s11, t0		# faz com o andi com t0 de modo que t6 tem somente os bits que fazem parte
+					# do codigo do pokemon inimigo em s11 intactos
+					
+		beq a5, zero, ACAO_ATACAR_CHECAR_TIPO_FORTE
+		# caso a5 != 0 o pokemon atacante é o pokemon do RED
+		mv t0, t5
+		mv t5, t6	# troca os codigo do pokemon atacante e do que está sendo atacado
+		mv t6, t0
+		
+		ACAO_ATACAR_CHECAR_TIPO_FORTE:
 		# Checando o tipo do pokemon inimigo
-		andi t0, s11, 56	# o andi 56 (111_000) deixa só os bits de s11 que 
+		andi t0, t6, 56		# o andi 56 (111_000) deixa só os bits de t6 que 
 					# correspondem ao tipo do pokemon inimigo intacto 
 		srli t0, t0, 3		# move os bits para o começo de t0, de modo que o tipo cai em um 
 					# intervalo de 0 a 4
 					
-		# Checando o tipo que o pokemon do RED é forte
-		li t1, 0x0E00000
-		and t1, s11, t1		# o andi t1 deixa só os bits de s11 que 
-					# correspondem ao tipo forte do pokemon do RED intacto 
-		srli t1, t1, 21		# move os bits para o começo de t1, de modo que o tipo cai em um 
+		# Checando o tipo que o pokemon atacante é forte
+		li t1, 0x0E00
+		and t1, t5, t1		# o andi t1 deixa só os bits de t5 que 
+					# correspondem ao tipo forte do pokemon que está atacando
+		srli t1, t1, 9		# move os bits para o começo de t1, de modo que o tipo cai em um 
 					# intervalo de 0 a 4		
 	
 		bne t1, t0, ACAO_ATACAR_CHECAR_TIPO_FRACO
@@ -1152,11 +1334,11 @@ ACAO_ATACAR:
 		j ACAO_ATACAR_RENDERIZAR_DANO
 				
 		ACAO_ATACAR_CHECAR_TIPO_FRACO:
-		# Checando o tipo que o pokemon do RED é fraco
-		li t1, 0x1C0000
-		and t1, s11, t1		# o andi t1 deixa só os bits de s11 que 
-					# correspondem ao tipo fraco do pokemon do RED intacto 
-		srli t1, t1, 18		# move os bits para o começo de t1, de modo que o tipo cai em um 
+		# Checando o tipo que o pokemon atacante é fraco
+		li t1, 0x1C0
+		and t1, t5, t1		# o andi t1 deixa só os bits de s11 que 
+					# correspondem ao tipo fraco do pokemon atacante intacto 
+		srli t1, t1, 6		# move os bits para o começo de t1, de modo que o tipo cai em um 
 					# intervalo de 0 a 4		
 	
 		bne t1, t0, ACAO_ATACAR_RENDERIZAR_DANO
@@ -1170,16 +1352,16 @@ ACAO_ATACAR:
 	
 	# Renderiza o dano aplicado
 	mv a4, a0			# move para a4 o dano a ser renderizado
-	li a5, 0			# a5 == 0 para o dano ser no pokemon inimigo	
+	# a5 já tem o indicativo de qual pokemon o dano vai ser dado	
 	call RENDERIZAR_ATAQUE_DANO
 
 
 	# Renderiza a animação de ataque
-	li a5, 0		# a5 == 0 para o ataque ser no pokemon inimigo
+	# a5 já tem o indicativo de qual pokemon o dano vai ser dado	
 	call RENDERIZAR_ATAQUE_EFEITO
 		
 	# Atualiza a barra de vida do pokemon
-	li a4, 0		# a4 == 0 para o atualizar a barra de vida do pokemon inimigo
+	mv a4, a5	# a5 já tem naturalmente o indicativo de qual barra de vida atualizar	
 	call ATUALIZAR_BARRA_DE_VIDA	
 	
 	call TROCAR_FRAME		# inverte o frame, mostrando o frame 1
@@ -1303,13 +1485,13 @@ ACAO_ATACAR:
 		bne a0, t0, LOOP_ENTER_ACAO_ATAQUE
 	
 	# Verifica a vida do pokemon inimigo
-	li a4, 0		# a4 == 0 para verificar o pokemon do inimigo
+	mv a4, a5		# a5 já tem o indicativo para verificar a vida do pokemon do inimigo
 	call VERIFICAR_VIDA_POKEMON
 	
-	li a0, 0		# a0 == 0 para o combate continua
+	li a0, 0		# a0 == 0 para o combate continuar
 	bne a1, zero, FIM_ACAO_ATAQUE
-	# se a vida do pokemon inimigo for 0 o RED venceu	
-		li a0, 2	# a0 == 2 para o combate parar porque o RED venceu
+	# se a vida do pokemon inimigo for 0 o atacante venceu	
+		li a0, 1	# a0 == 1 para o combate parar porque o atacante venceu
 
 	FIM_ACAO_ATAQUE:
 	
@@ -1418,6 +1600,29 @@ PRINT_MENSAGEM_INICIAL_DE_ACAO:
 	
 	ret	
 																																																																																																																																			
+# ====================================================================================================== #
+
+TURNO_COMPUTADOR:
+	# Procedimento que coordena o turno do computador, fazendo chamadas aos procedimentos de ação 
+	# (atacar ou defender) de acordo com um numero randomico
+	#
+	# Retorno:
+	# 	a0 = [ 0 ] se o combate deve continuar
+	#	     [ 1 ] se o computador ganhou
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+	
+	li a6, 1		# a6 == 1 porque quem está atacando é o computador																																																																									
+	call ACAO_ATACAR
+	# como retorno a0 == 0 se o combate deve continuar e 1 caso o computador tenha vencido
+	# esse retorno será propagado para EXECUTAR_COMBATE
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																							
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret		
+																																																																																																																																					
 # ====================================================================================================== #
 
 RENDERIZAR_MENU_DE_COMBATE:
@@ -1811,7 +2016,7 @@ RENDERIZAR_POKEMON:
 		# Imprime a vida do pokemon
 		# Todos os pokemons tem uma vida de 45 pontos
 		
-		# Calculando o endereço de onde imprimir o primeiro numero (4) dependendo de a5
+		# Calculando o endereço de onde imprimir a vida dependendo de a5
 		li a1, 0xFF000000	# seleciona o frame 0
 		
 		# Onde imprimir a vida do pokemon inimigo			
@@ -1827,52 +2032,29 @@ RENDERIZAR_POKEMON:
 		
 		call CALCULAR_ENDERECO			
 		
-		mv a1, a0		# move o retorno para a1
+		mv a1, a0		# move o retorno para a1 
+		li a0, 45		# 45 pontos de vida
+		call PRINT_NUMERO
 		
-		# O loop começa imprimindo o numero 4
-		la a0, tiles_numeros	
-		addi a0, a0, 8		# pula para onde começa os pixels no .data	
-		addi a0, a0, 240 	# 240 = 60 (area de uma imagem de um numero) * 4, ou seja,
-					# a0 passa para o inico do tile com o numero 4
-					
-		li t3, 5		# numero de simbolos a serem impressos 	
-				
-		LOOP_POKEMON_PRINT_VIDA:
-		# Imprimindo o numero 
-		# a0 já tem o endereço da imagem do numero (ou /)			
-		# a1 já tem o endereço de onde imprimir o numero
+		# Imprime o caractere barra (/)
+		la a0, caractere_barra	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data		
+		# do PRINT_NUMERO acima a1 está naturalmente a -10 linhas +7 colunas de onde imprimir o proximo
+		# numero
+		li t0, -3193		# -3193 = -10 * 320 + 7
+		add a1, a1, t0
 		li a2, 6		# numero de colunas dos tiles a serem impressos
 		li a3, 10		# numero de linhas dos tiles a serem impressos	
-		call PRINT_IMG										
-
-		addi t3, t3, -1		# decrementa o numero de simbolos restantes
-
-		# Pelo PRINT_IMG o endereço de a0 já está no inicio da imagem do 5
-		# pelo PRINT_IMG acima a1 está naturalmente a -10 linhas +7 colunas de onde imprimir o proximo
+		call PRINT_IMG	
+				
+		# Imprime novemente os pontos de vida (45)
+		li a0, 45		# 45 pontos de vida		
+		# do PRINT_IMG acima a1 está naturalmente a -10 linhas +7 colunas de onde imprimir o proximo
 		# numero
 		li t0, -3193		# -3193 = -10 * 320 + 7
 		add a1, a1, t0	
-		
-		# Pelo PRINT_IMG o endereço de a0 já está no inicio da imagem do 5				
-		li t0, 4
-		beq t3, t0, LOOP_POKEMON_PRINT_VIDA	# se t3 == 4 imprime o 5
-		
-		la a0, caractere_barra	
-		addi a0, a0, 8		# pula para onde começa os pixels no .data							
-		li t0, 3		
-		beq t3, t0, LOOP_POKEMON_PRINT_VIDA	# se t3 == 3 imprime uma imagem de uma barra (/)
-			
-		la a0, tiles_numeros	
-		addi a0, a0, 8		# pula para onde começa os pixels no .data	
-		addi a0, a0, 240 	# 240 = 60 (area de uma imagem de um numero) * 4, ou seja,
-					# a0 passa para o inico do tile com o numero 4
-		li t0, 2
-		beq t3, t0, LOOP_POKEMON_PRINT_VIDA	# se t3 == 2 imprime o 4	
-				
-		addi a0, a0, 60 	# Pelos calculos acima o endereço de a0 está a 60 pixels do inicio 
-					# da imagem do 5
+		call PRINT_NUMERO
 
-		bne t3, zero, LOOP_POKEMON_PRINT_VIDA	# se t3 == 1 imprime o 5
 
 	call TROCAR_FRAME 		# inverte o frame, mostrando o frame 0
 
@@ -1939,12 +2121,28 @@ RENDERIZAR_ATAQUE_EFEITO:
 
 	# Agora replica a imagem do pokemon que está no frame 1 para o frame 0 para que os dois estejam iguais
 	# limpando o efeito de ataque no processo
-	
+		# Calculando o endereço de onde começar a replica dependendo de a5
+		li a1, 0xFF000000	# seleciona o frame 0
+		
+		# Onde a replica começa no pokemon inimigo
+		li a2, 208		# numero da coluna 
+		li a3, 47		# numero da linha
+		beq a5, zero, ACAO_ATAQUE_REPLICAR_EFEITO
+		
+		# Onde a replica começa no pokemon do RED
+		li a2, 76		# numero da coluna 
+		li a3, 111		# numero da linha
+		
+		ACAO_ATAQUE_REPLICAR_EFEITO:
+		
+		call CALCULAR_ENDERECO
+		mv t3, a0		# move o retorno para t3	
+			
 	li t0, 0x00100000
 	add a0, t3, t0		# a1 recebe o endereço de t3 no frame 1								
 	mv a1, t3		# t3 tem o endereço de onde o efeito foi impresso no frame 0
-	li a2, 32		# numero de colunas a serem copiadas
-	li a3, 32		# numero de linhas a serem copiadas
+	li a2, 40		# numero de colunas a serem copiadas
+	li a3, 40		# numero de linhas a serem copiadas
 	call REPLICAR_FRAME
 	
 	# Por fim, para emular um efeito de dano o pokemon deve ficar piscando
@@ -2111,7 +2309,7 @@ ATUALIZAR_BARRA_DE_VIDA:
 
 
 	# Por fim, será impresso os números indicando a vida atual do pokemon
-		# Calculando o endereço de onde começar a imprimir os numeros dependendo de a5
+		# Calculando o endereço de onde começar a imprimir os numeros dependendo de a4
 		li a1, 0xFF000000	# seleciona o frame 0
 		
 		# Onde os numeros de vida do pokemon inimigo está
@@ -2156,17 +2354,26 @@ ATUALIZAR_BARRA_DE_VIDA:
 		call TROCAR_FRAME  		# inverte o frame, mostrando o frame 0
 		
 	# Replica a imagem dos pontos de vida no frame 0 para o frame 1 para que os dois estejam iguais
-		# Calculando o endereço de onde começar a replica no frame 0
-		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		li a2, 120 			# numero da coluna do RED = 65
-		li a3, 36			# numero da linha do RED = 77
+		# Calculando o endereço de onde começar a replica no frame 0 dependendo de a4
+		li a1, 0xFF000000	# seleciona o frame 0
+		
+		# Onde os numeros de vida do pokemon inimigo está
+		li a2, 120		# numero da coluna 
+		li a3, 37		# numero da linha
+		beq a4, zero, ATUALIZAR_BARRA_REPLICAR_VIDA
+		
+		# Onde os numeros de vida do pokemon do RED está
+		li a2, 264		# numero da coluna 
+		li a3, 117		# numero da linha
+				
+		ATUALIZAR_BARRA_REPLICAR_VIDA:		
 		call CALCULAR_ENDERECO		
 		
 		# a0 já tem o endereço de onde começar a replica no frame 0
 		li t0, 0x00100000
 		add a1, a0, t0		# a1 recebe o endereço de a0 no frame 1							
 		li a2, 16		# numero de colunas a serem copiadas
-		li a3, 12		# numero de linhas a serem copiadas
+		li a3, 16		# numero de linhas a serem copiadas
 		call REPLICAR_FRAME
 
 	FIM_ATUALIZAR_BARRA_DE_VIDA:
@@ -2233,62 +2440,6 @@ VERIFICAR_VIDA_POKEMON:
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret	
-# ====================================================================================================== #
-
-PRINT_NUMERO:
-	# Procedimento que imprime um número de 0 a 99 em algum frame
-	# Só serão impressos os algarismos necessários, de 0 a 9 por exemplo só imprime 1 numero 
-	#
-	# Argumentos:
-	#	a0 = numero de 0 a 99
-	# 	a1 = endereço de onde os numeros devem ser impressos
-	
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-			
-	# Primeiro encontra os dois digitos
-		li t0, 10
-		bge a0, t0, NUMERO_DE_DOIS_DIGITOS
-			rem t4, a0, t0		# t4 recebe o algarismo das unidades
-			j PRINT_ALGARISMO_UNIDADES
-	
-	NUMERO_DE_DOIS_DIGITOS:
-		div t3, a0, t0		# t3 recebe o algarismo das dezenas
-		rem t4, a0, t0		# t4 recebe o algarismo das unidades
-		
-	# Imprimindo o algarismo das dezenas no frame
-		la a0, tiles_numeros	
-		addi a0, a0, 8		# pula para onde começa os pixels no .data
-		li t0, 60		# cada tile de numero tem 10 * 6 = 60 de tamanho
-		mul t0, t0, t3		# 60 * t3 (algarismo das dezenas) retorna a quantos pixels o numero
-		add a0, a0, t0 		# de t3 está do inicio da imagem dos tiles
-		# a1 já tem o endereço de onde imprimir o numero
-		li a2, 6		# numero de colunas dos tiles a serem impressos
-		li a3, 10		# numero de linhas dos tiles a serem impressos	
-		call PRINT_IMG								
-
-		# pelo PRINT_IMG acima a1 está naturalmente a -10 linhas +7 colunas de onde imprimir o proximo
-		# numero
-		li t0, -3193		# -3193 = -10 * 320 + 7
-		add a1, a1, t0	
-						
-	PRINT_ALGARISMO_UNIDADES:				
-	# Imprimindo o algarismo das unidades no frame
-		la a0, tiles_numeros	
-		addi a0, a0, 8		# pula para onde começa os pixels no .data
-		li t0, 60		# cada tile de numero tem 10 * 6 = 60 de tamanho
-		mul t0, t0, t4		# 60 * t4 (algarismo das unidades) retorna a quantos pixels o numero
-		add a0, a0, t0 		# de t4 está do inicio da imagem dos tiles
-		# a1 já tem o endereço de onde imprimir o numero
-		li a2, 6		# numero de colunas dos tiles a serem impressos
-		li a3, 10		# numero de linhas dos tiles a serem impressos	
-		call PRINT_IMG				
-					
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret			
-
 
 # ====================================================================================================== #
 																																																																																																																																	

@@ -901,4 +901,61 @@ PRINT_TEXTO:
 	addi sp, sp, 4		# remove 1 word da pilha
 
 	ret
-																											
+
+# ====================================================================================================== #
+
+PRINT_NUMERO:
+	# Procedimento que imprime um número de 0 a 99 em algum frame
+	# Só serão impressos os algarismos necessários, de 0 a 9 por exemplo só imprime 1 numero 
+	#
+	# Argumentos:
+	#	a0 = numero de 0 a 99
+	# 	a1 = endereço de onde os numeros devem ser impressos
+	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+			
+	# Primeiro encontra os dois digitos
+		li t0, 10
+		bge a0, t0, NUMERO_DE_DOIS_DIGITOS
+			rem t4, a0, t0		# t4 recebe o algarismo das unidades
+			j PRINT_ALGARISMO_UNIDADES
+	
+	NUMERO_DE_DOIS_DIGITOS:
+		div t3, a0, t0		# t3 recebe o algarismo das dezenas
+		rem t4, a0, t0		# t4 recebe o algarismo das unidades
+		
+	# Imprimindo o algarismo das dezenas no frame
+		la a0, tiles_numeros	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data
+		li t0, 60		# cada tile de numero tem 10 * 6 = 60 de tamanho
+		mul t0, t0, t3		# 60 * t3 (algarismo das dezenas) retorna a quantos pixels o numero
+		add a0, a0, t0 		# de t3 está do inicio da imagem dos tiles
+		# a1 já tem o endereço de onde imprimir o numero
+		li a2, 6		# numero de colunas dos tiles a serem impressos
+		li a3, 10		# numero de linhas dos tiles a serem impressos	
+		call PRINT_IMG								
+
+		# pelo PRINT_IMG acima a1 está naturalmente a -10 linhas +7 colunas de onde imprimir o proximo
+		# numero
+		li t0, -3193		# -3193 = -10 * 320 + 7
+		add a1, a1, t0	
+						
+	PRINT_ALGARISMO_UNIDADES:				
+	# Imprimindo o algarismo das unidades no frame
+		la a0, tiles_numeros	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data
+		li t0, 60		# cada tile de numero tem 10 * 6 = 60 de tamanho
+		mul t0, t0, t4		# 60 * t4 (algarismo das unidades) retorna a quantos pixels o numero
+		add a0, a0, t0 		# de t4 está do inicio da imagem dos tiles
+		# a1 já tem o endereço de onde imprimir o numero
+		li a2, 6		# numero de colunas dos tiles a serem impressos
+		li a3, 10		# numero de linhas dos tiles a serem impressos	
+		call PRINT_IMG				
+					
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret			
+
+																																																						
