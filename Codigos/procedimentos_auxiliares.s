@@ -378,6 +378,8 @@ REIMPRIMIR_RED_E_AREA:
 		call PRINT_IMG	
 
 	REIMPRIMIR_RED_E_AREA_FRAME_1:		
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 0
+		
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
@@ -414,9 +416,7 @@ REIMPRIMIR_RED_E_AREA:
 		li a3, 6		# numero de linhas da faixa de grama	
 		call PRINT_IMG	
 						
-	FIM_REIMPRIMIR_RED_E_AREA:
-			
-	call TROCAR_FRAME		# inverte o frame, mostrando o frame 0																																																																																																																				
+	FIM_REIMPRIMIR_RED_E_AREA:			
 	
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
@@ -901,7 +901,7 @@ PRINT_TEXTO:
 	addi sp, sp, 4		# remove 1 word da pilha
 
 	ret
-
+	
 # ====================================================================================================== #
 
 PRINT_NUMERO:
@@ -911,20 +911,20 @@ PRINT_NUMERO:
 	# Argumentos:
 	#	a0 = numero de 0 a 99
 	# 	a1 = endereço de onde os numeros devem ser impressos
-	
+
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
-			
+
 	# Primeiro encontra os dois digitos
 		li t0, 10
 		bge a0, t0, NUMERO_DE_DOIS_DIGITOS
 			rem t4, a0, t0		# t4 recebe o algarismo das unidades
 			j PRINT_ALGARISMO_UNIDADES
-	
+
 	NUMERO_DE_DOIS_DIGITOS:
 		div t3, a0, t0		# t3 recebe o algarismo das dezenas
 		rem t4, a0, t0		# t4 recebe o algarismo das unidades
-		
+
 	# Imprimindo o algarismo das dezenas no frame
 		la a0, tiles_numeros	
 		addi a0, a0, 8		# pula para onde começa os pixels no .data
@@ -940,7 +940,7 @@ PRINT_NUMERO:
 		# numero
 		li t0, -3193		# -3193 = -10 * 320 + 7
 		add a1, a1, t0	
-						
+
 	PRINT_ALGARISMO_UNIDADES:				
 	# Imprimindo o algarismo das unidades no frame
 		la a0, tiles_numeros	
@@ -952,10 +952,9 @@ PRINT_NUMERO:
 		li a2, 6		# numero de colunas dos tiles a serem impressos
 		li a3, 10		# numero de linhas dos tiles a serem impressos	
 		call PRINT_IMG				
-					
+
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret			
 
-																																																						
+	ret			
+																											

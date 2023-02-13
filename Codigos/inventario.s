@@ -25,7 +25,7 @@ matriz_texto_inventario: .word 10, 1
 
 # Inicializando os itens do inventario
 
-NUMERO_DE_POKEBOLAS: .byte 0
+NUMERO_DE_POKEBOLAS: .byte 1
 POKEMONS_DO_RED: .word 0,0,0,0,0
 
 .text 
@@ -77,6 +77,10 @@ MOSTRAR_INVENTARIO:
 	# Argumentos:
 	#	a5 = [ 0 ] -> se a entrada é pela tecla 'i'
 	#	     [ 1 ] -> entrada pelos procedimentos de combate, tal como explicado acima
+	#	a6 = [ 1 ] -> se a chamada ao inventario é para mostrar exclusivamente as pokebolas, isso
+	#		só acontece no combate durante o ACAO_ITEM. Caso a6 == 1 o valor de a5 e o retorno 
+	#		a0 são inuteis, a saida sempre é pelo Enter
+	#	     [ 0 ] -> mostrar inventario de forma normal	 
 	#
 	# Retorno:
 	#	a0 = um número de 0 a 4 indicando o pokemon que o RED selecionou antes que o inventario fosse 
@@ -272,7 +276,11 @@ MOSTRAR_INVENTARIO:
 								# não está no fim da lista de pokemons
 
 	call TROCAR_FRAME	# inverte o frame, ou seja, mostra o frame 1
-				
+
+	# Nesse ponto é verificado o valor de a6. Caso a6 == 1 então só é para mostrar as pokebolas
+	li t0, 1
+	beq a6, t0, MOSTRAR_INVENTARIO_POKEBOLAS
+
 	# Com todos os itens no lugar é hora de tornar o menu do inventário responsivo aos comandos do jogador,
 	# dando a opção de trocar entre pokemons com W e S
 	
@@ -644,6 +652,103 @@ MOSTRAR_INVENTARIO:
 
 	ret
 			
+# ------------------------------------------------------------------------------------------------------ #
+
+MOSTRAR_INVENTARIO_POKEBOLAS:
+	# Uma pequena extensão de MOSTRAR_INVENTARIO para a ação de combate ACAO_ITEM, no qual são mostrados
+	# somente as pokebolas
+	# OBS: não é empilhado o valor de ra pois a chegada é por branch e a saída é sempre 
+	# para FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO
+
+	# Primeira seleciona a opção das pokebolas
+		# Calcula o endereço de onde as pokebolas estão no menu
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 203 		# numero da coluna 
+		li a3, 127		# numero da linha		
+		call CALCULAR_ENDERECO		
+
+		mv a1, a0	# move o retorno para a1
+		
+		# Selecionado a opção
+		li a0, 0		# a0 == 0 -> selecionar a opção
+		# a1 já tem o endereço de onde o texto está
+		li a2, 10		# numero de linhas de pixels do texto
+		li a3, 26		# numero de colunas de pixels do texto
+		call SELECIONAR_OPCAO_MENU
+
+	# Imprime a imagem da pokebola grande
+		# Calcula o endereço de onde imprimir a imagem
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 94 		# numero da coluna 
+		li a3, 84		# numero da linha		
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime a imagem	
+		la a0, pokebola_grande	# carrega a imagem
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da uma
+		lw a3, 4(a0)		# numero de linhas da uma
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+
+	# Imprime uma faixa grande para colocar o texto 'POKEBOLA'
+		# Calcula o endereço de onde imprimir a faixa
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 79 		# numero da coluna 
+		li a3, 125		# numero da linha		
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime a faixa	
+		li a0, 0xFF		# a0 tem a cor branca
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 65		# numero de colunas da imagem da seta
+		li a3, 17		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+						
+	# Imprime o texto 'POKEBOLA'
+		# Calcula o endereço de onde imprimir o texto
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 83 		# numero da coluna 
+		li a3, 127		# numero da linha		
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime o texto com ('POKEBOLA')
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_pokebola 	
+		call PRINT_TEXTO
+		
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_MOSTRAR_INVENTARIO_POKEBOLA:
+		call VERIFICAR_TECLA
+		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_MOSTRAR_INVENTARIO_POKEBOLA	
+	
+	# Especificamente nesse caso é necessario replicar a caixa de dialogo do frame 1 no frame 0
+	# para retirar a seta que está sobre ITEM no menu de combate
+		# Calculando o endereço de onde começar a copia no frame 1
+		li a1, 0xFF100000	# seleciona o frame 0
+		li a2, 244		# numero da coluna 
+		li a3, 203		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		# Replica a caixa de dialogo do frame 1 no frame 0 para que os dois estejam iguais	
+		# a0 tem o endereço da replica no frame 1						
+		mv a1, a0		
+		li t0, 0x00100000
+		sub a1, a1, t0		# a1 recebe o endereço de a0 no frame 0	
+		li a2, 264		# numero de colunas a serem copiadas
+		li a3, 32		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME		
+																																																																																																										
+	j FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO
+
 # ====================================================================================================== #
 
 .data
@@ -656,3 +761,7 @@ MOSTRAR_INVENTARIO:
 
 	.include "../Imagens/inventario/pokemons_tipos.data"
 	.include "../Imagens/inventario/seta_tipo_forte_fraco.data"
+	
+	.include "../Imagens/inventario/pokebola_grande.data"
+	
+	

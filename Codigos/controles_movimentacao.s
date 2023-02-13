@@ -50,6 +50,7 @@ VERIFICAR_TECLA_JOGO:
 		li t0, 'i'
 		bne a0, t0, FIM_VERIFICAR_TECLA_JOGO
 			li a5, 0		# a5 = 0 porque o inventario foi mostrado através da tecla 'i'
+			li a6, 0		# a6 = 0 para mostrar o inventario normalmente			
 			call MOSTRAR_INVENTARIO
 	
 	FIM_VERIFICAR_TECLA_JOGO:	

@@ -77,12 +77,27 @@ matriz_texto_vitoria: .word 7, 1
 matriz_texto_derrota: .word 7, 1 		
 		.byte 34,22,35,35,25,60,39
 		
-matriz_texto_voce_ganhou: .word 12, 1 		# inclui dois pontos no final	
+matriz_texto_voce_ganhou: .word 12, 1 		# inclui espaço no final	
 		.byte 31,8,2,20,77,5,0,7,6,8,73,77
 		
 matriz_texto_pokebola: .word 8, 1 		
-		.byte 24,25,26,29,37,25,38,39						
-														
+		.byte 24,25,26,29,37,25,38,39	
+							
+matriz_texto_voce_nao_tem_nenhuma: .word 20, 1 			
+		.byte 31,8,2,20,77,7,16,8,77,72,4,69,77,7,4,7,6,73,69,0	
+		
+matriz_texto_ponto: .word 1, 1 			# so o tile de um ponto		
+		.byte 54
+									
+matriz_texto_inventario_cheio: .word 17, 1 			# inclui ponto no final	
+		.byte 57,7,11,4,7,72,19,70,78,8,77,2,6,4,78,8,54
+
+matriz_texto_a_captura_falhou: .word 17, 1 		# inclui ponto no final
+		.byte 39,77,2,0,9,72,73,70,0,77,66,0,76,6,8,73,54
+		
+matriz_texto_a_captura_funcionou: .word 20, 1 		# inclui exclamação no final
+		.byte 39,77,2,0,9,72,73,70,0,77,66,73,7,2,78,8,7,8,73,74
+																																														
 # Essa matriz de tiles em especial representa uma parte da tela de combate e será usada durante a ação de ataque
 # para limpar o sprite do pokemon inimigo e do RED da tela
 matriz_tiles_combate_limpar_pokemon:
@@ -814,6 +829,7 @@ INICIAR_POKEMON_RED:
 			call PRINT_COR	
 																																					
 	li a5, 1		# a5 = 1 porque o inventario foi mostrado através do combate
+	li a6, 0		# a6 = 0 para mostrar o inventario normalmente
 	call MOSTRAR_INVENTARIO	
 
 	# do retorno de MOSTRAR_INVENTARIO a0 tem um valor de 0 a 4 representando a opção, e consequentemente,
@@ -977,7 +993,9 @@ TURNO_JOGADOR:
 	
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
-		
+	
+	INICIO_TURNO_JOGADOR:
+			
 	# Primeiro encontra a matriz de texto com o nome do pokemon escolhido pelo RED
 	srli t0, s11, 12	# os primeiros 12 bits de s11 são o codigo do pokemon inimigo e os proximos 12
 				# são do pokemon do RED
@@ -1078,11 +1096,23 @@ TURNO_JOGADOR:
 	
 	COMBATE_VERIFICAR_ACAO_FUGIR:																														
 	li t0, 1
-	bne a0, t0, FIM_TURNO_JOGADOR
+	bne a0, t0, COMBATE_VERIFICAR_ACAO_ITEM
 		# se a opção selecionada for 1 então chama a ação de fugir																																																																										
 		call ACAO_FUGIR
 		# como retorno a0 == 0 se o combate deve continuar e 2 caso o RED venceu, esse retorno será
 		# propagado para EXECUTAR_COMBATE
+	
+	COMBATE_VERIFICAR_ACAO_ITEM:
+	li t0, 3
+	bne a0, t0, FIM_TURNO_JOGADOR
+		# se a opção selecionada for 3 então chama a ação de item																																																																										
+		call ACAO_ITEM
+		# como retorno a0 == 2 se o turno não deve acabar
+		li t0, 2
+		beq a0, t0, INICIO_TURNO_JOGADOR
+			
+		# como retorno a0 == 0 se o combate deve continuar e 1 se deve parar, esse retorno será
+		# propagado para EXECUTAR_COMBATE	
 	
 	FIM_TURNO_JOGADOR:
 
@@ -1499,7 +1529,597 @@ ACAO_ATACAR:
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret		
+
+# ------------------------------------------------------------------------------------------------------ #
+
+ACAO_ITEM:
+	# A ação de item inclui chamar o inventario para que o jogador possa escolher a pokebola,
+	# cuidando de casos de conflito (inventario cheio, por exemplo). Caso seja possivel também
+	# toma conta de capturar o pokemon e atualizar o inventario
+	#
+	# Retorno:
+	# 	a0 = [ 0 ] se o combate deve continuar
+	#	     [ 1 ] se o combate deve parar porque o pokemon foi capturado
+	#	     [ 2 ] se não é para terminar o turno do jogador
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+	
+	# Antes limpa algumas partes do frame 1 de modo que só o que vai aparecer é a caixa de dialogo
+	# e o inventario
+		# Calculando o endereço de onde começar a limpeza no frame 1
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 32		# numero da coluna 
+		li a3, 32		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv a1, a0		# move o retorno para a1
+
+		# Imprimindo o rentangulo com a cor de fundo da tela de combate no frame 1
+		li a0, 190		# a0 tem o valor do fundo do menu da tela do combate
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 276		# numero de colunas da area a ser impressa
+		li a3, 129		# numero de linhas da area a ser impressa		
+		call PRINT_COR	
+	
+	li a6, 1		# a6 = 1 para mostrar somente as pokebolas
+	call MOSTRAR_INVENTARIO	
 		
+	# Replica o frame 0 no frame 1 para que os dois estejam iguais
+	li a0, 0xFF000000	# copia o frame 0 no frame 1
+	li a1, 0xFF100000
+	li a2, 320		# numero de colunas a serem copiadas
+	li a3, 240		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME	
+	
+	# Agora é necessário fazer verificações para ver se o RED pode ou não capturar o pokemon
+		# A primeira é se ele tem pokebolas
+		la t0, NUMERO_DE_POKEBOLAS
+		lb t0, 0(t0)
+		bne t0, zero, ACAO_ITEM_VERIFICAR_INVENTARIO_CHEIO
+		 		
+		# se igual a zero imprime um texto indicando isso	
+		
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+		
+		# Primeiro limpa a caixa de dialogo no frame 0
+		# Calculando o endereço de onde começar a limpeza no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv t5, a0		# move o retorno para t5
+
+		# Imprimindo o rentangulo com a cor de fundo da caixa no frame 0
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		mv a1, t5		# t5 tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+				
+		# Calculando o endereço de onde imprimir o primeiro texto no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv a1, a0		# move o retorno para a1
+
+		# Imprime o texto ('Você não tem nenhuma')
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_voce_nao_tem_nenhuma
+		call PRINT_TEXTO
+		
+		# Calculando o endereço de onde imprimir o ultimo texto no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 201		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv a1, a0		# move o retorno para a1
+
+		# Imprime o texto ('POKEBOLA')
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_pokebola
+		call PRINT_TEXTO
+		
+		# Imprime o texto ('.')
+		# a1 já tem naturalmente pelo PRINT_TEXTO acima o endereço de onde imprimir o texto
+		la a4, matriz_texto_ponto
+		call PRINT_TEXTO
+	
+		# Por fim, imprime uma pequena seta indicando que o jogador pode apertar ENTER para avançar
+		# o dialogo						
+		# Calculando o endereço de onde imprimir a seta no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 159		# numero da coluna 
+		li a3, 207		# numero da linha
+		call CALCULAR_ENDERECO											
+
+		mv a1, a0		# move o retorno para a1		
+									
+		# Imprimindo a imagem da seta no frame 0
+		la a0, seta_proximo_dialogo_combate		# carrega a imagem				
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da imagem
+		lw a3, 4(a0)		# numero de linhas da imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+																																
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+
+		# Replica a caixa de dialogo do frame 0 no frame 1 para que os dois estejam iguais				
+		mv a0, t5		# t5 ainda tem o endereço da caixa no frame 0
+		li t0, 0x00100000
+		add a1, t5, t0		# a1 recebe o endereço de t5 no frame 1		
+		li a2, 264		# numero de colunas a serem copiadas
+		li a3, 32		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME				
+		
+		li t3, 2		# t3 = 2 porque o turno nao deve acabar																																																																											li t3, 0-2
+		
+		j LOOP_ENTER_ACAO_ITEM
+		
+		# ------------------------------------------------------------------------------------------
+		
+		ACAO_ITEM_VERIFICAR_INVENTARIO_CHEIO:
+		
+		# A segunda verificação é se o inventario está cheio
+		la t0, POKEMONS_DO_RED
+		li t1, 5	# numero de posições a serem verificadas
+		li t2, 0	# t2 guarda o numero de posições livres no inventario
+		
+		ACAO_ITEM_ENCONTAR_ESPACO_VAZIO:
+			lw t3, 0(t0)
+			bne t3, zero, ENCONTAR_PROXIMO_ESPACO_VAZIO
+				addi t2, t2, 1		# se a posição for 0 então incrementa t2
+			ENCONTAR_PROXIMO_ESPACO_VAZIO:
+			addi t1, t1, -1		# decrementa o numero de posições restantes
+			addi t0, t0, 4		# proxima posicao do inventario
+			bne t1, zero, ACAO_ITEM_ENCONTAR_ESPACO_VAZIO
+		
+		bne t2, zero, ACAO_ITEM_TENTAR_CAPTURAR_POKEMON
+		# se não houver posição livre imprime um texto explicando o ocorrido
+		
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+		
+		# Primeiro limpa a caixa de dialogo no frame 0
+		# Calculando o endereço de onde começar a limpeza no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv t5, a0		# move o retorno para t5
+
+		# Imprimindo o rentangulo com a cor de fundo da caixa no frame 0
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		mv a1, t5		# t5 tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+				
+		# Calculando o endereço de onde imprimir o primeiro texto no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv a1, a0		# move o retorno para a1
+
+		# Imprime o texto ('Inventário cheio.')
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_inventario_cheio
+		call PRINT_TEXTO
+		
+		# Por fim, imprime uma pequena seta indicando que o jogador pode apertar ENTER para avançar
+		# o dialogo						
+		# Calculando o endereço de onde imprimir a seta no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 159		# numero da coluna 
+		li a3, 207		# numero da linha
+		call CALCULAR_ENDERECO											
+
+		mv a1, a0		# move o retorno para a1		
+									
+		# Imprimindo a imagem da seta no frame 0
+		la a0, seta_proximo_dialogo_combate		# carrega a imagem				
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da imagem
+		lw a3, 4(a0)		# numero de linhas da imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+																																
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+
+		# Replica a caixa de dialogo do frame 0 no frame 1 para que os dois estejam iguais				
+		mv a0, t5		# t5 ainda tem o endereço da caixa no frame 0
+		li t0, 0x00100000
+		add a1, t5, t0		# a1 recebe o endereço de t5 no frame 1		
+		li a2, 264		# numero de colunas a serem copiadas
+		li a3, 32		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME				
+		
+		li t3, 2		# t3 = 2 porque o turno nao deve acabar	
+		
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_ACAO_ITEM:
+		call VERIFICAR_TECLA
+		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_ACAO_ITEM		
+		
+	j FIM_ACAO_ITEM
+										
+	ACAO_ITEM_TENTAR_CAPTURAR_POKEMON:
+	# se tudo ocorreu corretamente o pokemon pode tentar ser capturado
+																							
+	# Primeiro encontra a imagem do pokemon inimigo dependendo
+	andi t0, s11, 7		# faz o andi com 7 para deixar somente os bits que fazem parte do tipo
+				# do pokemon inimigo intactos
+	addi t0, t0, -1		# -1 porque o tipo do pokemon começa em 1
+							
+	la t1, pokemons			# t1 tem o inicio da imagem do BULBASAUR
+	addi t1, t1, 8			# pula para onde começa os pixels no .data	
+	li t2, 1482			# 1482 = 38 * 39 = tamanho de uma imagem de um pokemon, ou seja,
+	mul t2, t2, t0			# passa o endereço de t1 para a imagem do pokemon 
+	add t3, t1, t2			# correto de acordo com t0
+	
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 1																																																																																																																																																																																															
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																														
+	# Imprime a imagem do pokemon desaparecendo da tela no frame 0
+		# Calculando o endereço de onde imprimir o pokemon 
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 204		# numero da coluna 
+		li a3, 43		# numero da linha					
+		call CALCULAR_ENDERECO			
+	
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime a silhueta do pokemon	no frame 0
+		mv a0, t3	# t3 tem a imagem do pokemon que foi decidido no inicio procedimento				
+		# a1 já tem o endereço de onde imprimir a imagem
+		li a2, 38	# numero de colunas da imagem
+		li a3, 39	# numero de linhas da imagem
+		li a4, 0	# a silhueta será impressa na orientação normal		
+		call PRINT_POKEMON_SILHUETA
+		
+		call TROCAR_FRAME		# inverte o frame, mostrando o frame 0	
+																																																																																																																																																																																																	
+		# Espera alguns milisegundos	
+		li a0, 800			# sleep 800 ms
+		call SLEEP			# chama o procedimento SLEEP	
+
+		# Remove o sprite do pokemon o que pode ser feito imprimindo novamente os
+		# tiles onde ele está
+		# Calculando o endereço de onde imprimir os tiles no frame 1
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 192		# numero da coluna 
+		li a3, 32		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv t6, a0		# move o retorno para t6
+	
+		# Agora novamente no frame 1 os tiles onde o pokemon está
+		la a0, matriz_tiles_combate_limpar_pokemon	# carrega a matriz de tiles
+		la a1, tiles_combate_e_inventario	# carrega a imagem com os tiles
+		mv a2, t6				# t6 tem o endereço onde os tile serão impressos
+		call PRINT_TILES
+			
+		# Imprime também uma imagem de uma pokebola representando a captura
+		la a0, pokebola_captura		# carrega a imagem	
+		li t0, 12186		# t0 = 38 * 320 + 26			
+		add a1, t6, t0		# a imagem será impressa a +38 linhas +26 colunas de onde o pokemon
+					# foi renderizado
+		lw a2, 0(a0)		# numero de colunas da imagem
+		lw a3, 4(a0)		# numero de linhas da imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG														
+		
+		call TROCAR_FRAME		# inverte o frame, mostrando o frame 1	
+		
+		# Agora replica os pixels do frame 1 para o 0
+		mv a0, t6		# t6 tem o endereço onde os tiles foram renderizados no frame 1
+		li t0, 0x00100000
+		sub a1, t6, t0		# a1 recebe o endereço de t6 no frame 0			
+		li a2, 60		# numero de colunas a serem copiadas
+		li a3, 56		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME
+					
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 0	
+	
+	# Agora imprime o texto ('... YYY)', onde YYY é a mensagem se a captura foi bem sucedida ou nao	
+	# Calculando o endereço de onde imprimir o primeiro texto ('...') no frame 1
+	li a1, 0xFF100000	# seleciona o frame 1
+	li a2, 28		# numero da coluna 
+	li a3, 185		# numero da linha
+	call CALCULAR_ENDERECO	
+
+	mv t5, a0		# move o retorno para a1
+
+	# Antes limpa a caixa de dialogo no frame 1
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		mv a1, t5		# t5 tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR
+
+	# Por fim, imprime uma pequena seta indicando que o jogador pode apertar ENTER para avançar
+	# o dialogo						
+		# Calculando o endereço de onde imprimir a seta no frame 1
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 159		# numero da coluna 
+		li a3, 207		# numero da linha
+		call CALCULAR_ENDERECO											
+
+		mv a1, a0		# move o retorno para a1		
+									
+		# Imprimindo a imagem da seta no frame 0
+		la a0, seta_proximo_dialogo_combate		# carrega a imagem				
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da imagem
+		lw a3, 4(a0)		# numero de linhas da imagem
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+						
+	# Imprime o texto ('...')
+	mv a1, t5		# t5 tem o endereço de onde imprimir o texto
+	la a4, matriz_texto_tres_pontos
+	call PRINT_TEXTO
+	
+	mv t2, a1		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde imprimiu o tile,
+				# de modo que está na posição exata do proximo texto
+			
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 1	
+
+	# Replica a caixa de dialogo do frame 1 no frame 0 para que os dois estejam iguais
+	mv a0, t5		# t5 tem o endereço da caixa no frame 1
+	li t0, 0x00100000
+	sub a1, t5, t0		# a1 recebe o endereço de t5 no frame 0			
+	li a2, 264		# numero de colunas a serem copiadas
+	li a3, 32		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME	
+
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 0	
+													
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_ACAO_ITEM_TRES_PONTOS:
+		call VERIFICAR_TECLA
+		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_ACAO_ITEM_TRES_PONTOS
+										
+	# Escolhe um numero randomico de 0 a 2, se o numero for 0 então a captura nao foi bem sucedida
+	li a0, 2
+	call ENCONTRAR_NUMERO_RANDOMICO
+		
+	bne a0, zero, CAPTURA_FUNCIONOU
+
+	# -------------------------------------------------------
+
+	# A captura falhou se a0 == 0
+
+	# Imprime o texto com o ' a captura falhou' no frame 1
+	mv a1, t2	# pelo PRINT_TEXTO anterior t2 ainda tem salvo o endereço onde o ultimo tile
+			# foi impresso, de modo que está na posição exata do proximo texto
+	la a4, matriz_texto_a_captura_falhou
+	call PRINT_TEXTO	
+			
+	# Decrementa o numero de pokebolas 
+	la t0, NUMERO_DE_POKEBOLAS
+	lb t1, 0(t0)
+	addi t1, t1, -1
+	sb t1, 0(t0)	
+	
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+	
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_FIM_CAPTURA_DE_POKEMON:
+		call VERIFICAR_TECLA
+	
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_FIM_CAPTURA_DE_POKEMON	
+			
+	# Replica a caixa de dialogo do frame 1 no frame 0 para que os dois estejam iguais	
+	mv a0, t5		# t5 tem o endereço da caixa no frame 1
+	li t0, 0x00100000
+	sub a1, t5, t0		# a1 recebe o endereço de t5 no frame 0		
+	li a2, 264		# numero de colunas a serem copiadas
+	li a3, 32		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME		
+
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+
+	# é necessario reimprimir o sprite do pokemon inimigo
+	# Primeiro encontra a imagem do pokemon inimigo
+	
+	# Imprimindo novamente os tiles para limpar a imagem da pokebola
+		# Calculando o endereço de onde imprimir os tiles
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 192		# numero da coluna 
+		li a3, 32		# numero da linha
+		call CALCULAR_ENDERECO	
+		
+		mv a2, a0		# move o retorno para t6
+	
+		# Agora novamente no frame 0 os tiles onde o pokemon está
+		la a0, matriz_tiles_combate_limpar_pokemon	# carrega a matriz de tiles
+		la a1, tiles_combate_e_inventario	# carrega a imagem com os tiles
+		# a2 já tem o endereço onde os tile serão impressos
+		call PRINT_TILES
+		
+	andi t0, s11, 7		# faz o andi com 7 para deixar somente os bits que fazem parte do tipo
+				# do pokemon inimigo intactos
+	addi t0, t0, -1		# -1 porque o tipo do pokemon começa em 1
+							
+	la t1, pokemons			# t1 tem o inicio da imagem do BULBASAUR
+	addi t1, t1, 8			# pula para onde começa os pixels no .data	
+	li t2, 1482			# 1482 = 38 * 39 = tamanho de uma imagem de um pokemon, ou seja,
+	mul t2, t2, t0			# passa o endereço de t1 para a imagem do pokemon 
+	add t3, t1, t2			# correto de acordo com t0
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																							
+	# Imprime a imagem do pokemon aparecendo da tela no frame 0
+		# Calculando o endereço de onde imprimir o pokemon 
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 204		# numero da coluna 
+		li a3, 43		# numero da linha					
+		call CALCULAR_ENDERECO			
+	
+		mv t4, a0		# move o retorno para a1
+		
+		# Imprime a silhueta do pokemon	no frame 0
+		mv a0, t3	# t3 tem a imagem do pokemon que foi decidido no inicio procedimento				
+		mv a1, t4	# t4 tem o endereço de onde imprimir a imagem
+		li a2, 38	# numero de colunas da imagem
+		li a3, 39	# numero de linhas da imagem
+		li a4, 0	# a silhueta será impressa na orientação normal		
+		call PRINT_POKEMON_SILHUETA
+		
+		# Espera alguns milisegundos	
+		li a0, 800			# sleep 800 ms
+		call SLEEP			# chama o procedimento SLEEP	
+			
+		# Imprime a imagem completa do pokemon no frame 0
+		mv a0, t3	# t3 ainda tem a imagem do pokemon que foi decidido no inicio procedimento				
+		mv a1, t4	# t4 tem o endereço de onde imprimir a imagem
+		li a2, 38	# numero de colunas da imagem
+		li a3, 39	# numero de linhas da imagem
+		call PRINT_IMG
+		
+		# Replica o frame 0 no frame 1 para que os dois estejam iguais
+		mv a0, t4		# t4 tem o endereço de onde o pokemon foi impresso no frame 0
+		li t0, 0x00100000
+		add a1, t4, t0		# a1 recebe o endereço de t4 no frame 1			
+		li a2, 60		# numero de colunas a serem copiadas
+		li a3, 56		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME
+				
+	li t3, 0		# t3 recebe 0 para indicar que o combate deve continuar	
+			
+	j FIM_ACAO_ITEM	
+	
+	# -------------------------------------------------------
+	
+	CAPTURA_FUNCIONOU:		
+	
+	# A captura falhou se a0 != 0
+
+	# Imprime o texto com o ' a captura funcionou!' no frame 1
+	mv a1, t2	# pelo PRINT_TEXTO anterior t2 ainda tem salvo o endereço onde o ultimo tile
+			# foi impresso, de modo que está na posição exata do proximo texto
+	la a4, matriz_texto_a_captura_funcionou
+	call PRINT_TEXTO
+
+	# Armazena o pokemon captura na primeira posicao livre do inventario
+	li t0, 4095	
+	and t0, s11, t0		# faz com o andi com t0 de modo que t0 tem somente os bits que fazem parte
+				# do codigo do pokemon inimigo em s11 intactos
+				
+	la t1, POKEMONS_DO_RED
+	li t2, 5	# numero de posições a serem verificadas
+		
+	ACAO_ITEM_LOOP_ARMAZENAR_POKEMON:
+		lw t3, 0(t1)
+		beq t3, zero, ACAO_ITEM_ARMAZENAR_POKEMON
+		addi t2, t2, -1		# decrementa o numero de posições restantes
+		addi t1, t1, 4		# proxima posicao do inventario
+		bne t2, zero, ACAO_ITEM_LOOP_ARMAZENAR_POKEMON
+	
+	ACAO_ITEM_ARMAZENAR_POKEMON:
+	sw t0, 0(t1) 		# armazena o codigo do pokemon captura no inventario
+
+	call TROCAR_FRAME 		# inverte o frame, mostrando o frame 1
+	
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_FIM_CAPTURA_FUNCIONOU:
+		call VERIFICAR_TECLA
+	
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_FIM_CAPTURA_FUNCIONOU	
+			
+	# Agora imprime a mensagem de vitoria no frame 0
+		# Primeiro limpa a caixa de dialogo	
+		# Calculando o endereço de onde começar a limpeza no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		mv a1, a0		# move o retorno para t5
+
+		# Imprimindo o rentangulo com a cor de fundo da caixa no frame 0
+		li a0, 0xFF		# a0 tem o valor do fundo da caixa
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 147		# numero de colunas da imagem da seta
+		li a3, 30		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+		
+		# Imprimindo o texto de vitoria
+		# Calculando o endereço de onde imprimir o texto no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 75		# numero da coluna 
+		li a3, 193		# numero da linha
+		call CALCULAR_ENDERECO	
+			
+		mv a1, a0		# move o retorno para a1
+		# Imprime o texto com a mensagem
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_vitoria 	
+		call PRINT_TEXTO
+			
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 0	
+	
+	# Replica a caixa de dialogo do frame 0 no frame 1 para que os dois estejam iguais	
+		# Calculando o endereço de onde começar a copia no frame 0
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 28		# numero da coluna 
+		li a3, 185		# numero da linha
+		call CALCULAR_ENDERECO	
+	
+		# a0 já tem o endereço da caixa no frame 0
+		li t0, 0x00100000
+		add a1, a0, t0		# a1 recebe o endereço de a0 no frame 0		
+		li a2, 264		# numero de colunas a serem copiadas
+		li a3, 32		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME		
+			
+		# Espera alguns milisegundos	
+		li a0, 4500			# sleep 4,5 s
+		call SLEEP			# chama o procedimento SLEEP	
+
+	# Decrementa o numero de pokebolas 
+	la t0, NUMERO_DE_POKEBOLAS
+	lb t1, 0(t0)
+	addi t1, t1, -1
+	sb t1, 0(t0)	
+																																																																																																																																																																																																																																																																																																																																																																																	
+	li t3, 1		# t3 recebe 1 para indicar que o combate não deve continuar
+	
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+	
+			
+	# Replica a caixa de dialogo do frame 1 no frame 0 para que os dois estejam iguais	
+	mv a0, t5		# t5 tem o endereço da caixa no frame 1
+	li t0, 0x00100000
+	sub a1, t5, t0		# a1 recebe o endereço de t5 no frame 0		
+	li a2, 264		# numero de colunas a serem copiadas
+	li a3, 32		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME
+		
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 0	
+														
+	# -------------------------------------------------------
+							
+	FIM_ACAO_ITEM:
+
+	mv a0, t3	# t3 tem o valor do retorno decidido acima
+											
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret		
+						
 # ------------------------------------------------------------------------------------------------------ #
 
 PRINT_MENSAGEM_INICIAL_DE_ACAO:
@@ -2199,7 +2819,6 @@ RENDERIZAR_ATAQUE_EFEITO:
 	
 	ret	
 
-
 # ====================================================================================================== #
 
 RENDERIZAR_ATAQUE_DANO:
@@ -2512,5 +3131,6 @@ PRINT_POKEMON_SILHUETA:
 	.include "../Imagens/combate/matriz_tiles_caixa_pokemon_combate.data"					
 	.include "../Imagens/combate/seta_direcao_caixa_pokemon_combate.data"									
 	.include "../Imagens/combate/combate_barra_de_vida.data"
-	.include "../Imagens/combate/efeito_de_ataque.data"																																					
+	.include "../Imagens/combate/efeito_de_ataque.data"
+	.include "../Imagens/combate/pokebola_captura.data"																																																																											
 	.include "../Imagens/outros/caractere_barra.data"																		
