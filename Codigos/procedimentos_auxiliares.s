@@ -78,7 +78,54 @@ PRINT_IMG:
 	ret
 
 # ====================================================================================================== #
+
+PRINT_IMG_INVERTIDA:
+	# Mesma coisa que o PRINT_IMG, exceto que imprime a imagem de maneira espelhada
+	#
+	# Argumentos: 
+	# 	a0 = endereço da imagem		
+	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
+	# 	a2 = numero de colunas da imagem
+	#	a3 = numero de linhas da imagem
+
+	add a0, a0, a2		# como a imagem deve ser impressa de forma invertida então o endereço
+				# de a0 deve estar no final da primeira linha	
+	addi a0, a0, -1		# também é necessario voltar o endereço por 1 coluna (por motivos desconhecidos)	
+				
+	li t0, 0xC7		# t0 tem o valor da cor de um pixel transparente
 	
+	PRINT_IMG_INVERTIDA_LINHAS:
+		mv t1, a2		# copia do numero de a2 para usar no loop de colunas
+			
+		PRINT_IMG_INVERTIDA_COLUNAS:
+			lbu t2, 0(a0)			# pega 1 pixel do .data e coloca em t2
+			
+			# Se o valor do pixel do .data (t2) for 0xC7 (pixel transparente), 
+			# o pixel não é armazenado no bitmap, e por consequência não é renderizado na tela
+			beq t2, t0, NAO_ARMAZENAR_PIXEL_IMG_INVERTIDA
+				sb t2, 0(a1)			# pega o pixel de t2 e coloca no bitmap
+	
+			NAO_ARMAZENAR_PIXEL_IMG_INVERTIDA:
+			addi t1, t1, -1			# decrementa o numero de colunas restantes
+			addi a0, a0, -1			# vai para o próximo pixel anterior da imagem
+			addi a1, a1, 1			# vai para o próximo pixel do bitmap
+			bne t1, zero, PRINT_IMG_INVERTIDA_COLUNAS	# reinicia o loop se t1 != 0
+			
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
+
+		add a0, a0, a2		# como a imagem deve ser impressa de forma invertida então o endereço
+		add a0, a0, a2		# deve estar no final da proxima linha a ser impressa,
+					# o que requer soma a2 duas vezes
+
+		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+		
+		bne a3, zero, PRINT_IMG_INVERTIDA_LINHAS	# reinicia o loop se a3 != 0
+			
+	ret
+	
+# ====================================================================================================== #
+			
 PRINT_TILES_AREA:
 	# Procedimento auxiliar que tem por objetivo usar uma matriz de tiles para imprimir uma imagem
 	# de uma área 
@@ -119,12 +166,12 @@ PRINT_TILES_AREA:
 					# retorna quantos pixels esse tile está do começo da imagem
 			
 			add t1, t1, s4	# t1 recebe o endereço do tile a ser impresso
-	
-			# O loop abaixo emula um PRINT_IMG, a diferença é que como PRINT_IMG pode imprimir
-			# imagens com uma tamanho arbitrário de colunas e linhas ele tem que utlizar instruções
-			# load e store byte, mas como cada tile sempre tem 16 x 16 de tamanho é possível usar
-			# load e store word para agilizar o processo
-			
+						
+			# O modo de impressao se baseia em um loop que emula um PRINT_IMG, a diferença é que
+			# como PRINT_IMG pode imprimir imagens com uma tamanho arbitrário de colunas e linhas 
+			# ele tem que utlizar instruções load e store byte, mas como cada tile sempre tem 
+			# 16 x 16 de tamanho é possível usar load e store word para agilizar o processo
+		
 			li t2, 256	# numero de pixels de um tile (16 x 16)
 			
 			PRINT_TILE_AREA_COLUNAS:
@@ -265,8 +312,118 @@ PRINT_TILES:
 	ret
 
 		
-# ====================================================================================================== #																																																									
-																																																																																																																																																																									
+# ====================================================================================================== #
+			
+REIMPRIMIR_RED_E_AREA:
+	# Procedimento que renderiza novamente os tiles da área atual (seguindo o apontado por s2) e o
+	# sprite do RED com a orientação correta (seguindo s1) em ambos os frames
+	# Para funcionar é necessário garantir que os dois frame estão identicos antes de chamar esse 
+	# procedimento
+	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra	
+	
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 1
+
+	# Escolhe a imagem do RED de acordo com s1 (orientação)
+		la t4, red_esquerda				
+		beq s1, zero, INICIO_REIMPRIMIR_RED_E_AREA
+		la t4, red_direita	
+		li t0, 1				
+		beq s1, t0, INICIO_REIMPRIMIR_RED_E_AREA
+		la t4, red_cima	
+		li t0, 2				
+		beq s1, t0, INICIO_REIMPRIMIR_RED_E_AREA
+		la t4, red_baixo
+	
+	INICIO_REIMPRIMIR_RED_E_AREA:				
+	# Imprimindo as imagens da área e o sprite do RED no frame 0					
+		# Imprimindo a imagem do quarto do RED no frame 0
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF000000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA				
+						
+		# Imprimindo a imagem do RED no frame 0
+		mv a0, t4		# t4 tem a imagem do RED na orientação correta 				
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+	
+		# Verifica se o RED está em um tile de grama e imprime a faixa caso necessario
+		lbu t0, 0(s6)		# s6 é a posicao do RED na matriz de movimentação
+		li t1, 7		# 7 é o codigo de um tile de grama
+		bne t0, t1, REIMPRIMIR_RED_E_AREA_FRAME_1
+		
+		# Imprimindo faixa no frame 0
+		la a0, tiles_pallet	# para encontrar a faixa de grama que será impressa pode ser usado o
+		addi a0, a0, 8		# tilles pallet, partindo do fato de que essa imagem vai estar 
+		li t0, 22688		# na linha 1418 (22688 = 1418 * 16 (largura de uma linha de tiles_pallet))
+		add a0, a0, t0
+		
+		mv t5, a0		# salva o endereço de a0 em t5
+		
+		mv a1, s0		# O endereço onde essa faixa será impressa é no novo endereço do
+		li t0, 4160		# personagem (s0), 13 linhas para baixo (4160 = 13 * 320) e uma coluna
+		add a1, a1, t0		# para a esquerda (-1)
+		addi a1, a1, -1
+		
+		mv t6, a1		# salva o endereço de a1 em t6
+					
+		li a2, 16		# numero de colunas da faixa de grama	
+		li a3, 6		# numero de linhas da faixa de grama	
+		call PRINT_IMG	
+
+	REIMPRIMIR_RED_E_AREA_FRAME_1:		
+	call TROCAR_FRAME		# inverte o frame, mostrando o frame 0
+		
+	# Imprimindo a imagem da área no frame 1	
+		# Imprimindo a imagem do quarto do RED no frame 1
+		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
+		li a1, 0xFF100000	# a imagem será impressa no frame 0
+		li a2, 20		# número de colunas de tiles a serem impressas
+		li a3, 15		# número de linhas de tiles a serem impressas
+		call PRINT_TILES_AREA		
+										
+		# Imprimindo a imagem do RED no frame 0
+		
+		mv a0, t4		# t4 tem a imagem do RED na orientação correta 				
+			
+		mv a1, s0		# s0 tem a posição do RED no frame 0
+		li t0, 0x00100000	# passando o endereço de s0 para o seu endereço correspondente no
+		add a1, a1, t0		# frame 1
+		
+		lw a2, 0(a0)		# numero de colunas de uma imagem do RED
+		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+	
+		# Verifica se o RED está em um tile de grama e imprime a faixa caso necessario
+		lbu t0, 0(s6)		# s6 é a posicao do RED na matriz de movimentação
+		li t1, 7		# 7 é o codigo de um tile de grama
+		bne t0, t1, FIM_REIMPRIMIR_RED_E_AREA
+		
+		# Imprimindo faixa no frame 1
+		mv a0, t5		# t5 ainda tem salvo o endereço da imagem da grama	
+			
+		li t0, 0x00100000
+		add a1, t6, t0 		# passa o endereço de t6 (onde imprimir a grama) para o frame 1	
+						
+		li a2, 16		# numero de colunas da faixa de grama	
+		li a3, 6		# numero de linhas da faixa de grama	
+		call PRINT_IMG	
+						
+	FIM_REIMPRIMIR_RED_E_AREA:			
+	
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+	
+	ret 																																																																																																																																																																					
+# ====================================================================================================== #	
+																																																																																																																																																																																																																																
 CALCULAR_ENDERECO:
 	# Procedimento que calcula um endereço no frame de escolha ou em uma imagem
 	# Argumentos: 
@@ -356,6 +513,121 @@ CALCULAR_ENDERECO_DE_TILE:
 	
 # ====================================================================================================== #
 
+PRINT_COR:
+	# Procedimento que imprime uma área de a2 x a3 pixels com a cor a0 a partir de um endereço em algum frame
+	# Esse procedimento geralamente é usado para "limpar" a tela em alguns momentos, como retirar certas
+	# imagens de menus ou limpar caixas de diálogo, por exemplo.
+	#
+	# Argumentos: 
+	# 	a0 = cor que será impressa 	
+	# 	a1 = endereço de onde, no frame escolhido, a impressao deve começar
+	# 	a2 = numero de colunas da área a ser impressa
+	#	a3 = numero de linhas da área a ser impressa
+	# Obs: por algum motivo esse procedimento não funciona no RARS exceto se o endereço de a1 estiver
+	# especificamente no frame que está na tela
+
+	PRINT_COR_LINHAS:
+		mv t0, a2		# copia do numero de a2 para usar no loop de colunas
+			
+		PRINT_COR_COLUNAS:
+			sb a0, 0(a1)			# pega a cor de a0 e coloca no bitmap
+	
+			addi a1, a1, 1			# vai para o próximo pixel do bitmap
+			addi t0, t0, -1			# decrementa o numero de colunas restantes			
+			bne t0, zero, PRINT_COR_COLUNAS	# reinicia o loop se t0 != 0
+			
+		addi a3, a3, -1			# decrementando o numero de linhas restantes
+		
+		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+		
+		bne a3, zero, PRINT_COR_LINHAS	# reinicia o loop se a3 != 0		
+	ret
+
+# ====================================================================================================== #
+
+REPLICAR_FRAME:
+	# Procedimento que faz uma copia de uma área em um frame para outro frame
+	# 
+	# Argumentos: 
+	# 	a0 = endereço no frame do inicio da area que será copiada
+	#	a1 = endereço no frame que vai receber a copia
+	#	a2 = numero de colunas que serão copiadas de a0 para a1
+	#	a3 = numero de linhas que serão copiadas de a0 para a1	
+	# 
+	# OBS: se parte do pressuposto que a0 e a1 estão alinhados para usar lw e sw, e que a área a ser copiada
+	# tem largura e altura (a2 e a3) multiplos de 4
+	
+	REPLICAR_FRAME_LINHAS:
+		mv t0, a2	# copia do numero de colunas para o loop abaixo
+			
+		REPLICAR_FRAME_COLUNAS:
+			lw t1, 0(a0)			# pega 4 pixels do frame em a0
+			sw t1, 0(a1)			# armazena os 4 pixels no frame a1	
+	
+			addi a0, a0, 4			# vai para os próximos pixels do bitmap a0
+			addi a1, a1, 4			# vai para os próximos pixels do bitmap a1
+						
+			addi t0, t0, -4			# decrementa o numero de colunas de pixels restantes			
+			bne t0, zero, REPLICAR_FRAME_COLUNAS	# reinicia o loop se t0 != 0
+
+		sub a0, a0, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a0, a0, 320		# passa o endereço do bitmap para a proxima linha
+		
+		sub a1, a1, a2			# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320		# passa o endereço do bitmap para a proxima linha
+														
+		addi a3, a3, -1			# decrementando o numero de linhas restantes	
+		bne a3, zero, REPLICAR_FRAME_LINHAS	# reinicia o loop se t0 != 0		
+	ret
+
+# ====================================================================================================== #
+
+SELECIONAR_OPCAO_MENU:							
+	# Procedimento auxiliar que tem por objetivo selecionar ou retirar a seleção de um item de um menu,
+	# trocando os pixels de um texto por pixels azuis ou pixels cinza dependendo do argumento
+	# O texto deve ter sido impresso usando os tiles em tiles_alfabeto.data
+	# 
+	# Argumentos:
+	# 	a0 = [ 0 ] -> selecionar uma opção, ou seja, trocar os pixels do texto de cinza para azul
+	#	     [ != 0 ] -> retirar a seleção de uma opção, ou seja, trocar os pixels de azul para cinza
+	#	a1 = endereço onde o texto está
+	#	a2 = numero de linhas de pixels do texto
+	#	a3 = numero de colunas de pixels do texto
+	
+	li t0,	91		# t0 = cor do texto quando ele não está selecionado	
+	li t1,	192		# t1 = cor que vai "selecionar" o texto
+		
+	# Se a0 != 0 então o procedimento vai retirar a seleção de um item								
+	beq a0, zero, SELECIONAR_OPCAO_LINHAS	
+		li t0,	192		# t0 = cor do texto quando ele está selecionada	
+		li t1,	91		# t1 = cor que vai retirar a seleção do texto
+					
+	SELECIONAR_OPCAO_LINHAS:
+		mv t2, a3		# copia do numero de colunas no loop abaixo
+			
+		SELECIONAR_OPCAO_COLUNAS:
+			lbu t3, 0(a1)			# pega 1 pixel do bitmap e coloca em t3
+			
+			# Se t3 != t0 então o pixel não sera modificado,
+			# dessa forma somente o texto do item será modificados					
+			bne t3, t0, NAO_MODIFICAR_OPCAO
+				sb t1, 0(a1)
+			
+			NAO_MODIFICAR_OPCAO:
+			addi a1, a1, 1				# vai para o próximo pixel do bitmap
+			addi t2, t2, -1				# decrementando o numero de colunas restantes
+			bne t2, zero, SELECIONAR_OPCAO_COLUNAS	# reinicia o loop se t2 != 0
+			
+		sub a1, a1, a3				# volta o endeço do bitmap pelo numero de colunas impressas
+		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
+		addi a2, a2, -1				# decrementando o numero de linhas restantes		
+		bne a2, zero, SELECIONAR_OPCAO_LINHAS	# reinicia o loop se a2 != 0
+			
+	ret
+
+# ====================================================================================================== #
+
 TROCAR_FRAME:
 	# Procedimento que troca o frame que está sendo mostrado de 0 -> 1 e de 1 -> 0
 	
@@ -403,7 +675,23 @@ SLEEP:
 	ret
 				
 # ====================================================================================================== #
-		
+
+ENCONTRAR_NUMERO_RANDOMICO:	
+	# Procedimento que encontra um numero "randomico" entre 0 e a0 (nao inclusivo)
+	# Argumentos:
+	# 	a0 = limite superior para o numero randomico (nao inclusivo)
+	# Retorno:
+	# 	a0 = número "rândomico" entre 0 e a0 - 1
+ 		
+	csrr t0, time		# le o tempo atual do sistema
+	
+	remu a0, t0, a0		# encontra o resto da divisão do tempo do sistema por a0 de modo que a0 
+				# tem um numero entre 0 e a0 - 1 
+			
+	ret
+	
+# ====================================================================================================== #
+			
 PRINT_DIALOGOS:
 	# Procedimento que imprime uma quantidade variavel de caixas de dialogo em ambos os frames
 	# Os dialogos são sempre renderizados em uma área fixa da tela
@@ -506,7 +794,7 @@ PRINT_SETA_DIALOGO:
 		addi a1, a1, -640	# sobe o endereço de a1 em duas linhas
 	
 	# Imprime a seta no frame 1
-		la a0, seta_dialogo	# carrega a imagem
+		#la a0, seta_dialogo	# carrega a imagem
 		# a1 tem o endereço onde a seta será renderizada
 		lw a2, 0(a0)		# a1 = numero de colunas da imagem
 		lw a3, 4(a0)		# a2 = numero de linhas da imagem
@@ -514,7 +802,7 @@ PRINT_SETA_DIALOGO:
 		call PRINT_IMG
 
 	# Imprime a seta no frame 0
-		la a0, seta_dialogo	# carrega a imagem
+		#la a0, seta_dialogo	# carrega a imagem
 		mv a1, t6		# a1 tem o endereço onde a seta será renderizada
 		# os valores de a2 (coluna) e a3 (linha) continuam os mesmos 
 		addi a0, a0, 8		# pula para onde começa os pixels no .data
@@ -588,14 +876,14 @@ PRINT_TEXTO:
 			
 		lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
 			
-		li t1, 1		# se o numero do tile for menor do que 63		
-		li t2, 63		# então é necessário voltar 1 pixel
+		li t1, 1		# se o numero do tile for menor do que 65	
+		li t2, 65		# então é necessário voltar 1 pixel
 		blt t0, t2, PROXIMO_TILE_TEXTO
-		li t1, 2		# se o numero do tile for maior ou igual a 63 e menor do que 73
-		li t2, 73		# então é necessário voltar 2 pixels
+		li t1, 2		# se o numero do tile for maior ou igual a 65 e menor do que 75
+		li t2, 75		# então é necessário voltar 2 pixels
 		blt t0, t2, PROXIMO_TILE_TEXTO
-		li t1, 4		# se o numero do tile for maior que 73 e menor que 75 volta 
-		li t2, 75		# 4 pixels
+		li t1, 4		# se o numero do tile for maior que 75 e menor que 77 volta 
+		li t2, 77		# 4 pixels
 		ble t0, t2, PROXIMO_TILE_TEXTO			
 		li t2, 5		# caso contrário volta 5 pixels
 									
@@ -613,4 +901,60 @@ PRINT_TEXTO:
 	addi sp, sp, 4		# remove 1 word da pilha
 
 	ret
+	
+# ====================================================================================================== #
+
+PRINT_NUMERO:
+	# Procedimento que imprime um número de 0 a 99 em algum frame
+	# Só serão impressos os algarismos necessários, de 0 a 9 por exemplo só imprime 1 numero 
+	#
+	# Argumentos:
+	#	a0 = numero de 0 a 99
+	# 	a1 = endereço de onde os numeros devem ser impressos
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+
+	# Primeiro encontra os dois digitos
+		li t0, 10
+		bge a0, t0, NUMERO_DE_DOIS_DIGITOS
+			rem t4, a0, t0		# t4 recebe o algarismo das unidades
+			j PRINT_ALGARISMO_UNIDADES
+
+	NUMERO_DE_DOIS_DIGITOS:
+		div t3, a0, t0		# t3 recebe o algarismo das dezenas
+		rem t4, a0, t0		# t4 recebe o algarismo das unidades
+
+	# Imprimindo o algarismo das dezenas no frame
+		la a0, tiles_numeros	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data
+		li t0, 60		# cada tile de numero tem 10 * 6 = 60 de tamanho
+		mul t0, t0, t3		# 60 * t3 (algarismo das dezenas) retorna a quantos pixels o numero
+		add a0, a0, t0 		# de t3 está do inicio da imagem dos tiles
+		# a1 já tem o endereço de onde imprimir o numero
+		li a2, 6		# numero de colunas dos tiles a serem impressos
+		li a3, 10		# numero de linhas dos tiles a serem impressos	
+		call PRINT_IMG								
+
+		# pelo PRINT_IMG acima a1 está naturalmente a -10 linhas +7 colunas de onde imprimir o proximo
+		# numero
+		li t0, -3193		# -3193 = -10 * 320 + 7
+		add a1, a1, t0	
+
+	PRINT_ALGARISMO_UNIDADES:				
+	# Imprimindo o algarismo das unidades no frame
+		la a0, tiles_numeros	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data
+		li t0, 60		# cada tile de numero tem 10 * 6 = 60 de tamanho
+		mul t0, t0, t4		# 60 * t4 (algarismo das unidades) retorna a quantos pixels o numero
+		add a0, a0, t0 		# de t4 está do inicio da imagem dos tiles
+		# a1 já tem o endereço de onde imprimir o numero
+		li a2, 6		# numero de colunas dos tiles a serem impressos
+		li a3, 10		# numero de linhas dos tiles a serem impressos	
+		call PRINT_IMG				
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret			
 																											

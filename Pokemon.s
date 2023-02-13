@@ -50,7 +50,13 @@
 #		[ 0 ] = próximo passo será dado com o pé esquerdo					 #
 #		[ Qualquer outro valor] = próximo passo será dado com o pé direito			 #
 #	s9 = define o tempo de SLEEP durante os procedimentos de movimentação da tela (movimentação	 #
-#		em Pallet). O valor de s9 pode ser trocado acima.					 # 		
+#		em Pallet). O valor de s9 pode ser trocado acima.					 #
+#	s10 = [ 0 ] -> se o RED não estiver indo ou não está em um tile de grama 			 #
+#	      [ Qualquer outro valor] = caso estiver indo para um tile de grama	 			 #
+#	s11 = usado no combate para guardar o codigo do pokemon inimigo e o pokemon escolhido pelo 	 #
+#		jogador. O valor é convencionado no formato [12 bits do pokemon do RED][12 bits do 	 #
+#		pokemon inimigo], onde os 12 bits se referem ao codigo do pokemon. Para consulta os	 #
+#		codigos válidos podem ser encontrados em data.s						 #
 #													 #											 
 # ====================================================================================================== #
 # Observações:											         #
@@ -80,7 +86,7 @@ call RENDERIZAR_AREA
 LOOP_PRINCIPAL_JOGO:
 	# Verifica se alguma tecla relacionada a movimentação (w, a, s ou d) ou inventario (i) foi apertada
 	call VERIFICAR_TECLA_JOGO
-	
+
 	j  LOOP_PRINCIPAL_JOGO
 				
 
@@ -88,10 +94,11 @@ LOOP_PRINCIPAL_JOGO:
 
 
 .data
-	.include "Codigos/tela_inicial.s"
-	.include "Codigos/intro_historia.s"
+	#.include "Codigos/tela_inicial.s"
+	#.include "Codigos/intro_historia.s"
+	.include "Codigos/inventario.s"		
 	.include "Codigos/historia.s"	
 	.include "Codigos/areas.s"
 	.include "Codigos/controles_movimentacao.s"	
-	.include "Codigos/inventario.s"		
+	.include "Codigos/combate.s"			
 	.include "Codigos/procedimentos_auxiliares.s"

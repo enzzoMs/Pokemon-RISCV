@@ -12,7 +12,7 @@ NOVA_LINHA_DE_TILES_PALLET: .byte 4,5,103,104,104,105,76,67,67,53,103,106,107,10
 # ------------------------------------------------------------------------------------------------------ #
 # 													 #
 # Código com os procedimentos necessários para renderizar os momentos de história do jogo, incluindo	 #
-# imprimir caixas de diálogo e executar algumas animações 						 #
+# imprimir caixas de diálogo e executar algumas animações. 						 #
 #													 #
 # Esse arquivo possui 3 procedimentos principais, um para cada momento de história do jogo:		 #
 #	RENDERIZAR_ANIMACAO_PROF_OAK, RENDERIZAR_DIALOGO_PROFESSOR_LABORATORIO,				 #
@@ -36,12 +36,12 @@ RENDERIZAR_ANIMACAO_PROF_OAK:
 		call SLEEP			# chama o procedimento SLEEP	
 		
 	# Como primeira parte da animaçaõ é necessário imprimir um balão de exclamação sobre a cabeça do RED
-	# no frame 0. O balão funciona que nem um tile normal, a diferença é que tem fundo transparentes
+	# no frame 0. O balão funciona que nem um tile normal, a diferença é que tem fundo transparente
 	
 	mv a0, s0			# calcula o endereço de inicio do tile onde a cabeça do RED está (s0)
 	call CALCULAR_ENDERECO_DE_TILE	
 	
-	# Imprimindo o balão de exclamação no frame 1			
+	# Imprimindo o balão de exclamação no frame 0			
 		la a0, balao_exclamacao		# carrega a imagem
 		addi a0, a0, 8			# pula para onde começa os pixels no .data
 		# do retorno do procedimento CALCULAR_ENDERECO_DE_TILE a1 já tem o endereço de inicio 
@@ -762,12 +762,12 @@ RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL:
 	# atualizar o inventario do RED com o novo pokemon, liberar a saida de pallet e atualizar a matriz de
 	# tiles de pallet
 		# Atualizando o inventario com o codigo dos pokemons de acordo com a5
-		li t0, 1089	# codigo do BULBASAUR				
+		li t0, BULBASAUR	# codigo do BULBASAUR				
 		beq a5, zero, ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO
-		li t0, 138	# codigo do CHARMANDER			
+		li t0, CHARMANDER	# codigo do CHARMANDER			
 		li t1, 1				
 		beq a5, t1, ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO
-		li t0, 531	# codigo do SQUIRTLE		
+		li t0, SQUIRTLE		# codigo do SQUIRTLE		
 	
 		ESCOLHER_POKEMON_ATUALIZAR_INVENTARIO:
 		
@@ -900,9 +900,9 @@ RENDERIZAR_DIALOGOS:
 		mul t0, t0, t1		# multiplica o bit de t0 por 0x00100000 e soma com a0 de modo que o				
 		add a0, a0, t0		# endereço de a0 vai para o frame que não está sendo mostrado
 		call PRINT_CAIXA_DE_DIALOGO
-			
-		# Impreme o dialogo
-			
+		
+		# Imprime o dialogo
+				
 		# a4 já tem a matriz de tiles do dialogo
 		# a6 já tem tamanho de uma linha da matriz de tiles	
 		li a7, 0xFF000000	# a7 tem o endereço base do frame 0
@@ -1072,14 +1072,14 @@ PRINT_DIALOGO:
 			
 			lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
 			
-			li t1, 1		# se o numero do tile for menor do que 64		
-			li t2, 64		# então é necessário voltar 1 pixel
+			li t1, 1		# se o numero do tile for menor do que 65		
+			li t2, 65		# então é necessário voltar 1 pixel
 			blt t0, t2, PROXIMO_TILE_DIALOGO
-			li t1, 2		# se o numero do tile for maior ou igual a 64 e menor do que 74
-			li t2, 74		# então é necessário voltar 2 pixels
+			li t1, 2		# se o numero do tile for maior ou igual a 65 e menor do que 75
+			li t2, 75		# então é necessário voltar 2 pixels
 			blt t0, t2, PROXIMO_TILE_DIALOGO
-			li t1, 4		# se o numero do tile for maior que 74 e menor que 76 volta 
-			li t2, 76		# 4 pixels
+			li t1, 4		# se o numero do tile for maior que 75 e menor que 77 volta 
+			li t2, 77		# 4 pixels
 			ble t0, t2, PROXIMO_TILE_DIALOGO			
 			li t2, 5		# caso contrário volta 5 pixels
 									

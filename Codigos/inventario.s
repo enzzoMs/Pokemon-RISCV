@@ -21,14 +21,17 @@ matriz_texto_squirtle: .word 8, 1
 		       .byte 30,59,40,57,35,60,38,22
 
 matriz_texto_inventario: .word 10, 1
-			 .byte 57,7,11,4,7,71,19,69,77,8
+			 .byte 57,7,11,4,7,72,19,70,78,8
 
 # Inicializando os itens do inventario
 
-NUMERO_DE_POKEBOLAS: .byte 0
+NUMERO_DE_POKEBOLAS: .byte 1
 POKEMONS_DO_RED: .word 0,0,0,0,0
-# O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PP, onde:
-# 	PP -> número do pokemon, de modo que:
+
+.text 
+
+# O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PPP, onde:
+# 	PPP -> número do pokemon, de modo que:
 #		[ 001 ] -> BULBASAUR
 #		[ 010 ] -> CHARMANDER
 #		[ 011 ] -> SQUIRTLE
@@ -41,13 +44,17 @@ POKEMONS_DO_RED: .word 0,0,0,0,0
 #		[ 011 ] -> GROUND
 #		[ 100 ] -> BUG
 # Sendo assim o codigo de cada Pokemon pode ser encontrado abaixo:
-# 	BULBASAUR -> 1089
-#	CHARMANDER -> 138
-# 	SQUIRTLE -> 531
-# 	CATERPIE -> 100
-# 	DIGLETT -> 541
+# 	BULBASAUR [Tipo GRASS, Fraco FIRE, Forte WATER]-> 1089
+#	CHARMANDER [Tipo FIRE, Fraco WATER, Forte GRASS] -> 138
+# 	SQUIRTLE [Tipo WATER, Fraco GRASS, Forte FIRE] -> 531
+# 	CATERPIE [Tipo BUG, Fraco FIRE, Forte GRASS] -> 100
+# 	DIGLETT [Tipo GROUND, Fraco GRASS, Forte FIRE] -> 541
 
-.text
+.eqv BULBASAUR 1089
+.eqv CHARMANDER 138
+.eqv SQUIRTLE 531
+.eqv CATERPIE 100
+.eqv DIGLETT 541
 
 # ====================================================================================================== # 
 # 				              INVENTARIO					         #
@@ -61,9 +68,26 @@ POKEMONS_DO_RED: .word 0,0,0,0,0
 MOSTRAR_INVENTARIO:
 	# Este procedimento que coordena o funcionamento do inventario na tela, imprimindo todas as informações
 	# necessário e fazendo alterações no menu de acordo com os inputs do jogador
+	# O inventário pode ser mostrado de duas formas: 
+	#	1) através da tecla 'i', nesse modo a saída também é pela telca 'i'
+	#	2) pelos procedimentos de combate. Nesse modo o inventário é mostrado para que o jogador
+	#	escolha um pokemon para a batalha. A saída é através do ENTER e somente se uma posição 
+	#	válida do inventário (com pokemon) estiver selecionada
+	#
+	# Argumentos:
+	#	a5 = [ 0 ] -> se a entrada é pela tecla 'i'
+	#	     [ 1 ] -> entrada pelos procedimentos de combate, tal como explicado acima
+	#	a6 = [ 1 ] -> se a chamada ao inventario é para mostrar exclusivamente as pokebolas, isso
+	#		só acontece no combate durante o ACAO_ITEM. Caso a6 == 1 o valor de a5 e o retorno 
+	#		a0 são inuteis, a saida sempre é pelo Enter
+	#	     [ 0 ] -> mostrar inventario de forma normal	 
+	#
+	# Retorno:
+	#	a0 = um número de 0 a 4 indicando o pokemon que o RED selecionou antes que o inventario fosse 
+	#	fechado. Esse retorno só é util para o caso de a5 == 1
 	
-	# OBS: não é necessário empilhar o valor de ra pois a chegada a este procedimento é por meio
-	# de uma instrução de jump e a saida é pelo ra empilhado em VERIFICAR_TECLA_JOGO
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
 
 	# Primeiro imprime a imagem base do inventario, ou seja, a imagem sem nunhum pokemon, nome ou outra
 	# informação, só com os placeholders necessários  	
@@ -71,17 +95,52 @@ MOSTRAR_INVENTARIO:
 	# de tiles
 	# O inventario sempre é impresso no frame 1
 
+	# De inicio é necessário imprimir alguns retangulos com a cor 186, isso porque os tiles do inventario
+	# e combate são compartilhados para economizar memoria, então especificamente os cantos da caixa que
+	# forma o inventario são transparentes, mas em certos lugares o ideal é que apareça a cor do fundo
+	# do inventario (186)
+
+	# Calculando o endereço de onde imprimir o primeiro retangulo
+		li a1, 0xFF100000		# seleciona como argumento o frame 1
+		li a2, 56 			# numero da coluna 
+		li a3, 80			# numero da linha
+		li t0, 20		# dependendo do valor de a5 o inventario a imagem pode ser renderizada
+		mul t0, t0, a5		# 20 pixels para cima se o inventario foi chamado pelo combate (a5 == 1)
+		sub a3, a3, t0
+		call CALCULAR_ENDERECO		
+			
+		mv a1, a0	# move o retorno para a1
+			
+		# Imprimindo o rentangulo com a cor
+		li a0, 182		# a0 tem o valor do fundo do menu do inventario
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 3		# numero de colunas da imagem da seta
+		li a3, 8		# numero de linhas da imagem da seta			
+		call PRINT_COR
+
+		# Imprimindo o rentangulo com a cor
+		li a0, 182		# a0 tem o valor do fundo do menu do inventario
+		li t0, 24752 		# 24752 = 77 * 320 + 112	
+		add a1, a1, t0		# o proximo retangulo começa a 166 linhas e 167 colunas de onde o ultimo
+					# terminou de ser impresso
+		li a2, 96		# numero de colunas da imagem da seta
+		li a3, 3		# numero de linhas da imagem da seta			
+		call PRINT_COR
+		
 	# Calculando o endereço de onde imprimir o inventario no frame 1
 		li a1, 0xFF100000	# seleciona o frame 1
 		li a2, 56 		# numero da coluna 
 		li a3, 56		# numero da linha
+		li t0, 20		# dependendo do valor de a5 o inventario a imagem pode ser renderizada
+		mul t0, t0, a5		# 20 pixels para cima se o inventario foi chamado pelo combate (a5 == 1)
+		sub a3, a3, t0		
 		call CALCULAR_ENDERECO	
 		
 		mv a2, a0	# do retorno do procedimento acima a0 tem o endereço de onde imprimir o inventario
 		
 	# Imprimindo os tiles do inventario
-		la a0, matriz_tiles_inventario		# carrega a matriz de tiles da caixa
-		la a1, tiles_inventario			# carrega a imagem com os tiles da caixa
+		la a0, matriz_tiles_inventario		# carrega a matriz de tiles do inventario
+		la a1, tiles_combate_e_inventario	# carrega a imagem com os tiles do inventario
 		# a2 já tem o endereço de onde imprimir as caixas
 		call PRINT_TILES
 	
@@ -93,6 +152,9 @@ MOSTRAR_INVENTARIO:
 			li a1, 0xFF100000	# seleciona o frame 1
 			li a2, 74		# numero da coluna 
 			li a3, 66		# numero da linha
+			li t0, 20		# dependendo do valor de a5 o inventario o texto pode ser
+			mul t0, t0, a5		# renderizado 20 pixels para cima se o inventario foi chamado 
+			sub a3, a3, t0		# pelo combate (a5 == 1)		
 			call CALCULAR_ENDERECO		
 		
 			mv a1, a0		# move o retorno para a1
@@ -108,6 +170,9 @@ MOSTRAR_INVENTARIO:
 			li a1, 0xFF100000	# seleciona o frame 1
 			li a2, 203		# numero da coluna 
 			li a3, 147		# numero da linha
+			li t0, 20		# dependendo do valor de a5 o inventario a imagem pode ser
+			mul t0, t0, a5		# renderizada 20 pixels para cima se o inventario foi chamado 
+			sub a3, a3, t0		# pelo combate (a5 == 1)			
 			call CALCULAR_ENDERECO	
 			
 			mv t3, a0	# salva o retorno em t3
@@ -150,6 +215,9 @@ MOSTRAR_INVENTARIO:
 			li a1, 0xFF100000	# seleciona o frame 1
 			li a2, 184		# numero da coluna 
 			li a3, 64		# numero da linha
+			li t0, 20		# dependendo do valor de a5 o inventario a imagem pode ser
+			mul t0, t0, a5		# renderizada 20 pixels para cima se o inventario foi chamado 
+			sub a3, a3, t0		# pelo combate (a5 == 1)			
 			call CALCULAR_ENDERECO		
 			
 			mv t5, a0		# move o retorno para t5
@@ -208,7 +276,11 @@ MOSTRAR_INVENTARIO:
 								# não está no fim da lista de pokemons
 
 	call TROCAR_FRAME	# inverte o frame, ou seja, mostra o frame 1
-				
+
+	# Nesse ponto é verificado o valor de a6. Caso a6 == 1 então só é para mostrar as pokebolas
+	li t0, 1
+	beq a6, t0, MOSTRAR_INVENTARIO_POKEBOLAS
+
 	# Com todos os itens no lugar é hora de tornar o menu do inventário responsivo aos comandos do jogador,
 	# dando a opção de trocar entre pokemons com W e S
 	
@@ -220,6 +292,9 @@ MOSTRAR_INVENTARIO:
 			li a1, 0xFF100000	# seleciona o frame 1
 			li a2, 178		# numero da coluna 
 			li a3, 64		# numero da linha
+			li t0, 20		# dependendo do valor de a5 o inventario a imagem pode ser
+			mul t0, t0, a5		# renderizada 20 pixels para cima se o inventario foi chamado 
+			sub a3, a3, t0		# pelo combate (a5 == 1)			
 			li t0, 16
 			mul t0, t4, t0		# o numero da linha também é dependendo do valor da opção 
 			add a3, a3, t0		# atualmente selecionada
@@ -251,7 +326,7 @@ MOSTRAR_INVENTARIO:
 			mv a1, t5		# t5 tem o endereço de onde o texto está
 			li a2, 10		# numero de linhas de pixels do texto
 			li a3, 70		# numero de colunas de pixels do texto
-			call SELECIONAR_OPCAO_INVENTARIO
+			call SELECIONAR_OPCAO_MENU
 	
 		# Imprime a imagem do pokemon, seu tipo e pontos pontes e fracos
 			# O primeiro passo é encontrar qual o pokemon correspondente a essa opção
@@ -265,12 +340,15 @@ MOSTRAR_INVENTARIO:
 							# t1 intactos para a analise
 			
 				# se t3 == 0 então não tem um pokemon nessa posição
-				beq t3, zero, LOOP_SELECIONAR_OPCAO	
+				beq t3, zero, LOOP_SELECIONAR_OPCAO_MENU	
 			
 			# Calcula o endereço de onde imprimir a imagem do pokemon 
 				li a1, 0xFF100000		# seleciona como argumento o frame 1
 				li a2, 93 			# numero da coluna 
 				li a3, 95			# numero da linha
+				li t0, 20		# dependendo do valor de a5 o inventario a imagem pode ser
+				mul t0, t0, a5		# renderizada 20 pixels para cima se o inventario foi  
+				sub a3, a3, t0		# chamado pelo combate (a5 == 1)				
 				call CALCULAR_ENDERECO	
 		
 				mv a1, a0		# move para a1 o endereço retornado
@@ -373,33 +451,53 @@ MOSTRAR_INVENTARIO:
 				li a3, 12	# a3 = numero de linhas da imagem 
 				call PRINT_IMG				
 
-		LOOP_SELECIONAR_OPCAO:
+		LOOP_SELECIONAR_OPCAO_MENU:
 		
 		# Agora é incrementado ou decrementado o valor de t4 de acordo com o input do jogador
 		call VERIFICAR_TECLA
 		
 		addi t4, t4, -1	
 		li t1, -1	# se o valor de t4 atualizado for -1 então o não dá para subir mais no menu
-		beq t4, t1, SELECIONAR_OPCAO_S
+		beq t4, t1, SELECIONAR_OPCAO_S_INVENTARIO
 		li t0, 'w'		
-		beq a0, t0, OPCAO_TROCADA
+		beq a0, t0, OPCAO_TROCADA_INVENTARIO
 		
-		SELECIONAR_OPCAO_S:
+		SELECIONAR_OPCAO_S_INVENTARIO:
 		addi t4, t4, 2		# mais 2 porque foi subtraido 1 acima				
 		li t1, 5	# se o valor de t4 atualizado for 5 então o não dá para descer mais no menu
-		beq t4, t1, FIM_LOOP_SELECIONAR_OPCAO
+		beq t4, t1, FIM_LOOP_SELECIONAR_OPCAO_MENU
 		li t0, 's'
-		beq a0, t0, OPCAO_TROCADA
+		beq a0, t0, OPCAO_TROCADA_INVENTARIO
 		
-		FIM_LOOP_SELECIONAR_OPCAO:
+		FIM_LOOP_SELECIONAR_OPCAO_MENU:
 		addi t4, t4, -1		# memos 1 para voltar t4 para o valor que ele tinha antes das verificações
 		
+		beq a5, zero, SELECIONAR_OPCAO_I_INVENTARIO
+		# se a5 != 0 então a entrada é pelo combate então a sáida será por ENTER e somente se uma 
+		# posição válida (com pokemon) estiver selecionada		
+			# Primeiro é verificado se a opção atual tem um pokemon
+			la t0, POKEMONS_DO_RED
+			slli t1, t4, 2		# multiplica t4 por 4 por que cada pokemon tem 4 bytes (1 word)
+			add t0, t0, t1		# e passa o endereço de t0 para a opção atual
+			lw t0, 0(t0)		# verifica a posição atualmente selecionada em POKEMONS_DO_RED
+			
+			# se t0 == 0 então a posição não tem pokemon e não é valida			
+			beq t0, zero, LOOP_SELECIONAR_OPCAO_MENU	
+								
+			# se for valida verifica se o jogador apertou ENTER
+			li t0, 10		# 10 = codigo do ENTER 
+			beq a0, t0, FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO													
+					
+		j LOOP_SELECIONAR_OPCAO_MENU
+						
+		SELECIONAR_OPCAO_I_INVENTARIO:
+		# se a5 == 0 então a entrada é pela tecla 'i' então a sáida também será pela tecla 'i'		
 		li t0, 'i'		# se 'i' foi apertado então é preciso fechar o inventário
 		beq a0, t0, FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO
 		
-		j LOOP_SELECIONAR_OPCAO
+		j LOOP_SELECIONAR_OPCAO_MENU
 		
-		OPCAO_TROCADA:
+		OPCAO_TROCADA_INVENTARIO:
 		# Se ocorreu uma troca de opção é necessário retirar a seleção da opção atual e limpar a tela
 			# Retirando a seleção da opção
 			li a0, 1		# a0 == 1 -> retirar seleção
@@ -407,96 +505,43 @@ MOSTRAR_INVENTARIO:
 						# selecionada está
 			li a2, 10		# numero de linhas de pixels do texto
 			li a3, 70		# numero de colunas de pixels do texto
-			call SELECIONAR_OPCAO_INVENTARIO
+			call SELECIONAR_OPCAO_MENU
 			
-			# Retirando a imagem da seta
-			addi t5, t5, -7		# volta o endereço de t5 por sete colunas de modo que t5
-						# agora tem o endereço de onde a seta está
-			
-			li t0, 191		# t0 tem o valor do fundo do menu do inventario
-			li t1, 11		# numero de linhas da imagem da seta
-	
-			RETIRAR_SETA_LINHAS:
-			li t2, 6		# numero de colunas da imagem da seta
-			
-			RETIRAR_SETA_COLUNAS:
-			sb t0, 0(t5)		# armazena o pixel de t0 em t5
-	
-			addi t2, t2, -1			# decrementa o numero de colunas restantes
-			addi t5, t5, 1			# vai para o próximo pixel do bitmap
-			bne t2, zero, RETIRAR_SETA_COLUNAS	# reinicia o loop se t2 != 0
-			
-			addi t1, t1, -1			# decrementando o numero de linhas restantes
-		
-			addi t5, t5, -6			# volta o endeço do bitmap pelo numero de colunas impressas
-			addi t5, t5, 320		# passa o endereço do bitmap para a proxima linha
-		
-			bne t1, zero, RETIRAR_SETA_LINHAS	# reinicia o loop se t1 != 0
-			
+			# Para retirar a imagem da seta basta imprimir uma área de mesmo tamanho com a cor
+			# de fundo do inventario
+			li a0, 0xFF		# a0 tem o valor do fundo do menu do inventario
+			addi a1, t5, -7		# volta o endereço de t5 por sete colunas de modo que a1
+						# agora tem o endereço de onde a seta está e onde a limpeza
+						# vai acontecer			
+			li a2, 6		# numero de colunas da imagem da seta
+			li a3, 11		# numero de linhas da imagem da seta			
+			call PRINT_COR
+
 		# Limpando a tela
 			# Calculando o endereço de onde começar a limpeza
-				li a1, 0xFF100000		# seleciona como argumento o frame 1
-				li a2, 88 			# numero da coluna 
-				li a3, 88			# numero da linha
-				call CALCULAR_ENDERECO		
+			li a1, 0xFF100000		# seleciona como argumento o frame 1
+			li a2, 64 			# numero da coluna 
+			li a3, 95			# numero da linha
+			li t0, 20		# dependendo do valor de a5 o inventario a imagem pode ser
+			mul t0, t0, a5		# renderizada 20 pixels para cima se o inventario foi chamado 
+			sub a3, a3, t0		# pelo combate (a5 == 1)			
+			call CALCULAR_ENDERECO		
 			
-				mv a1, a0	# move o retorno para a1
+			mv a1, a0	# move o retorno para a1
 			
-			# Limpando a tela. A limpeza consistem em imprimir novamente o tile que faz parte do
-			# "fundo" do inventario 		
-				li t3, 16	# A impressão vai acontecer em 16 colunas ao longo do loop abaixo
-				li t5, 4	# Nos primeiros loops vão ser limpos 4 linhas
-				li t1, 0	# De inicio não atualiza o a1
-				
-				LOOP_LIMPAR_INVENTARIO_PROXIMA_ITARACAO:
-					add a1, a1, t1		# atualiza o endereço de a1 para a proxima coluna
-								# de acordo com o valor escolhido de t1
-		
-				LOOP_LIMPAR_INVENTARIO:
-					la a0, tiles_inventario	
-					addi a0, a0, 8	
-					li t0, 2304		# A imagem que será usada na limpeza está é o
-					add a0, a0, t0		# tile 9, portanto está a 2304 = 9 * 16 * 16 
-								# pixels do inicio da imagem de tiles
-					# a1 já tem o endereço de onde imprimir o tile
-					li a2, 16		# numero de colunas de um tile
-					li a3, 16		# numero de linhas de um tile
-					call PRINT_IMG
-					
-					# Pelo funcionamento do PRINT_IMG a1 já vai estar no endereço de inicio
-					# do tile imediatamente abaixo do que foi impresso				
-																	
-					addi t5, t5, -1		# decrementa o numero de linhas restantes
-					bne t5, zero, LOOP_LIMPAR_INVENTARIO	# reinicia o loop se t5 != 0
-				
-				addi t3, t3, -1		# decrementa o numero de colunas restantes
-				
-				# Abaixo é decidido dependendo da iteração (t3) qual o proximo numero de linhas
+			# Limpando a tela. A limpeza consistem em imprimir novamente uma area que faz parte do
+			# "fundo" do inventario com o PRINT_COR
+			li a0, 182		# a0 tem o valor do fundo do menu do inventario
+			# a1 já tem o endereço de onde começar a impressao		
+			li a2, 98		# numero de colunas da imagem da seta
+			li a3, 76		# numero de linhas da imagem da seta			
+			call PRINT_COR
 							
-				li t1, -20464 		# a1 será atualizado em -64 linhas e + 16 colunas
-				li t5, 4		# a proxima limpeza será em 4 linhas		
-				li t0, 14
-				bge t3, t0, LOOP_LIMPAR_INVENTARIO_PROXIMA_ITARACAO	
-				li t0, 13
-				li t1, -64		# a1 será atualizado em -64 colunas
-				li t5, 1		# a proxima limpeza será em 1 linha	
-				beq t3, t0, LOOP_LIMPAR_INVENTARIO_PROXIMA_ITARACAO	
-				li t1, -5104 		# a1 será atualizado em -16 linhas e + 16 colunas
-				li t5, 1		# a proxima limpeza será em 1 linha		
-				li t0, 7			
-				bge t3, t0, LOOP_LIMPAR_INVENTARIO_PROXIMA_ITARACAO
-				li t1, -80		# a1 será atualizado em -80 colunas
-				li t5, 1		# a proxima limpeza será em 1 linha
-				li t0, 6				
-				beq t3, t0, LOOP_LIMPAR_INVENTARIO_PROXIMA_ITARACAO	
-				li t1, -5104 		# a1 será atualizado em -16 linhas e + 16 colunas
-				li t5, 1		# a proxima limpeza será em 1 linha		
-				li t0, 7			
-				bge t3, zero, LOOP_LIMPAR_INVENTARIO_PROXIMA_ITARACAO			
-										
 		j LOOP_SELECIONAR_POKEMON_INVENTARIO
 	
 	FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO:
+	
+	mv t6, t4		# move para t6 o valor da opção atualmente selecionada
 	
 	# Para fechar o inventário só é necessário limpar a tela no frame 1
 		call TROCAR_FRAME 	# inverte o frame, ou seja, mostra o frame 0			
@@ -504,7 +549,7 @@ MOSTRAR_INVENTARIO:
 		# Calculando o endereço de onde o inventario foi impresso no frame 1
 		li a1, 0xFF100000	# seleciona o frame 1
 		li a2, 48 		# numero da coluna 
-		li a3, 48		# numero da linha
+		li a3, 48		# numero da linha		
 		call CALCULAR_ENDERECO	
 		
 		mv a1, a0	# move o retorno para a1
@@ -561,63 +606,153 @@ MOSTRAR_INVENTARIO:
 		li a2, 16		# numero de colunas da faixa de grama	
 		li a3, 6		# numero de linhas da faixa de grama	
 		call PRINT_IMG	
-
+		
 	FIM_INVENTARIO:
+		
+	mv a0, t6	# move para a0 como retorno o valor de t6, ou seja, o valor da ultima opção selecionada			
+	
+	li t0, 4		# Para encontrar o endereço da opção atual em 
+	mul t0, t0, a0		# POKEMONS_DO_RED basta utilizar o valor de a0
+	la t1, POKEMONS_DO_RED	# (numero da opção atual) partindo do fato de 
+	add t1, t1, t0		# de que cada pokemon tem 1 word (4 bytes) de tamanho
 				
+	lw a0, 0(t1)		# le o codigo do pokemon apontado por t1	
+	
+	# Transforma o codigo do pokemon em um numero de 0 a 4
+	
+	# Se o pokemon escolhido foi o BULBASAUR o retorno será 0
+	li t0, 0
+	li t1, BULBASAUR	
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+
+	# Se o pokemon escolhido foi o CHARMANDER o retorno será 1
+	li t0, 1
+	li t1, CHARMANDER			
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+			
+	# Se o pokemon escolhido foi o SQUIRTLE o retorno será 2
+	li t0, 2
+	li t1, SQUIRTLE					
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+										
+	# Se o pokemon escolhido foi o CATERPIE o retorno será 3
+	li t0, 3
+	li t1, CATERPIE							
+	beq a0, t1, INVENTARIO_RETORNAR_POKEMON
+	
+	# Se o pokemon escolhido foi o DIGLETT o retorno será 4 
+	li t0, 4
+		
+	INVENTARIO_RETORNAR_POKEMON:
+	
+	mv a0, t0	# move para a0 o valor de t0 decidido acima
+																	
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 
 	ret
 			
-# ====================================================================================================== #
-									
-SELECIONAR_OPCAO_INVENTARIO:
-	# Procedimento auxiliar que tem por objetivo selecionar ou retirar a seleção de um item do inventario
-	# trocando os pixels de um texto por pixels azuis ou pixels cinza dependendo do argumento
-	# O texto deve ter sido impresso usando os tiles em tiles_alfabeto.data
-	# 
-	# Argumentos:
-	# 	a0 = [ 0 ] -> selecionar uma opção, ou seja, trocar os pixels do texto de cinza para azul
-	#	     [ != 0 ] -> retirar a seleção de uma opção, ou seja, trocar os pixels de azul para cinza
-	#	a1 = endereço onde o texto está
-	#	a2 = numero de linhas de pixels do texto
-	#	a3 = numero de colunas de pixels do texto
-	
-	li t0,	91		# t0 = cor do texto quando ele não está selecionado	
-	li t1,	192		# t1 = cor que vai "selecionar" o texto
+# ------------------------------------------------------------------------------------------------------ #
+
+MOSTRAR_INVENTARIO_POKEBOLAS:
+	# Uma pequena extensão de MOSTRAR_INVENTARIO para a ação de combate ACAO_ITEM, no qual são mostrados
+	# somente as pokebolas
+	# OBS: não é empilhado o valor de ra pois a chegada é por branch e a saída é sempre 
+	# para FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO
+
+	# Primeira seleciona a opção das pokebolas
+		# Calcula o endereço de onde as pokebolas estão no menu
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 203 		# numero da coluna 
+		li a3, 127		# numero da linha		
+		call CALCULAR_ENDERECO		
+
+		mv a1, a0	# move o retorno para a1
 		
-	# Se a0 != 0 então o procedimento vai retirar a seleção de um item								
-	beq a0, zero, SELECIONAR_OPCAO_LINHAS	
-		li t0,	192		# t0 = cor do texto quando ele está selecionada	
-		li t1,	91		# t1 = cor que vai retirar a seleção do texto
-					
-	SELECIONAR_OPCAO_LINHAS:
-		mv t2, a3		# copia do numero de colunas no loop abaixo
-			
-		SELECIONAR_OPCAO_COLUNAS:
-			lbu t3, 0(a1)			# pega 1 pixel do bitmap e coloca em t3
-			
-			# Se t3 != t0 então o pixel não sera modificado,
-			# dessa forma somente o texto do item será modificados					
-			bne t3, t0, NAO_MODIFICAR_OPCAO
-				sb t1, 0(a1)
-			
-			NAO_MODIFICAR_OPCAO:
-			addi a1, a1, 1				# vai para o próximo pixel do bitmap
-			addi t2, t2, -1				# decrementando o numero de colunas restantes
-			bne t2, zero, SELECIONAR_OPCAO_COLUNAS	# reinicia o loop se t2 != 0
-			
-		sub a1, a1, a3				# volta o endeço do bitmap pelo numero de colunas impressas
-		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
-		addi a2, a2, -1				# decrementando o numero de linhas restantes		
-		bne a2, zero, SELECIONAR_OPCAO_LINHAS	# reinicia o loop se a2 != 0
-			
-	ret
+		# Selecionado a opção
+		li a0, 0		# a0 == 0 -> selecionar a opção
+		# a1 já tem o endereço de onde o texto está
+		li a2, 10		# numero de linhas de pixels do texto
+		li a3, 26		# numero de colunas de pixels do texto
+		call SELECIONAR_OPCAO_MENU
+
+	# Imprime a imagem da pokebola grande
+		# Calcula o endereço de onde imprimir a imagem
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 94 		# numero da coluna 
+		li a3, 84		# numero da linha		
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime a imagem	
+		la a0, pokebola_grande	# carrega a imagem
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da uma
+		lw a3, 4(a0)		# numero de linhas da uma
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+
+	# Imprime uma faixa grande para colocar o texto 'POKEBOLA'
+		# Calcula o endereço de onde imprimir a faixa
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 79 		# numero da coluna 
+		li a3, 125		# numero da linha		
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime a faixa	
+		li a0, 0xFF		# a0 tem a cor branca
+		# a1 já tem o endereço de onde começar a impressao		
+		li a2, 65		# numero de colunas da imagem da seta
+		li a3, 17		# numero de linhas da imagem da seta			
+		call PRINT_COR	
+						
+	# Imprime o texto 'POKEBOLA'
+		# Calcula o endereço de onde imprimir o texto
+		li a1, 0xFF100000	# seleciona o frame 1
+		li a2, 83 		# numero da coluna 
+		li a3, 127		# numero da linha		
+		call CALCULAR_ENDERECO	
+		
+		mv a1, a0		# move o retorno para a1
+		
+		# Imprime o texto com ('POKEBOLA')
+		# a1 já tem o endereço de onde imprimir o texto
+		la a4, matriz_texto_pokebola 	
+		call PRINT_TEXTO
+		
+	# Espera o jogador apertar ENTER	
+	LOOP_ENTER_MOSTRAR_INVENTARIO_POKEBOLA:
+		call VERIFICAR_TECLA
+		
+		li t0, 10		# 10 é o codigo do ENTER	
+		bne a0, t0, LOOP_ENTER_MOSTRAR_INVENTARIO_POKEBOLA	
+	
+	# Especificamente nesse caso é necessario replicar a caixa de dialogo do frame 1 no frame 0
+	# para retirar a seta que está sobre ITEM no menu de combate
+		# Calculando o endereço de onde começar a copia no frame 1
+		li a1, 0xFF100000	# seleciona o frame 0
+		li a2, 244		# numero da coluna 
+		li a3, 203		# numero da linha
+		call CALCULAR_ENDERECO	
+
+		# Replica a caixa de dialogo do frame 1 no frame 0 para que os dois estejam iguais	
+		# a0 tem o endereço da replica no frame 1						
+		mv a1, a0		
+		li t0, 0x00100000
+		sub a1, a1, t0		# a1 recebe o endereço de a0 no frame 0	
+		li a2, 264		# numero de colunas a serem copiadas
+		li a3, 32		# numero de linhas a serem copiadas
+		call REPLICAR_FRAME		
+																																																																																																										
+	j FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO
 
 # ====================================================================================================== #
 
 .data
-	.include "../Imagens/inventario/tiles_inventario.data"
+	.include "../Imagens/combate/tiles_combate_e_inventario.data"
 	.include "../Imagens/inventario/matriz_tiles_inventario.data"
 	
 	.include "../Imagens/inventario/tiles_numeros.data"
@@ -626,3 +761,7 @@ SELECIONAR_OPCAO_INVENTARIO:
 
 	.include "../Imagens/inventario/pokemons_tipos.data"
 	.include "../Imagens/inventario/seta_tipo_forte_fraco.data"
+	
+	.include "../Imagens/inventario/pokebola_grande.data"
+	
+	

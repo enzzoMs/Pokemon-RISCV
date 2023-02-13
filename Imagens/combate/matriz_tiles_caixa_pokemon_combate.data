@@ -1,0 +1,4 @@
+matriz_tiles_caixa_pokemon_combate: .word 8, 2
+.byte 
+0,1,1,1,1,1,1,2
+3,4,4,4,4,4,4,5

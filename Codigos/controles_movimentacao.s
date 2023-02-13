@@ -49,7 +49,9 @@ VERIFICAR_TECLA_JOGO:
 		# Verifica se a tecla do inventario (i) foi apertada 	
 		li t0, 'i'
 		bne a0, t0, FIM_VERIFICAR_TECLA_JOGO
-			j MOSTRAR_INVENTARIO
+			li a5, 0		# a5 = 0 porque o inventario foi mostrado através da tecla 'i'
+			li a6, 0		# a6 = 0 para mostrar o inventario normalmente			
+			call MOSTRAR_INVENTARIO
 	
 	FIM_VERIFICAR_TECLA_JOGO:	
 
@@ -400,8 +402,11 @@ MOVIMENTACAO_TECLA_W:
 																								
 	FIM_MOVIMENTACAO_W:
 
-	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
-																											
+	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário 
+	 
+	call VERIFICAR_COMBATE		# verifica se o tile para onde o RED se moveu é um tile de grama e
+					# se ele vai iniciar um combate
+																																
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -840,7 +845,10 @@ MOVIMENTACAO_TECLA_A:
 	FIM_MOVIMENTACAO_A:
 
 	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
-																											
+	
+	call VERIFICAR_COMBATE		# verifica se o tile para onde o RED se moveu é um tile de grama e
+					# se ele vai iniciar um combate
+																																																					
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -1201,7 +1209,10 @@ MOVIMENTACAO_TECLA_S:
 	FIM_MOVIMENTACAO_S:
 
 	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  
-									
+
+	call VERIFICAR_COMBATE		# verifica se o tile para onde o RED se moveu é um tile de grama e
+					# se ele vai iniciar um combate
+													
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 
@@ -1642,7 +1653,9 @@ MOVIMENTACAO_TECLA_D:
 	FIM_MOVIMENTACAO_D:
 
 	call PRINT_FAIXA_DE_GRAMA	# imprime a faixa de grama sobre o RED caso seja necessário  	
-																																							
+
+	call VERIFICAR_COMBATE		# verifica se o tile para onde o RED se moveu é um tile de grama e
+					# se ele vai iniciar um combate																																																																														
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
