@@ -25,20 +25,16 @@
 # saibam o que fazer.											 #
 # Os possíveis valores de AAA e YY podem ser encontrados abaixo:					 #
 # 	Áreas (AAA): 										 	 #
-#		Quarto do RED -> 000									 #
-#		Sala da casa do RED -> 001								 #
+#		Casa do do RED -> 000									 #
 #		Pallet -> 010										 #
 #		Laboratório -> 011									 #
 # 													 #
 # Já os valores de PP variam dependendo da área. Algumas áreas possuem mais de uma maneira de acessa-las #
 # A sala do RED, por exemplo, pode ser acessada tanto pelo quarto do RED ou pela porta da frente, nesse  #
 # caso PP indica por qual entrada o personagem vai acessar a área:					 #
-#	Quarto do RED:											 #
-#		PP = 00 -> Entrada por lugar nenhum (quando o jogo começa)				 #
-#		PP = 01 -> Entrada pelas escadas							 #
-#	Sala do RED:											 #
-#		PP = 00 -> Entrada pela porta da frente							 #
-#		PP = 01 -> Entrada pelas escadas							 #
+#	Casa do RED:											 #
+#		PP = 00 -> Entrada por lugar nenhum (quando o jogo começa)				 #							 #
+#		PP = 01 -> Entrada pela porta da frente							 #
 #	Pallet:												 #
 #		PP = 00 -> Entrada pela casa do RED							 #
 #		PP = 01 -> Entrada pelo laboratorio							 #
@@ -91,13 +87,9 @@ RENDERIZAR_AREA:
 		mv a0, t0	# move para a0 o valor de PP para que a0 possa ser usado como 
 				# argumento nos procedimentos de renderização de área
 		
-		# se t1 (AAA) = 000 renderiza o quarto do RED
-		beq t1, zero, RENDERIZAR_QUARTO_RED
-
-		li t0, 4	# 4 ou 001 00 em binário é o código da área da sala da casa do RED
-		# se t1 (AAA) = 001 00 renderiza a sala da casa do RED
-		beq t1, t0, RENDERIZAR_SALA_RED
-		
+		# se t1 (AAA) = 000 renderiza a casa do RED
+		beq t1, zero, RENDERIZAR_CASA_RED
+	
 		li t0, 8	# 8 ou 010 00 em binário é o código da área de Pallet
 		# se t1 (AAA) = 010 00 renderiza Pallet
 		beq t1, t0, RENDERIZAR_PALLET
@@ -113,22 +105,22 @@ RENDERIZAR_AREA:
 
 # ====================================================================================================== #
 
-RENDERIZAR_QUARTO_RED:
-	# Procedimento que imprime a imagem do quarto do RED e o sprite do RED no frame 0 e no frame 1 de 
+RENDERIZAR_CASA_RED:
+	# Procedimento que imprime a imagem da casa do RED e o sprite do RED no frame 0 e no frame 1 de 
 	# acordo com o ponto de entrada, além de atualizar os registradores salvos
 	# Argumentos:
 	# 	a0 = indica o ponto de entrada na área, ou seja, por onde o RED está entrando nessa área
 	#	Para essa área os pontos de entrada possíveis são:
 	#		PP = 00 -> Entrada por lugar nenhum (quando o jogo começa)	
-	#		PP = 01 -> Entrada pelas escadas
+	#		PP = 01 -> Entrada pela porta da frente
 
 	# OBS: não é necessário empilhar o valor de ra pois a chegada a este procedimento é por meio
 	# de uma instrução de branch e a saída é pelo ra empilhado por RENDERIZAR_AREA
  	
  	# Primeiro verifica qual o ponto de entrada (PP = a0)		
-	bne a0, zero, QUARTO_RED_PP_ESCADAS	
+	bne a0, zero, CASA_RED_PP_PORTA	
 		
-	# Se a0 == 00 então o ponto de entrada é pelas escadas
+	# Se a0 == 00 então o ponto de entrada é por lugar nenhum
 					
 	# Atualizando os registradores salvos para essa área
 		# Atualizando o valor de s0 (posição atual do RED no frame 0)
@@ -165,7 +157,7 @@ RENDERIZAR_QUARTO_RED:
 																																												
 		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
 		# s7 (tamanho de linha na matriz de movimentação)	
-		la t0, matriz_movimentacao_quarto_red	
+		la t0, matriz_movimentacao_casa_red	
 		
 		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
 				
@@ -176,7 +168,9 @@ RENDERIZAR_QUARTO_RED:
 		addi s6, s6, 1		# 3 (número da linha) * 14 (tamanho de uma linha da matriz) 
 					# e a 1 (número da coluna) 
 											
-	# Imprimindo as imagens da área e o sprite inicial do RED no frame 0					
+	# Imprimindo as imagens da área e o sprite inicial do RED no frame 0
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+											
 		# Imprimindo a imagem do quarto do RED no frame 0
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
@@ -191,7 +185,8 @@ RENDERIZAR_QUARTO_RED:
 		lw a3, 4(a0)		# numero de linhas de uma imagem do RED	
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
 		call PRINT_IMG	
-	
+		
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem do quarto do RED no frame 1
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
@@ -213,25 +208,25 @@ RENDERIZAR_QUARTO_RED:
 		addi a0, a0, 8		# pula para onde começa os pixels no .data	
 		call PRINT_IMG	
 		
-		j FIM_RENDERIZAR_QUARTO_RED
+		j FIM_RENDERIZAR_CASA_RED
 	
 	
-	QUARTO_RED_PP_ESCADAS:
-	# Se a0 == 01 (ou != 0) então o ponto de entrada é pelas escadas	
+	CASA_RED_PP_PORTA:
+	# Se a0 == 01 (ou != 0) então o ponto de entrada é pela porta da frente	
 	
 	# Atualizando os registradores salvos para essa área
 		# Atualizando o valor de s0 (posição atual do RED no frame 0)
 			li a1, 0xFF000000		# seleciona como argumento o frame 0
-			li a2, 209 			# numero da coluna do RED = 209
-			li a3, 77			# numero da linha do RED = 77
+			li a2, 113 			# numero da coluna do RED = 113
+			li a3, 173			# numero da linha do RED = 173
 			call CALCULAR_ENDERECO	
 		
 			mv s0, a0		# move o endereço retornado para s0
 	
 		# Atualizando o valor de s1 (orientação do personagem)
-			li s1, 1	# inicialmente virado para a direita
+			li s1, 2	# inicialmente virado para cima
 		
-		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles ques está sendo 
+		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles que está sendo 
 		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
 			la s2, matriz_tiles_casa_red	# carregando em s2 o endereço da matriz
 		
@@ -248,157 +243,13 @@ RENDERIZAR_QUARTO_RED:
 		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
 			la t0, matriz_tiles_casa_red
 			addi t0, t0, 8			# pula para onde começa os pixels no .data
-			addi s5, t0, 124		# o RED começa na linha 5 e coluna 14 da matriz
-							# de tiles, então é somado (5 * 22(tamanho de
-							# uma linha da matriz)) + 14		
-																																												
-		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
-		# s7 (tamanho de linha na matriz de movimentação)	
-		la t0, matriz_movimentacao_quarto_red	
-		
-		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
-				
-		addi t0, t0, 8
-	
-		addi s6, t0, 42		# o personagem começa na linha 3 e coluna 1 da matriz
-					# então é somado o endereço base da matriz (t0) a 
-		addi s6, s6, 10		# 3 (número da linha) * 14 (tamanho de uma linha da matriz) 
-					# e a 10 (número da coluna) 
-											
-	# Imprimindo as imagens da área no frame 0					
-		# Imprimindo a imagem do quarto do RED no frame 0
-		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a1, 0xFF000000	# a imagem será impressa no frame 0
-		li a2, 20		# número de colunas de tiles a serem impressas
-		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES_AREA								
-	
-	# Imprimindo a imagem da área no frame 1	
-		# Imprimindo a imagem do quarto do RED no frame 1
-		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
-		li a1, 0xFF100000	# a imagem será impressa no frame 0
-		li a2, 20		# número de colunas de tiles a serem impressas
-		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES_AREA		
-										
-	
-	FIM_RENDERIZAR_QUARTO_RED:									
-																												
-	# Mostra o frame 0		
-	li t0, 0xFF200604		# t0 = endereço para escolher frames 
-	sb zero, (t0)			# armazena 0 no endereço de t0
-
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret
-
-# ====================================================================================================== #	
-
-RENDERIZAR_SALA_RED:
-	# Procedimento que imprime a imagem da sala da casa do RED no frame 0 e no frame 1
-	# de acordo com o ponto de entrada, além de atualizar os registradores salvos
-	# Argumentos:
-	# 	a0 = indica o ponto de entrada na área, ou seja, por onde o RED está entrando nessa área
-	#	Para essa área os pontos de entrada possíveis são:
-	#		PP = 00 -> Entrada pela porta da frente							
-	#		PP = 01 -> Entrada pelas escadas
-
-	# OBS: não é necessário empilhar o valor de ra pois a chegada a este procedimento é por meio
-	# de uma instrução de branch e a saída é pelo ra empilhado por RENDERIZAR_AREA
-	
-	# Primeiro verifica qual o ponto de entrada (PP = a0)		
-	beq a0, zero, SALA_RED_PP_PORTA		
-		
-	# Se a0 == 01 (ou != 0) então o ponto de entrada é pelas escadas
-
-	# Atualizando os registradores salvos para essa área
-		# Atualizando o valor de s0 (posição atual do RED no frame 0)
-			li a1, 0xFF000000		# seleciona como argumento o frame 0
-			li a2, 209 			# numero da coluna do RED = 209
-			li a3, 77			# numero da linha do RED = 77
-			call CALCULAR_ENDERECO	
-		
-			mv s0, a0		# move o endereço retornado para s0
-	
-		# Atualizando o valor de s1 (orientação do personagem)
-			li s1, 0	# inicialmente virado para a esquerda
-		
-		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles ques está sendo 
-		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
-			la s2, matriz_tiles_sala_red	# carregando em s2 o endereço da matriz
-		
-			lw s3, 0(s2)		# s3 recebe o tamanho de uma linha da matriz
-		
-			addi s2, s2, 8		# pula para onde começa os pixels no .data
-		
-			addi s2, s2, 23		# pula para onde começa a subsecção que será mostrada na tela
-						
-		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
-			la s4, tiles_casa_red				
-			addi s4, s4, 8		# pula para onde começa os pixels no .data			
-		
-		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
-			la t0, matriz_tiles_sala_red
-			addi t0, t0, 8			# pula para onde começa os pixels no .data
-			addi s5, t0, 124		# o RED começa na linha 5 e coluna 15 da matriz
-							# de tiles, então é somado (5 * 22(tamanho de
-							# uma linha da matriz)) + 14		
-																																												
-		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
-		# s7 (tamanho de linha na matriz de movimentação)	
-		la t0, matriz_movimentacao_sala_red	
-		
-		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
-				
-		addi t0, t0, 8
-	
-		addi s6, t0, 42		# o personagem começa na linha 3 e coluna 10 da matriz
-					# então é somado o endereço base da matriz (t0) a 
-		addi s6, s6, 10		# 3 (número da linha) * 14 (tamanho de uma linha da matriz) 
-					# e a 10 (número da coluna) 	
-												
-		j FIM_RENDERIZAR_SALA_RED
-	
-	SALA_RED_PP_PORTA:
-		# Se a0 == 00 (ou != 0) então o ponto de entrada é pela porta	
-
-	# Atualizando os registradores salvos para essa área
-		# Atualizando o valor de s0 (posição atual do RED no frame 0)
-			li a1, 0xFF000000		# seleciona como argumento o frame 0
-			li a2, 113 			# numero da coluna do RED = 113
-			li a3, 173			# numero da linha do RED = 173
-			call CALCULAR_ENDERECO	
-		
-			mv s0, a0		# move o endereço retornado para s0
-	
-		# Atualizando o valor de s1 (orientação do personagem)
-			li s1, 2	# inicialmente virado para cima
-		
-		# Atualizando o valor de s2 (endereço da subsecção na matriz de tiles que está sendo 
-		# mostrada) e s3 (tamanho de uma linha da matriz de tiles)
-			la s2, matriz_tiles_sala_red	# carregando em s2 o endereço da matriz
-		
-			lw s3, 0(s2)		# s3 recebe o tamanho de uma linha da matriz
-		
-			addi s2, s2, 8		# pula para onde começa os pixels no .data
-		
-			addi s2, s2, 23		# pula para onde começa a subsecção que será mostrada na tela
-						
-		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
-			la s4, tiles_casa_red				
-			addi s4, s4, 8		# pula para onde começa os pixels no .data			
-		
-		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
-			la t0, matriz_tiles_sala_red
-			addi t0, t0, 8			# pula para onde começa os pixels no .data
 			addi s5, t0, 250		# o RED começa na linha 11 e coluna 8 da matriz
 							# de tiles, então é somado (11 * 22(tamanho de
 							# uma linha da matriz)) + 8		
 																																												
 		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
 		# s7 (tamanho de linha na matriz de movimentação)	
-		la t0, matriz_movimentacao_sala_red	
+		la t0, matriz_movimentacao_casa_red	
 		
 		lw s7, 0(t0)			# s7 recebe o tamanho de uma linha da matriz da área
 				
@@ -407,26 +258,30 @@ RENDERIZAR_SALA_RED:
 		addi s6, t0, 126	# o personagem começa na linha 9 e coluna 4 da matriz
 					# então é somado o endereço base da matriz (t0) a 
 		addi s6, s6, 4		# 9 (número da linha) * 14 (tamanho de uma linha da matriz) 
-					# e a 4 (número da coluna) 																
-	
-	FIM_RENDERIZAR_SALA_RED:
-	
-	# Imprimindo as imagens da área no frame 0					
+					# e a 4 (número da coluna) 
+											
+		# Imprimindo as imagens da área no frame 0	
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+							
 		# Imprimindo a imagem da sala do RED no frame 0
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES_AREA				
-							
-	# Imprimindo a imagem da área no frame 1	
+		call PRINT_TILES_AREA
+						
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+								
+		# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem da sala do RED no frame 1
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES_AREA																				
-																																																							
+						
+	FIM_RENDERIZAR_CASA_RED:									
+																												
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	sb zero, (t0)			# armazena 0 no endereço de t0
@@ -554,14 +409,18 @@ RENDERIZAR_PALLET:
 	
 	FIM_RENDERIZAR_PALLET:
 																															
-	# Imprimindo as imagens da área no frame 0					
+	# Imprimindo as imagens da área no frame 0	
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+							
 		# Imprimindo a imagem de pallet no frame 0
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
 		call PRINT_TILES_AREA				
-							
+		
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+									
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem de pallet no frame 1
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
@@ -641,14 +500,18 @@ RENDERIZAR_LABORATORIO:
 		addi s6, s6, 7		# 13 (número da linha) * 16 (tamanho de uma linha da matriz) 
 					# e a 7 (número da coluna) 	
 														
-	# Imprimindo as imagens da área no frame 0					
+	# Imprimindo as imagens da área no frame 0
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+								
 		# Imprimindo a imagem da sala do RED no frame 0
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES_AREA				
-							
+		call PRINT_TILES_AREA		
+				
+		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
+									
 	# Imprimindo a imagem da área no frame 1	
 		# Imprimindo a imagem da sala do RED no frame 1
 		mv a0, s2		# endereço, na matriz de tiles, de onde começa a imagem a ser impressa
@@ -883,10 +746,8 @@ TRANSICAO_ENTRE_AREAS:
 																																			
 .data
 	.include "../Imagens/areas/casa_red/tiles_casa_red.data"
-	.include "../Imagens/areas/casa_red/matriz_tiles_quarto_red.data"
-	.include "../Imagens/areas/casa_red/matriz_movimentacao_quarto_red.data"
-	.include "../Imagens/areas/casa_red/matriz_tiles_sala_red.data"
-	.include "../Imagens/areas/casa_red/matriz_movimentacao_sala_red.data"
+	.include "../Imagens/areas/casa_red/matriz_tiles_casa_red.data"
+	.include "../Imagens/areas/casa_red/matriz_movimentacao_casa_red.data"
 	.include "../Imagens/areas/pallet/tiles_pallet.data"
 	.include "../Imagens/areas/pallet/matriz_tiles_pallet.data"
 	.include "../Imagens/areas/pallet/matriz_movimentacao_pallet.data"
