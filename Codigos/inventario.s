@@ -1,60 +1,4 @@
-.data
-
-# Matrizes de texto
-# Uma matriz de texto é uma matriz em que cada elemento representa um tile de tiles_alfabeto.data, sendo usados
-# para imprimir um nome geralmente curto na tela. Os labels estão no formato matriz_texto_Y, onde Y é o texto
-# que a matriz se refere
-
-matriz_texto_bulbasaur: .word 9, 1 
-			.byte 37,40,38,37,39,30,39,40,35
-			
-matriz_texto_caterpie: .word 8, 1 
-		       .byte 36,39,60,22,35,24,57,22
-		       
-matriz_texto_charmander: .word 10, 1 
-			 .byte 36,33,39,35,27,39,28,34,22,35
-			 
-matriz_texto_diglett: .word 7, 1 
-		      .byte 34,57,61,38,22,60,60
-		      
-matriz_texto_squirtle: .word 8, 1 
-		       .byte 30,59,40,57,35,60,38,22
-
-matriz_texto_inventario: .word 10, 1
-			 .byte 57,7,11,4,7,72,19,70,78,8
-
-# Inicializando os itens do inventario
-
-NUMERO_DE_POKEBOLAS: .byte 5
-POKEMONS_DO_RED: .word 0,0,0,0,0
-
 .text 
-
-# O codigo de cada pokemon é codificado no seguinte formato FFF_RRR_TTT_PPP, onde:
-# 	PPP -> número do pokemon, de modo que:
-#		[ 001 ] -> BULBASAUR
-#		[ 010 ] -> CHARMANDER
-#		[ 011 ] -> SQUIRTLE
-#		[ 100 ] -> CATERPIE
-#		[ 101 ] -> DIGLETT
-#	TTT -> tipo do pokemon, RRR -> tipo que ele é fraco, FFF -> tipo que ele é forte, todos de modo que:
-#		[ 000 ] -> GRASS
-#		[ 001 ] -> FIRE
-#		[ 010 ] -> WATER
-#		[ 011 ] -> GROUND
-#		[ 100 ] -> BUG
-# Sendo assim o codigo de cada Pokemon pode ser encontrado abaixo:
-# 	BULBASAUR [Tipo GRASS, Fraco FIRE, Forte WATER]-> 1089
-#	CHARMANDER [Tipo FIRE, Fraco WATER, Forte GRASS] -> 138
-# 	SQUIRTLE [Tipo WATER, Fraco GRASS, Forte FIRE] -> 531
-# 	CATERPIE [Tipo BUG, Fraco FIRE, Forte GRASS] -> 100
-# 	DIGLETT [Tipo GROUND, Fraco GRASS, Forte FIRE] -> 541
-
-.eqv BULBASAUR 1089
-.eqv CHARMANDER 138
-.eqv SQUIRTLE 531
-.eqv CATERPIE 100
-.eqv DIGLETT 541
 
 # ====================================================================================================== # 
 # 				              INVENTARIO					         #
@@ -749,19 +693,4 @@ MOSTRAR_INVENTARIO_POKEBOLAS:
 																																																																																																										
 	j FIM_LOOP_SELECIONAR_POKEMON_INVENTARIO
 
-# ====================================================================================================== #
-
-.data
-	.include "../Imagens/combate/tiles_combate_e_inventario.data"
-	.include "../Imagens/inventario/matriz_tiles_inventario.data"
-	
-	.include "../Imagens/inventario/tiles_numeros.data"
-	
-	.include "../Imagens/inventario/pokebola_inventario.data"
-
-	.include "../Imagens/inventario/pokemons_tipos.data"
-	.include "../Imagens/inventario/seta_tipo_forte_fraco.data"
-	
-	.include "../Imagens/inventario/pokebola_grande.data"
-	
 	

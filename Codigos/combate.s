@@ -1,112 +1,3 @@
-.data
-
-# Matrizes de texto
-# Uma matriz de texto é uma matriz em que cada elemento representa um tile de tiles_alfabeto.data, sendo usados
-# para imprimir um nome geralmente curto na tela. Os labels estão no formato matriz_texto_Y, onde Y é o texto
-# que a matriz se refere
-
-matriz_texto_atacar: .word 6, 1 
-		     .byte 39,60,39,36,39,35
-			
-matriz_texto_defesa: .word 6, 1 
-		       .byte 34,22,62,22,30,39
-
-matriz_texto_item: .word 4, 1 
-		     .byte 57,60,22,27
-		     
-matriz_texto_fugir: .word 5, 1 
-		     .byte 62,40,61,57,35
-
-matriz_texto_um: .word 3, 1 
-		 .byte 40,69,77			# inclui espaço no final
-		     
-matriz_texto_selvagem: .word 9, 1 
-		     .byte 77,71,4,76,11,0,5,4,69	# inclui espaço no começo     	
-		     
-matriz_texto_apareceu: .word 9, 1 
-		     .byte 0,9,0,70,4,2,4,73,74		# inclui exclamação no final 
-
-matriz_texto_escolha_o_seu_pokemon: .word 22, 1 		# inclui exclamação no final 
-		     .byte 22,71,2,8,76,6,0,77,8,77,71,4,73,77,24,25,26,29,27,25,28,74	
-			
-matriz_texto_escolhido: .word 11, 1 		# inclui espaço no começo e ponto no final
-		.byte 77,4,71,2,8,76,6,78,3,8,54
-		
-matriz_texto_o_que_o: .word 8, 1 		# inclui espaço no final
-		.byte 25,77,10,73,4,77,8,77		
-
-matriz_texto_vai: .word 4, 1 		# inclui espaço no começo
-		.byte 77,11,0,78
-		
-matriz_texto_fazer: .word 6, 1 		# inclui interrogação no final
-		.byte 66,0,15,4,70,55
-
-matriz_texto_tenta_fugir: .word 13, 1 		# inclui espaço no começo e exclamação no final
-		.byte 77,72,4,7,72,0,77,66,73,5,78,70,74
-		
-matriz_texto_tres_pontos: .word 2, 1 		# inclui espaço no final
-		.byte 65,77
-		
-matriz_texto_a_fuga_falhou: .word 14, 1 		# inclui ponto no final
-		.byte 39,77,66,73,5,0,77,66,0,76,6,8,73,54
-		
-matriz_texto_a_fuga_funcionou: .word 17, 1 		# inclui exclamação no final
-		.byte 39,77,66,73,5,0,77,66,73,7,2,78,8,7,8,73,74
-		
-matriz_texto_ataca: .word 7, 1 		# inclui espaço no começo e exclamação no final
-		.byte 77,0,72,0,2,0,74	
-		
-matriz_texto_muito_efetivo: .word 15, 1 		# inclui exclamação e espaço no final
-		.byte 27,73,78,72,8,77,4,66,4,72,78,11,8,74,77
-		
-matriz_texto_pouco_efetivo: .word 15, 1 		# inclui ponto e espaço no final
-		.byte 24,8,73,2,8,77,4,66,4,72,78,11,8,54,77											
-
-matriz_texto_o_ataque: .word 8, 1 		
-		.byte 25,77,0,72,0,10,73,4
-
-matriz_texto_deu: .word 4, 1 		# inclui espaço no final
-		.byte 3,4,73,77
-				
-matriz_texto_de_dano: .word 8, 1 		# inclui ponto no final
-		.byte 3,4,77,3,0,7,8,54
-		
-matriz_texto_vitoria: .word 7, 1 		
-		.byte 31,57,60,25,35,57,39		
-
-matriz_texto_derrota: .word 7, 1 		
-		.byte 34,22,35,35,25,60,39
-		
-matriz_texto_voce_ganhou: .word 12, 1 		# inclui espaço no final	
-		.byte 31,8,2,20,77,5,0,7,6,8,73,77
-		
-matriz_texto_pokebola: .word 8, 1 		
-		.byte 24,25,26,29,37,25,38,39	
-							
-matriz_texto_voce_nao_tem_nenhuma: .word 20, 1 			
-		.byte 31,8,2,20,77,7,16,8,77,72,4,69,77,7,4,7,6,73,69,0	
-		
-matriz_texto_ponto: .word 1, 1 			# so o tile de um ponto		
-		.byte 54
-									
-matriz_texto_inventario_cheio: .word 17, 1 			# inclui ponto no final	
-		.byte 57,7,11,4,7,72,19,70,78,8,77,2,6,4,78,8,54
-
-matriz_texto_a_captura_falhou: .word 17, 1 		# inclui ponto no final
-		.byte 39,77,2,0,9,72,73,70,0,77,66,0,76,6,8,73,54
-		
-matriz_texto_a_captura_funcionou: .word 20, 1 		# inclui exclamação no final
-		.byte 39,77,2,0,9,72,73,70,0,77,66,73,7,2,78,8,7,8,73,74
-																																														
-# Essa matriz de tiles em especial representa uma parte da tela de combate e será usada durante a ação de ataque
-# para limpar o sprite do pokemon inimigo e do RED da tela
-matriz_tiles_combate_limpar_pokemon:
-		.word 4, 4 		
-		.byte 2,2,2,2,
-		      2,2,2,2,
-		      5,6,7,8,
-		      13,14,15,16
-												
 .text
 		     			 			 
 # ====================================================================================================== # 
@@ -126,7 +17,7 @@ VERIFICAR_COMBATE:
 
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
-		
+
 	lb t0, 0(s6)			# checa a posição do RED na matriz de movimentação (s6)
 	li t1, 7			# 7 é codigo de um tile de grama
 	bne t0, t1, FIM_VERIFICAR_COMBATE
@@ -140,7 +31,7 @@ VERIFICAR_COMBATE:
 	
 	
 	FIM_VERIFICAR_COMBATE:
-	
+
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
@@ -3122,15 +3013,3 @@ PRINT_POKEMON_SILHUETA:
 			
 	ret
 	
-# ====================================================================================================== #
-	
-.data
-	.include "../Imagens/combate/matriz_tiles_tela_combate.data"
-	.include "../Imagens/combate/seta_proximo_dialogo_combate.data"				
-	.include "../Imagens/combate/tiles_caixa_pokemon_combate.data"	
-	.include "../Imagens/combate/matriz_tiles_caixa_pokemon_combate.data"					
-	.include "../Imagens/combate/seta_direcao_caixa_pokemon_combate.data"									
-	.include "../Imagens/combate/combate_barra_de_vida.data"
-	.include "../Imagens/combate/efeito_de_ataque.data"
-	.include "../Imagens/combate/pokebola_captura.data"																																																																											
-	.include "../Imagens/outros/caractere_barra.data"																		

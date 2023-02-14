@@ -583,27 +583,9 @@ TRANSICAO_ENTRE_AREAS:
 	# Abaixo é decidido o valor de t3 (endereço no frame 0 de onde colocar o tile da seta) e 
 	# t0 (qual a imagem da seta)
 	
-		bne s1, zero, TRANSICAO_SETA_DIREITA
-			# se s1 = 0 o personagem está virado para a esquerda	
-			addi t3, s0, -17	# o endereço de onde a seta vai estar é o tile a esquerda do RED
-						# e uma coluna para a esquerda
-			addi t3, t3, 960	# e 3 linhas para baixo (porque s0 tem na verdade o endereço da 
-						# cabeça do RED)
-			la t0, seta_transicao_esquerda	# carregando a imagem em t0
-			j RENDERIZAR_SETA_DE_TRANSICAO
-	
-	TRANSICAO_SETA_DIREITA:
-		li t1, 1
-		bne s1, t1, TRANSICAO_SETA_CIMA
-			# se s1 = 1 o personagem está virado para a direita
-			addi t3, s0, 15	# o endereço de onde a seta vai estar é o tile a direita do RED
-					# e uma coluna para a esquerda			
-			addi t3, t3, 960	# e 3 linhas para baixo (porque s0 tem na verdade o endereço da 
-						# cabeça do RED)	
-			la t0, seta_transicao_direita	# carregando a imagem em t0
-			j RENDERIZAR_SETA_DE_TRANSICAO
-			
-	TRANSICAO_SETA_CIMA:
+	# Só tem como ser ou para cima ou para baixo			
+										
+	# TRANSICAO_SETA_CIMA
 		li t1, 2
 		bne s1, t1, TRANSICAO_SETA_BAIXO
 			# se s1 = 1 o personagem está virado para cima	
@@ -742,22 +724,3 @@ TRANSICAO_ENTRE_AREAS:
 			# escolher o procedimento de movimentação
 	j ESCOLHER_PROCEDIMENTO_DE_MOVIMENTACAO
 			
-# ====================================================================================================== #	
-																																			
-.data
-	.include "../Imagens/areas/casa_red/tiles_casa_red.data"
-	.include "../Imagens/areas/casa_red/matriz_tiles_casa_red.data"
-	.include "../Imagens/areas/casa_red/matriz_movimentacao_casa_red.data"
-	.include "../Imagens/areas/pallet/tiles_pallet.data"
-	.include "../Imagens/areas/pallet/matriz_tiles_pallet.data"
-	.include "../Imagens/areas/pallet/matriz_movimentacao_pallet.data"
-	.include "../Imagens/areas/laboratorio/tiles_laboratorio.data"
-	.include "../Imagens/areas/laboratorio/matriz_tiles_laboratorio.data"
-	.include "../Imagens/areas/laboratorio/matriz_movimentacao_laboratorio.data"
-	
-	.include "../Imagens/areas/transicao_de_areas/seta_transicao_cima.data"
-	.include "../Imagens/areas/transicao_de_areas/seta_transicao_baixo.data"
-	.include "../Imagens/areas/transicao_de_areas/seta_transicao_esquerda.data"
-	.include "../Imagens/areas/transicao_de_areas/seta_transicao_direita.data"
-	.include "../Imagens/areas/transicao_de_areas/mensagem_sair_area.data"
-	.include "../Imagens/areas/transicao_de_areas/mensagem_entrar_area.data"						

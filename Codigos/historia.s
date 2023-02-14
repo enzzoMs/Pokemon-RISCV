@@ -1,10 +1,3 @@
-.data
-
-# Esses valores vão ser usados no final de RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL para atualizar a matriz
-# de tiles de Pallet, permitindo que o resto do mapa seja renderizado
-NOVA_LINHA_DE_TILES_PALLET: .byte 4,5,103,104,104,105,76,67,67,53,103,106,107,107,108,104,104,104,104,
-				  104,104,105,4,5
-
 .text
 
 # ====================================================================================================== # 
@@ -1219,44 +1212,5 @@ PRINT_CAIXA_DE_DIALOGO:
 
 	ret
 		
-# ====================================================================================================== #																																			
-.data
-	.include "../Imagens/outros/balao_exclamacao.data"
 
-	.include "../Imagens/historia/professor_carvalho/oak_cima.data"
-	.include "../Imagens/historia/professor_carvalho/oak_cima_passo_direito.data"
-	.include "../Imagens/historia/professor_carvalho/oak_cima_passo_esquerdo.data"
-	.include "../Imagens/historia/professor_carvalho/oak_direita.data"
-	.include "../Imagens/historia/professor_carvalho/oak_direita_passo_direito.data"
-	.include "../Imagens/historia/professor_carvalho/oak_direita_passo_esquerdo.data"	
-	.include "../Imagens/historia/professor_carvalho/oak_baixo.data"
-	.include "../Imagens/historia/professor_carvalho/oak_baixo_passo_direito.data"
-	.include "../Imagens/historia/professor_carvalho/oak_baixo_passo_esquerdo.data"	
-	.include "../Imagens/historia/professor_carvalho/oak_esquerda.data"
-	.include "../Imagens/historia/professor_carvalho/oak_esquerda_passo_direito.data"
-	.include "../Imagens/historia/professor_carvalho/oak_esquerda_passo_esquerdo.data"	
-			
-	.include "../Imagens/historia/dialogos/tiles_caixa_dialogo.data"
-	.include "../Imagens/historia/dialogos/matriz_tiles_caixa_dialogo.data"
-
-	.include "../Imagens/historia/dialogos/tiles_alfabeto.data"
-
-	.include "../Imagens/historia/escolha_pokemon_inicial/matriz_dialogo_escolha_pokemon_sim.data"
-	.include "../Imagens/historia/escolha_pokemon_inicial/matriz_dialogo_escolha_pokemon_nao.data"	
-	
-	.include "../Imagens/historia/escolha_pokemon_inicial/matriz_tiles_caixa_escolha_pokemon.data"	
-	.include "../Imagens/historia/escolha_pokemon_inicial/tiles_caixa_escolha_pokemon.data"	
-			
-	.include "../Imagens/pokemons/pokemons.data"	
-				
-	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_pallet_1.data"	
-	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_pallet_2.data"	
-	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_laboratorio_1.data"	
-	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_laboratorio_2.data"	
-	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_intro.data"	
-
-	.include "../Imagens/historia/intro/matriz_tiles_intro.data"	
-	.include "../Imagens/historia/intro/tiles_intro.data"	
-	.include "../Imagens/historia/intro/intro_professor_carvalho.data"		
-		
 				

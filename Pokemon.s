@@ -81,7 +81,6 @@ li a4, 64	# a4 recebe 32, ou 1_0_000_00 em binário, de acordo com a conveção par
 
 call RENDERIZAR_AREA
 
-
 # Loop principal de gameplay do jogo
 
 LOOP_PRINCIPAL_JOGO:
@@ -95,10 +94,4 @@ LOOP_PRINCIPAL_JOGO:
 
 
 .data
-	#.include "Codigos/tela_inicial.s"
-	.include "Codigos/inventario.s"		
-	.include "Codigos/historia.s"	
-	.include "Codigos/areas.s"
-	.include "Codigos/controles_movimentacao.s"	
-	.include "Codigos/combate.s"			
-	.include "Codigos/procedimentos_auxiliares.s"
+	.include "Codigos/data_includes.s"		

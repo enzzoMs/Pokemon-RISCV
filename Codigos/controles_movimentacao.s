@@ -2082,21 +2082,4 @@ PRINT_FAIXA_DE_GRAMA:
 
 	ret
 																																		
-# ====================================================================================================== #
-									
-.data
-	.include "../Imagens/red/red_direita.data"
-	.include "../Imagens/red/red_direita_passo_esquerdo.data"
-	.include "../Imagens/red/red_direita_passo_direito.data"
-	.include "../Imagens/red/red_cima.data"
-	.include "../Imagens/red/red_cima_passo_esquerdo.data"
-	.include "../Imagens/red/red_cima_passo_direito.data"	
-	.include "../Imagens/red/red_baixo.data"
-	.include "../Imagens/red/red_baixo_passo_esquerdo.data"
-	.include "../Imagens/red/red_baixo_passo_direito.data"	
-	.include "../Imagens/red/red_esquerda.data"
-	.include "../Imagens/red/red_esquerda_passo_esquerdo.data"
-	.include "../Imagens/red/red_esquerda_passo_direito.data"	
 
-	.include "../Imagens/outros/tiles_grama_animacao.data"	
-	
