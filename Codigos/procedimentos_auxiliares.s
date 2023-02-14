@@ -9,31 +9,6 @@
 #													 #
 # ====================================================================================================== #
 
-PRINT_TELA:
-	# Procedimento que imprime uma imagem de 320 x 240 no frame de escolha
-	#
-	# Argumentos: 
-	# 	a0 = endereço da imgagem		
-	# 	a1 = endereço do frame
-	
-	li t0, 76800		# area total da imagem -> 320 x 240 = 76800 pixels
-	addi a0, a0, 8		# pula para onde começa os pixels no .data
-	li t1, 0		# contador de quantos pixels já foram impressos
-
-	LOOP_PRINT_IMG: 
-		beq t0, t1, FIM_PRINT_IMG	# verifica se todos os pixels foram colocados
-		lw t3, 0(a0)			# pega 4 pixels do .data e coloca em t3
-		sw t3, 0(a1)			# pega os pixels de t3 e coloca no bitmap
-		addi a0, a0, 4			# vai para os próximos pixels da imagem
-		addi a1, a1, 4			# vai para os próximos pixels do bitmap
-		addi t1, t1, 4			# incrementa contador com os pixels colocados
-		j LOOP_PRINT_IMG		# reinicia o loop
-
-	FIM_PRINT_IMG:
-		ret 
-
-# ====================================================================================================== #
-
 PRINT_IMG:
 	# Procedimento que imprime imagens de tamanho variado, menores que 320 x 240, no frame de escolha.
 	# Esse procedimento também é equipado para lidar com imagens que contém pixels de cor transparente

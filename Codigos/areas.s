@@ -328,8 +328,8 @@ RENDERIZAR_PALLET:
 		
 			addi s2, s2, 8		# pula para onde começa os pixels no .data
 		
-			addi s2, s2, 395	# pula para onde começa a subsecção que será mostrada na tela
-						# (5a coluna e 15a linha da matriz de tiles)
+			addi s2, s2, 1175	# pula para onde começa a subsecção que será mostrada na tela
+						# (5a coluna e 45a linha da matriz de tiles)
 						
 		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
 			la s4, tiles_pallet				
@@ -338,8 +338,8 @@ RENDERIZAR_PALLET:
 		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
 			la t0, matriz_tiles_pallet
 			addi t0, t0, 8			# pula para onde começa os pixels no .data
-			addi s5, t0, 615		# o RED começa na linha 23 e coluna 17 da matriz
-							# de tiles, então é somado (23 * 26(tamanho de
+			addi s5, t0, 1395		# o RED começa na linha 53 e coluna 17 da matriz
+							# de tiles, então é somado (53 * 26(tamanho de
 							# uma linha da matriz)) + 17		
 																																												
 		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
@@ -350,9 +350,9 @@ RENDERIZAR_PALLET:
 				
 		addi t0, t0, 8
 	
-		addi s6, t0, 504	# o personagem começa na linha 21 e coluna 16 da matriz
+		addi s6, t0, 1272	# o personagem começa na linha 53 e coluna 16 da matriz
 					# então é somado o endereço base da matriz (t0) a 
-		addi s6, s6, 16		# 21 (número da linha) * 24 (tamanho de uma linha da matriz) 
+		addi s6, s6, 16		# 53 (número da linha) * 24 (tamanho de uma linha da matriz) 
 					# e a 16 (número da coluna) 		
 
 		j FIM_RENDERIZAR_PALLET
@@ -380,8 +380,8 @@ RENDERIZAR_PALLET:
 		
 			addi s2, s2, 8		# pula para onde começa os pixels no .data
 		
-			addi s2, s2, 287	# pula para onde começa a subsecção que será mostrada na tela
-						# (1a coluna e 11a linha da matriz de tiles)
+			addi s2, s2, 1067	# pula para onde começa a subsecção que será mostrada na tela
+						# (1a coluna e 41a linha da matriz de tiles)
 						
 		# Atualizando o valor de s4 (endereço da imagem com os tiles da área)
 			la s4, tiles_pallet				
@@ -390,8 +390,8 @@ RENDERIZAR_PALLET:
 		# Atualizando o valor de s5 (posição atual do personagem na matriz de tiles)						
 			la t0, matriz_tiles_pallet
 			addi t0, t0, 8			# pula para onde começa os pixels no .data
-			addi s5, t0, 449		# o RED começa na linha 17 e coluna 7 da matriz
-							# de tiles, então é somado (17 * 26(tamanho de
+			addi s5, t0, 1229		# o RED começa na linha 47 e coluna 7 da matriz
+							# de tiles, então é somado (47 * 26(tamanho de
 							# uma linha da matriz)) + 7		
 																																												
 		# Atualizando o valor de s6 (posição atual na matriz de movimentação da área) e 
@@ -402,9 +402,9 @@ RENDERIZAR_PALLET:
 				
 		addi t0, t0, 8
 	
-		addi s6, t0, 360	# o personagem começa na linha 15 e coluna 6 da matriz
+		addi s6, t0, 1128	# o personagem começa na linha 47 e coluna 6 da matriz
 					# então é somado o endereço base da matriz (t0) a 
-		addi s6, s6, 6		# 15 (número da linha) * 24 (tamanho de uma linha da matriz) 
+		addi s6, s6, 6		# 47 (número da linha) * 24 (tamanho de uma linha da matriz) 
 					# e a 6 (número da coluna) 		
 	
 	FIM_RENDERIZAR_PALLET:

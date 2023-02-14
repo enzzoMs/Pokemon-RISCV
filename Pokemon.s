@@ -81,6 +81,7 @@ li a4, 64	# a4 recebe 32, ou 1_0_000_00 em binário, de acordo com a conveção par
 
 call RENDERIZAR_AREA
 
+
 # Loop principal de gameplay do jogo
 
 LOOP_PRINCIPAL_JOGO:
