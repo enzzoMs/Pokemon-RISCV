@@ -14,12 +14,76 @@ NOVA_LINHA_DE_TILES_PALLET: .byte 4,5,103,104,104,105,76,67,67,53,103,106,107,10
 # Código com os procedimentos necessários para renderizar os momentos de história do jogo, incluindo	 #
 # imprimir caixas de diálogo e executar algumas animações. 						 #
 #													 #
-# Esse arquivo possui 3 procedimentos principais, um para cada momento de história do jogo:		 #
+# Esse arquivo possui 4 procedimentos principais, um para cada momento de história do jogo:		 #
 #	RENDERIZAR_ANIMACAO_PROF_OAK, RENDERIZAR_DIALOGO_PROFESSOR_LABORATORIO,				 #
-#	RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL								 #
+#	RENDERIZAR_ESCOLHA_DE_POKEMON_INICIAL, RENDERIZAR_INTRO					 	 #
 #													 #
 # ====================================================================================================== #
 
+RENDERIZAR_INTRO:
+	# Esse procedimento é chamado no inicio do joga para renderizar os dialogos com o professor 
+	# Carvalho
+
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, 0(sp)		# empilha ra
+
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 1
+
+	la s2, matriz_tiles_intro	# carregando em s2 o endereço da matriz que vai ser mostrada
+	lw s3, 0(s2)			# s3 recebe o tamanho de uma linha da matriz	
+	addi s2, s2, 8			# pula para onde começa os pixels no .data
+	
+	la s4, tiles_intro		# imagem com os tiles da matriz		
+	addi s4, s4, 8			# pula para onde começa os pixels no .data
+											
+	# Imprimindo o fundo da tela de intro no frame 0
+	la a0, matriz_tiles_intro		# carrega a matriz de tiles da intro
+	la a1, tiles_intro			# carrega a imagem com os tiles da intro
+	li a2, 0xFF000000			# os tiles serão impressos no frame 0
+	call PRINT_TILES 
+	
+	# Imprimindo a imagem do professor Carvalho no frame 0
+		# Calculando o endereço de onde imprimir a imagem
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 127		# numero da coluna 
+		li a3, 79		# numero da linha
+		call CALCULAR_ENDERECO	
+				
+		mv a1, a0		# move o retorno para a1		
+				
+		# Imprimindo a imagem do professor
+		la a0, intro_professor_carvalho		# carrega a imagem		
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da imagem 
+		lw a3, 4(a0)		# numero de linhas daa imagem 	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+		
+	call TROCAR_FRAME	# inverte o frame, mostrando o frame 0	
+	
+	# Replica o frame 0 no frame 1 para que os dois estejam iguais
+	li a0, 0xFF000000	# copia o frame 0 no frame 1
+	li a1, 0xFF100000
+	li a2, 320		# numero de colunas a serem copiadas
+	li a3, 240		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME	
+
+	# Espera alguns milisegundos	
+		li a0, 1000			# sleep 1 s
+		call SLEEP			# chama o procedimento SLEEP	
+												
+	# Imprime o dialogo do professor
+	la a4, matriz_dialogo_oak_intro		# carrega a matriz de tiles do dialogo
+	li a5, 13				# renderiza 13 dialogos	
+	call RENDERIZAR_DIALOGOS
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+
+	ret
+	
+# ====================================================================================================== #
+	
 RENDERIZAR_ANIMACAO_PROF_OAK:
 	# Esse procedimento é chamado quando o RED tenta pela primeira vez sair da área principal de Pallet
 	# e andar sobre um tile de grama. Quando o jogador passa por esses tiles existe a chance de um 
@@ -1070,8 +1134,21 @@ PRINT_DIALOGO:
 			# antes de imprimir o proximo tile para que cada letra fique mais ou menos uma do lado
 			# da outra.
 			
+			li t0, 1		
+			beq t5, t0, PROXIMO_TILE_DIALOGO
+		
+			lb t0, 1(a4)	# se existir pega o proximo elemento da matriz a ser impresso
+			li t1, 0		# se o numero do tile for 75 (hifen)	
+			li t2, 75		# então não necessário voltar pixel nenhum
+			beq t0, t2, PROXIMO_TILE_DIALOGO
+			li t2, 65		# ou entao 65 (tres pontos)
+			beq t0, t2, PROXIMO_TILE_DIALOGO						
+							
 			lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
-			
+
+			li t1, 1 	# se o numero do tile atual for 75 (hifen)	
+			li t2, 75 	# então não necessário voltar pixel nenhum
+			beq t0, t2, PROXIMO_TILE_DIALOGO						
 			li t1, 1		# se o numero do tile for menor do que 65		
 			li t2, 65		# então é necessário voltar 1 pixel
 			blt t0, t2, PROXIMO_TILE_DIALOGO
@@ -1176,3 +1253,10 @@ PRINT_CAIXA_DE_DIALOGO:
 	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_pallet_2.data"	
 	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_laboratorio_1.data"	
 	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_laboratorio_2.data"	
+	.include "../Imagens/historia/dialogos/matriz_dialogo_oak_intro.data"	
+
+	.include "../Imagens/historia/intro/matriz_tiles_intro.data"	
+	.include "../Imagens/historia/intro/tiles_intro.data"	
+	.include "../Imagens/historia/intro/intro_professor_carvalho.data"		
+		
+				

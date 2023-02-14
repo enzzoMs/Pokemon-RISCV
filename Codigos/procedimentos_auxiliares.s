@@ -873,9 +873,9 @@ PRINT_TEXTO:
 		# as letras estão arranjadas em grupos que indicam quantos pixels é necessário voltar
 		# antes de imprimir o proximo tile para que cada letra fique mais ou menos uma do lado
 		# da outra.
-			
-		lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso
-			
+				
+		lb t0, 0(a4)	# pega o elemento da matriz de tiles que foi impresso							
+																	
 		li t1, 1		# se o numero do tile for menor do que 65	
 		li t2, 65		# então é necessário voltar 1 pixel
 		blt t0, t2, PROXIMO_TILE_TEXTO

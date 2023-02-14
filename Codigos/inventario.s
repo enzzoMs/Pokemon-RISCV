@@ -25,7 +25,7 @@ matriz_texto_inventario: .word 10, 1
 
 # Inicializando os itens do inventario
 
-NUMERO_DE_POKEBOLAS: .byte 1
+NUMERO_DE_POKEBOLAS: .byte 5
 POKEMONS_DO_RED: .word 0,0,0,0,0
 
 .text 

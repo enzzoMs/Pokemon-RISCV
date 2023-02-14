@@ -72,7 +72,7 @@
 
 #call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
 
-#call INICIALIZAR_INTRO_HISTORIA		# Chama o procedimento em intro_historia.s
+call RENDERIZAR_INTRO			# Chama o procedimento em historia.s
 
 li a4, 64	# a4 recebe 32, ou 1_0_000_00 em binário, de acordo com a conveção para a codificação
 		# de transições de áreas (ver detalhes em areas.s)
@@ -95,7 +95,6 @@ LOOP_PRINCIPAL_JOGO:
 
 .data
 	#.include "Codigos/tela_inicial.s"
-	#.include "Codigos/intro_historia.s"
 	.include "Codigos/inventario.s"		
 	.include "Codigos/historia.s"	
 	.include "Codigos/areas.s"
