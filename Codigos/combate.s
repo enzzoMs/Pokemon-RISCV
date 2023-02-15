@@ -185,16 +185,10 @@ INICIAR_TELA_DE_COMBATE:
 			la a4, matriz_texto_fugir 	
 			call PRINT_TEXTO
 			
-			# Imprime o texto com o DEFESA
+			# Imprime o texto com o ITEM
 			addi a1, a1, -95	# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde
 			li t0, 5440		# imprimiu o tile, de modo que está a -95 colunas e +17 linhas
 			add a1, a1, t0		# do proximo texto (5440 = 17 * 320)
-			la a4, matriz_texto_defesa 	
-			call PRINT_TEXTO
-			
-			# Imprime o texto com o ITEM
-			addi a1, a1, 18		# pelo PRINT_TEXTO acima a1 ainda está no ultimo endereço onde
-						# imprimiu o tile, de modo que está a 18 colunas do proximo texto
 			la a4, matriz_texto_item 	
 			call PRINT_TEXTO
 												
@@ -994,9 +988,9 @@ TURNO_JOGADOR:
 		# propagado para EXECUTAR_COMBATE
 	
 	COMBATE_VERIFICAR_ACAO_ITEM:
-	li t0, 3
+	li t0, 2
 	bne a0, t0, FIM_TURNO_JOGADOR
-		# se a opção selecionada for 3 então chama a ação de item																																																																										
+		# se a opção selecionada for 2 então chama a ação de item																																																																										
 		call ACAO_ITEM
 		# como retorno a0 == 2 se o turno não deve acabar
 		li t0, 2
@@ -1249,8 +1243,8 @@ ACAO_ATACAR:
 	
 		bne t1, t0, ACAO_ATACAR_CHECAR_TIPO_FRACO
 		# verifica se o pokemon é forte contra o pokemon inimigo
-		# se sim duplica o dano
-		slli a0, a0, 1
+		# se sim aumenta o dano em 4
+		addi a0, a0, 4
 		la a6, matriz_texto_muito_efetivo	
 		j ACAO_ATACAR_RENDERIZAR_DANO
 				
@@ -1264,9 +1258,10 @@ ACAO_ATACAR:
 	
 		bne t1, t0, ACAO_ATACAR_RENDERIZAR_DANO
 		# verifica se o pokemon é fraco contra o pokemon inimigo
-		# se sim divide o dano por 2
-		srli a0, a0, 1
-		la a6, matriz_texto_pouco_efetivo	
+		# se sim diminui o dano por 2
+		la a6, matriz_texto_pouco_efetivo			
+		beq a0, zero, ACAO_ATACAR_RENDERIZAR_DANO
+			addi a0, a0, -2
 		
 	ACAO_ATACAR_RENDERIZAR_DANO:
 	mv a7, a0		# move para a7 o valor do dano
@@ -2248,19 +2243,17 @@ RENDERIZAR_MENU_DE_COMBATE:
 		j OPCAO_TROCADA_COMBATE
 		
 		OPCAO_S_COMBATE:
-		# se a opção atual for 2 ou 3 então não é possivel descer mais no menu
+		# se a opção atual for 2 então não é possivel descer mais no menu
 		li t0, 2
 		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
-		li t0, 3
-		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
 		addi t4, t4, 2			# passa t4 para a opção abaixo 
 		j OPCAO_TROCADA_COMBATE
 				
 		OPCAO_D_COMBATE:
-		# se a opção atual for 1 ou 3 então não é possivel ir mais para a direita no menu
+		# se a opção atual for 1 ou 2 então não é possivel ir mais para a direita no menu
 		li t0, 1
 		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
-		li t0, 3
+		li t0, 2
 		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
 		addi t4, t4, 1			# passa t4 para a opção a direita
 

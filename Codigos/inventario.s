@@ -509,6 +509,28 @@ MOSTRAR_INVENTARIO:
 		li a3, 9	# número de linhas de tiles a serem impressas
 		call PRINT_TILES_AREA	
 		
+		
+		la t0, tiles_laboratorio
+		addi t0, t0, 8
+		bne s4, t0, a	
+		# imprimindo professor	
+			li a1, 0xFF100000		# seleciona como argumento o frame 0
+			li a2, 145 			# numero da coluna do RED = 145
+			li a3, 60			# numero da linha do RED = 205
+			call CALCULAR_ENDERECO	
+			
+			mv a1, a0
+			
+											
+			la a0, oak_baixo		# carrega a imagem do sprite			
+			# a1 já tem o endereço de onde imprimir a imagem
+			lw a2, 0(a0)		# numero de colunas da imagem 
+			lw a3, 4(a0)		# numero de linhas daa imagem 	
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG	
+		
+		
+		a:
 		# Por via das dúvidas é melhor imprimir novamente o sprite do RED no frame 1 porque talvez 
 		# ele foi pego na limpeza acima
 		
@@ -522,7 +544,8 @@ MOSTRAR_INVENTARIO:
 		li t0, 2				
 		beq s1, t0, FIM_INVENTARIO_PRINT_RED		
 		la a0, red_baixo					
-				
+								
+								
 		FIM_INVENTARIO_PRINT_RED:
 		mv a1, s0		# s0 tem a posição do RED no frame 0
 		li t0, 0x00100000	# passando o endereço de s0 para o seu endereço correspondente no
@@ -678,7 +701,7 @@ MOSTRAR_INVENTARIO_POKEBOLAS:
 	# para retirar a seta que está sobre ITEM no menu de combate
 		# Calculando o endereço de onde começar a copia no frame 1
 		li a1, 0xFF100000	# seleciona o frame 0
-		li a2, 244		# numero da coluna 
+		li a2, 186		# numero da coluna 
 		li a3, 203		# numero da linha
 		call CALCULAR_ENDERECO	
 

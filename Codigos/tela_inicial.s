@@ -4,7 +4,7 @@
 # 						TELA INICIAL				                 #
 # ------------------------------------------------------------------------------------------------------ #
 # 													 #
-# Código responsável por renderizar a tela inicial do jogo, incluindo pequenas animações.                # 
+# Código responsável por renderizar a tela inicial do jogo e música			                 # 
 #													 #
 # ====================================================================================================== #
 
@@ -14,350 +14,138 @@ INICIALIZAR_TELA_INICIAL:
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, 0(sp)		# empilha ra
 
-	call RENDERIZAR_ANIMACAO_FAIXA
+	call PRINT_TELA_INICIAL
 	
-	# Espera alguns milisegundos	
-		li a0, 500			# sleep por 500 ms
-		call SLEEP			# chama o procedimento SLEEP		
-	
-	call RENDERIZAR_ANIMACAO_POKEMONS
-	
-	call MOSTRAR_TELA_INICIAL
-	
-	call MOSTRAR_TELA_CONTROLES
-
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret
-	
-
-# ------------------------------------------------------------------------------------------------------ #
-
-RENDERIZAR_ANIMACAO_FAIXA:
-
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-
-	# Antes de mostrar a tela inicial ocorre uma pequena animação onde as imagem do bulbasaur e 
-	# charizard são atravessadas por uma faixa branca, esse procedimento é responsável por executá-la
-
-	# Imprimindo a tela de pré animação
-		la a0, pre_animacao_inicial	# carrega a imagem
-		li a1, 0xFF100000		# seleciona como argumento o frame 1
-		call PRINT_TELA	
-	
-	# Mostrando o frame 1		
-		li t0, 0xFF200604		# t0 = endereço para escolher frames 
-		li t1, 1
-		sb t1, (t0)			# armazena 0 no endereço de t0
+	LOOP_MUSICA_TELA_INICIAL:
+		call MUSICA
 		
-	# Espera alguns milisegundos			
-		li a0, 1000			# sleep por 1 ms
-		call SLEEP			# chama o procedimento SLEEP		
+		# se o retorno a0 == 0 reinicia a musica
+		beq a0, zero, LOOP_MUSICA_TELA_INICIAL
+	
 		
-		
-	# Calcula o endereço do final da imagem do bulbasaur
-		li a1, 0xFF100000		# seleciona como argumento o frame 1
-		li a2, 3 			# coluna = 3
-		li a3, 199			# linha = 199
-		call CALCULAR_ENDERECO
-
-		mv a4, a0			# coloca o retorno do procedimento chamado acima em a4
-
-	# Calcula o endereço do final da imagem do charizard
-		li a1, 0xFF100000		# seleciona como argumento o frame 1
-		li a2, 206 			# coluna = 206
-		li a3, 199			# linha = 199
-		call CALCULAR_ENDERECO
-
-		mv a5, a0			# coloca o retorno do procedimento chamado acima em a5
-
-
-	# Renderizando faixa
-		li a6, 115			# numero de vezes que a faixa será renderizada
-		
-		
-	LOOP_RENDERIZAR_FAIXA:
-		# Espera alguns milisegundos	
-		li a0, 20			# sleep por 20 ms
-		call SLEEP			# chama o procedimento SLEEP		
-	
-		# renderizando a faixa no bulbasaur
-		mv a1, a4			# a1 = a4 = endereco de onde colocar a faixa
-		la a0, animacao_faixa		# carrega a imagem da faixa	
-		call PRINT_FAIXA
-		
-		# renderizando a faixa no charizard
-		mv a1, a5			# a1 = a5 = endereco de onde colocasr a faixa
-		la a0, animacao_faixa		# carrega a imagem da faixa	
-		call PRINT_FAIXA
-		
-		addi a4, a4, -320		# passando o endereco da faixa para a linha anterior
-		addi a5, a5, -320		# passando o endereco da faixa para a linha anterior
-		addi a6, a6, -1			# decrementa a6
-		
-		bne a6, zero, LOOP_RENDERIZAR_FAIXA	# verifica se a6 == 0 para terminar o loop
-			
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-				
-	ret
-
-
-# ------------------------------------------------------------------------------------------------------ #
-
-PRINT_FAIXA:
-
-	# Procedimento auxiliar ao RENDERIZAR_ANIMACAO_FAIXA que imprime a faixa no bitmap, a diferença 
-	# desse procedimento para o PRINT_IMG é que a faixa é impressa somente onde os bits não são pretos, 
-	# de forma a aparecer o contorno do bulbasaur e charizard
-	
-	# Argumentos: 
-	# 	a0 = endereço da imgagem		
-	# 	a1 = endereço de onde, no frame escolhido, a imagem deve ser renderizada
-	
-	lw t0, 0(a0)		# t0 = largura da imagem / numero de colunas da imagem
-	lw t1, 4(a0)		# t1 = altura da imagem / numero de linhas da imagem
-	
-	addi a0, a0, 8		# pula para onde começa os pixels no .data
-
-	li t2, 0		# contador para o numero de linhas ja impressas
-	
-	PRINT_LINHAS_FAIXA:
-		li t3, 0		# contador para o numero de colunas ja impressas
-		mv t4, a1		# copia do endereço de a1 para usar no loop de colunas
-			
-		PRINT_COLUNAS_FAIXA:
-			lb t5, (a0)			# pega 1 pixel do .data e coloca em t5
-			
-			lb t6, (t4)			# pega 1 pixel do bitmap
-
-			beq t6, zero, NAO_COLOCAR_PIXEL	# renderiza a faixa somente se o pixel não for preto
-			sb t5, 0(t4)			# pega o pixel de t5 e coloca no bitmap
-	
-			NAO_COLOCAR_PIXEL:
-			addi t3, t3, 1			# incrementando o numero de colunas impressas
-			addi a0, a0, 1			# vai para o próximo pixel da imagem
-			addi t4, t4, 1			# vai para o próximo pixel do bitmap
-			bne t3, t0, PRINT_COLUNAS_FAIXA	# reinicia o loop se t3 != t0
-			
-		addi t2, t2, 1				# incrementando o numero de linhas impressas
-		addi a1, a1, 320			# passa o endereço do bitmap para a proxima linha
-		bne t2, t1, PRINT_LINHAS_FAIXA	        # reinicia o loop se t2 != t1
-			
-	ret
-
-# ------------------------------------------------------------------------------------------------------ #
-
-RENDERIZAR_ANIMACAO_POKEMONS:
-
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-
-	# Depois de RENDERIZAR_ANIMACAO_FAIXA esse procedimento realiza também uma pequena animação onde
-	# o charizard e bulbasaur vão lentamente sendo mostrados na tela
-
-	# Calcula o endereço do começo da imagem do bulbasaur
-		li a1, 0xFF100000		# seleciona como argumento o frame 1
-		li a2, 3 			# coluna = 3
-		li a3, 115			# linha = 115
-		call CALCULAR_ENDERECO
-
-		mv t4, a0			# salva o retorno do procedimento chamado acima em t4
-
-	# Calcula o endereço do começo da imagem do charizard
-		li a1, 0xFF100000		# seleciona como argumento o frame 1
-		li a2, 206 			# coluna = 206
-		li a3, 99			# linha = 99
-		call CALCULAR_ENDERECO
-
-		mv t5, a0			# salva o retorno do procedimento chamado acima em t5
-
-
-	# O loop abaixo tem como base os arquivos bulbasaur_tela_inicial.data e charizard_tela_inicial.data, 
-	# verificando os .bmp correspondentes é possível perceber que as imagens foram colocadas de maneira 
-	# sequencial, nesse sentido, fica convencionado que o registrador t5 = endereço base das imagens do 
-	# bulbasaur e t6 = endereço base das imagens do charizard, de forma que quando uma imagem 
-	# termina de ser renderizada os registradores já vão apontar automaticamente para o endereço da 
-	# próxima imagem.
-
-	la a4, bulbasaur_tela_inicial	# carrega o endereço da imagem
-	addi a4, a4, 8			# pula para onde começa os pixels
-	 
-	la a5, charizard_tela_inicial	# carrega o endereço da imagem
-	addi a5, a5, 8			# pula para onde começa os pixels
-	
-	li t6, 4			# numero de loops
-	
-	LOOP_ANIMACAO_POKEMONS:
-		
-		# Imprimindo a imagem do bulbasaur
-			mv a0, a4		# a0 = endereço da imagem
-			mv a1, t4		# a1 = endereço de onde a imagem deve ser renderizada
-			li a2, 110 		# a2 = numero de colunas
-			li a3, 85		# a3 = numero de linhas
-			call PRINT_IMG
-		
-		mv a4, a0		# atualiza o endereço da imagem do bulbasur
-		
-		# Imprimindo a imagem do charizard
-			mv a0, a5		# a0 = endereço da imagem
-			mv a1, t5		# a1 = endereço de onde a imagem deve ser renderizada
-			li a2, 111 		# a2 = numero de colunas
-			li a3, 100		# a3 = numero de linhas
-			call PRINT_IMG
-			
-		mv a5, a0		# atualiza o endereço da imagem do charizard	
-		
-		# Espera alguns milisegundos	
-			li a0, 1000		# sleep por 1 s
-			call SLEEP			# chama o procedimento SLEEP		
-			
-		addi t6, t6, -1				# decrementa a6
-		
-		bne t6, zero, LOOP_ANIMACAO_POKEMONS	# se t0 != 0 recomeça o loop
-			
-
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-				
-	ret
-
-# ====================================================================================================== #
-
-MOSTRAR_TELA_INICIAL:
-
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-
-	# Imprimindo a tela inicial no frame 1
-		la a0, tela_inicial		# carregando a imagem da tela inicial
-		li a1, 0xFF100000		# selecionando como argumento o frame 1
-		call PRINT_TELA
-
-	# Imprimindo a tela inicial no frame 0
-		la a0, tela_inicial		# carregando a imagem da tela inicial
-		li a1, 0xFF000000		# selecionando como argumento o frame 0
-		call PRINT_TELA
-	
-	# Para o frame 0 a tela inicial não terá o texto "Aperte Enter", para isso é necessário substituir o
-	# texto por um retangulo preto:
-	
-	# Calcula o endereço do texto "Aperte Enter"
-		li a1, 0xFF000000		# seleciona como argumento o frame 0
-		li a2, 127 			# coluna = 127
-		li a3, 185			# linha = 185
-		call CALCULAR_ENDERECO
-	
-	li t0, 63		# t0 = largura do texto / numero de colunas = 63
-	li t1, 19		# t1 = altura do texto / numero de linhas = 19
-	
-	li t2, 0		# contador para o numero de linhas ja impressas
-	
-	# O loop abaixo substitui o texto por um retangulo preto
-	
-	REMOVE_TEXTO_LINHAS:
-		li t3, 0		# contador para o numero de colunas ja impressas
-		addi t4, a0, 0		# copia do endereço de a0 para usar no loop de colunas
-			
-		REMOVE_TEXTO_COLUNAS:
-			sb zero, 0(t4)				# bota um pixel preto no bitmap
-	
-			addi t3, t3, 1				# incrementando o numero de colunas impressas
-			addi t4, t4, 1				# vai para o próximo pixel do bitmap
-			bne t3, t0, REMOVE_TEXTO_COLUNAS	# reinicia o loop se t3 != t0
-			
-		addi t2, t2, 1				# incrementando o numero de linhas impressas
-		addi a0, a0, 320			# passa o endereço do bitmap para a proxima linha
-		bne t2, t1, REMOVE_TEXTO_LINHAS	        # reinicia o loop se t2 != t1
-	
-	# O loop abaixo alterna constantemente entre o frame 0 e o 1 enquanto espera que o 
-	# usuario aperte ENTER
-	
-	LOOP_FRAME_TELA_INICIAL:
-		# Espera alguns milisegundos	
-		li a0, 450			# sleep por 450 ms
-		call SLEEP			# chama o procedimento SLEEP		
-		
-		call TROCAR_FRAME
-		
-		call VERIFICAR_TECLA			# verifica se alguma tecla foi apertada	
-		li t0, 10				# t0 = valor da tecla enter
-		bne a0, t0, LOOP_FRAME_TELA_INICIAL	# se a0 = t0 -> tecla Enter foi apertada
-	
-	lw ra, (sp)		# desempilha ra
-	addi sp, sp, 4		# remove 1 word da pilha
-	
-	ret
-
-# ====================================================================================================== #
-
-MOSTRAR_TELA_CONTROLES:
-
-	addi sp, sp, -4		# cria espaço para 1 word na pilha
-	sw ra, (sp)		# empilha ra
-
-	# Mostrando o frame 0		
+	# Mostra o frame 0	
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	sb zero, (t0)			# armazena 0 no endereço de t0
-
-	# Imprimindo a tela de controles no frame 1
-	la a0, tela_controles		# carregando a imagem em a0
-	li a1, 0xFF100000		# selecionando como argumento o frame 1
-	call PRINT_TELA
-	
-	# Na tela de controles tem uma pequena animação de uma seta vermelha oscilando na tela,
-	# para isso a tela_controles também será impressa no frame 0
-	
-	# Imprimindo a tela de controles no frame 0
-	la a0, tela_controles		# carregando a imagem em a0
-	li a1, 0xFF000000		# selecionando como argumento o frame 0
-	call PRINT_TELA
-	
-	# Porém, no frame 0 essa seta deverá estar um pouco mais para cima:
-	
-	# Calcula o endereço do inicio da seta
-	li a1, 0xFF000000		# seleciona como argumento o frame 0
-	li a2, 0 			# coluna = 0
-	li a3, 220			# linha = 220
-	call CALCULAR_ENDERECO
-	# como retorno a0 = endereço da imagem da seta
-	
-	mv a1, a0		# a1 = endereço de onde a seta deve ser renderizada
-	addi a1, a1, -640	# sobe esse endereço 2 linhas para cima (320 * 2)
-	li a2, 320		# largura da seta / numero de colunas = 320
-	li a3, 15		# altura da seta / numero de linhas = 15
-	
-	call PRINT_IMG
-	
-	# O loop abaixo alterna constantemente entre o frame 0 e o 1 enquanto espera que o 
-	# usuario aperte ENTER
-		
-	LOOP_TELA_CONTROLES:
-		# Espera alguns milisegundos	
-			li a0, 450			# sleep por 450 ms
-			call SLEEP			# chama o procedimento SLEEP		
-		
-		call TROCAR_FRAME
-		
-		call VERIFICAR_TECLA			# verifica se alguma tecla foi apertada	
-		li t0, 10				# t0 = valor da tecla enter
-		bne a0, t0, LOOP_TELA_CONTROLES		# se a0 = t0 -> tecla Enter foi apertada
-	
+			
 	lw ra, (sp)		# desempilha ra
 	addi sp, sp, 4		# remove 1 word da pilha
 	
 	ret
-
-# ====================================================================================================== #
-
-.data
-	.include "../Imagens/tela_inicial/pre_animacao_inicial.data"
-	.include "../Imagens/tela_inicial/animacao_faixa.data"
-	.include "../Imagens/tela_inicial/bulbasaur_tela_inicial.data"
-	.include "../Imagens/tela_inicial/charizard_tela_inicial.data"	
-	.include "../Imagens/tela_inicial/tela_inicial.data"
-	.include "../Imagens/tela_inicial/tela_controles.data"
 	
+
+# ======================================================================================================= #
+
+PRINT_TELA_INICIAL:
+	# Procedimento que renderiza a tela inicial
 	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+
+	# Mostra o frame 1	
+	li t0, 0xFF200604		# t0 = endereço para escolher frames 
+	li t1, 1
+	sb t1, (t0)			# armazena 1 no endereço de t0
+		
+	# Imprimindo o fundo da tela no frame 0
+	la a0, matriz_tiles_menu_inicial	# carrega a matriz de tiles da intro
+	la a1, tiles_menu_inicial		# carrega a imagem com os tiles da intro
+	li a2, 0xFF000000			# os tiles serão impressos no frame 0
+	call PRINT_TILES 
+
+	# Imprimindo a imagem do pikachu no frame 0
+		# Calculando o endereço de onde imprimir a imagem
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 141		# numero da coluna 
+		li a3, 71		# numero da linha
+		call CALCULAR_ENDERECO	
+				
+		mv a1, a0		# move o retorno para a1		
+				
+		# Imprimindo a imagem do pikachu
+		la a0, menu_inicial_pikachu	# carrega a imagem		
+		# a1 já tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da imagem 
+		lw a3, 4(a0)		# numero de linhas daa imagem 	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+	
+	# Imprimindo o texto de aperte enter no frame 0
+		# Calculando o endereço de onde imprimir a imagem
+		li a1, 0xFF000000	# seleciona o frame 0
+		li a2, 127		# numero da coluna 
+		li a3, 193		# numero da linha
+		call CALCULAR_ENDERECO	
+				
+		mv t6, a0		# move o retorno para t6		
+				
+		# Imprimindo a imagem do texto
+		la a0, menu_inicial_texto_aperte_enter	# carrega a imagem		
+		mv a1, t6 		# t6 tem o endereço de onde imprimir a imagem
+		lw a2, 0(a0)		# numero de colunas da imagem 
+		lw a3, 4(a0)		# numero de linhas daa imagem 	
+		addi a0, a0, 8		# pula para onde começa os pixels no .data	
+		call PRINT_IMG	
+					
+	call TROCAR_FRAME	# inverte o frame sendo mostrado, mostrando o frame 0																																																																																																					
+	
+	# Replica o frame 0 no frame 1 para que os dois estejam iguais
+	li a0, 0xFF000000	# copia o frame 0 no frame 1
+	li a1, 0xFF100000
+	li a2, 320		# numero de colunas a serem copiadas
+	li a3, 240		# numero de linhas a serem copiadas
+	call REPLICAR_FRAME	
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																					
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+				
+	ret
+
+# ======================================================================================================= #
+
+MUSICA:
+	# Dá play na musica da tela inicial e espera o jogador apertar ENTER
+	#
+	# Retorno:
+	#	a0 = [ 0 ] caso o jogador não apertou ENTER e 1 caso contrario 
+	
+	addi sp, sp, -4		# cria espaço para 1 word na pilha
+	sw ra, (sp)		# empilha ra
+	
+
+	la t6, NUM_NOTAS_MUSICA	# define o endereço do número de notas
+	lw t5, 0(t6)		# le o numero de notas
+	la t6, NOTAS_MUSICA	# define o endereço das notas
+	li t2, 0		# zera o contador de notas
+	li a2, 68		# define o instrumento
+	li a3, 127		# define o volume
+
+LOOP_MUSICA:	
+	lw a0, 0(t6)		# le o valor da nota
+	lw a1, 4(t6)		# le a duracao da nota
+	li a7, 31		# define a chamada de syscall
+	ecall			# toca a nota
+	mv a0, a1		# passa a duração da nota para a pausa
+	li a7, 32		# define a chamada de syscal 
+	ecall			# realiza uma pausa de a0 ms
+	addi t6, t6, 8		# incrementa para o endereço da próxima nota
+	addi t2, t2, 1		# incrementa o contador de notas
+	
+	# Verifica se apertou ENTER
+	call VERIFICAR_TECLA
+	
+	mv t1, a0		# move o retorno para t1		
+	li t0, 10			# 10 é o codigo do ENTER
+	li a0, 1			# a0 = 1 porque o jogador apertou ENTER		
+	beq t1, t0, FIM_MUSICA
+
+	li a0, 0			# a0 = 0 porque o jogador nao apertou ENTER
+	bne t2, t5, LOOP_MUSICA		# contador chegou no final? então vá para FIM
+			
+FIM_MUSICA:	
+
+	lw ra, (sp)		# desempilha ra
+	addi sp, sp, 4		# remove 1 word da pilha
+				
+	ret
+			
+

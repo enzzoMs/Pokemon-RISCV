@@ -508,7 +508,24 @@ RENDERIZAR_LABORATORIO:
 		li a1, 0xFF000000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES_AREA		
+		call PRINT_TILES_AREA	
+		
+		# imprimindo professor	
+			li a1, 0xFF000000		# seleciona como argumento o frame 0
+			li a2, 145 			# numero da coluna do RED = 145
+			li a3, 60			# numero da linha do RED = 205
+			call CALCULAR_ENDERECO	
+			
+			mv a1, a0
+			
+											
+			la a0, oak_baixo		# carrega a imagem do sprite			
+			# a1 já tem o endereço de onde imprimir a imagem
+			lw a2, 0(a0)		# numero de colunas da imagem 
+			lw a3, 4(a0)		# numero de linhas daa imagem 	
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG										
+																			
 				
 		call TROCAR_FRAME	# inverte o frame, mostrando o frame 0
 									
@@ -518,8 +535,23 @@ RENDERIZAR_LABORATORIO:
 		li a1, 0xFF100000	# a imagem será impressa no frame 0
 		li a2, 20		# número de colunas de tiles a serem impressas
 		li a3, 15		# número de linhas de tiles a serem impressas
-		call PRINT_TILES_AREA																				
-																																																							
+		call PRINT_TILES_AREA	
+																					
+		# imprimindo professor	
+			li a1, 0xFF100000		# seleciona como argumento o frame 0
+			li a2, 145 			# numero da coluna do RED = 145
+			li a3, 60			# numero da linha do RED = 205
+			call CALCULAR_ENDERECO	
+			
+			mv a1, a0
+			
+											
+			la a0, oak_baixo		# carrega a imagem do sprite			
+			# a1 já tem o endereço de onde imprimir a imagem
+			lw a2, 0(a0)		# numero de colunas da imagem 
+			lw a3, 4(a0)		# numero de linhas daa imagem 	
+			addi a0, a0, 8		# pula para onde começa os pixels no .data	
+			call PRINT_IMG																																																								
 	# Mostra o frame 0		
 	li t0, 0xFF200604		# t0 = endereço para escolher frames 
 	sb zero, (t0)			# armazena 0 no endereço de t0

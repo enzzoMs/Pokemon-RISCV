@@ -1,3 +1,5 @@
+.include "Codigos/MACROSv21.s"
+
 .text
 
 # Especificando o tempo de sleep em ms de cada uma das opções possíveis para o registrador s9 tal como
@@ -19,7 +21,7 @@
 # Obs: mesmo com a opção 'FPGA_OU_RARS' selecionada o RARS provavelmente não vai conseguir executar a	 #
 # movimentação rápido o suficiente, por isso é melhor usar o FPGRARS					 #
 # ------------------------------------------------------------------------------------------------------ #
-	li s9, FPGRARS
+	li s9, FPGA_OU_RARS
 # ====================================================================================================== # 
 # 					Pokémon FireRed/LeafGreen				         #
 # ------------------------------------------------------------------------------------------------------ #
@@ -70,7 +72,7 @@
 
 # Inicializando menus, história e área iniciais 
 
-#call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
+call INICIALIZAR_TELA_INICIAL		# Chama o procedimento em tela_inicial.s
 
 call RENDERIZAR_INTRO			# Chama o procedimento em historia.s
 
@@ -86,7 +88,7 @@ call RENDERIZAR_AREA
 LOOP_PRINCIPAL_JOGO:
 	# Verifica se alguma tecla relacionada a movimentação (w, a, s ou d) ou inventario (i) foi apertada
 	call VERIFICAR_TECLA_JOGO
-
+	
 	j  LOOP_PRINCIPAL_JOGO
 				
 
@@ -95,3 +97,4 @@ LOOP_PRINCIPAL_JOGO:
 
 .data
 	.include "Codigos/data_includes.s"		
+	.include "Codigos/SYSTEMv21.s"

@@ -660,9 +660,14 @@ ENCONTRAR_NUMERO_RANDOMICO:
  		
 	csrr t0, time		# le o tempo atual do sistema
 	
+	mul t0, t0, t0		# time * time
+	li t1, 0x0FF00		# pega os 8 bits do meio
+	and t0, t0, t1	
+	srli t0, t0, 8		# shifta eles para o inicio
+	
 	remu a0, t0, a0		# encontra o resto da divisão do tempo do sistema por a0 de modo que a0 
 				# tem um numero entre 0 e a0 - 1 
-			
+					
 	ret
 	
 # ====================================================================================================== #
