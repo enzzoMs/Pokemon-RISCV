@@ -2133,16 +2133,15 @@ TURNO_COMPUTADOR:
 
 RENDERIZAR_MENU_DE_COMBATE:
 	# Procedimento que torna o menu de combate responsivo aos controles do jogador. Quando chamado o 
-	# procedimento vai imprimir uma seta que pode ser movida pelo jogador entre as 4 opções do menu,
+	# procedimento vai imprimir uma seta que pode ser movida pelo jogador entre as 3 opções do menu,
 	# e com ENTER essa opeção pode ser selecionada.
 	#
 	# Retorno:
 	#	a0 = número de 0 a 3 representado a opção que o jogador selecionou, onde
 	#		[ 0 ] -> ATACAR 
 	#		[ 1 ] -> FUGIR
-	#		[ 2 ] -> DEFESA  
-	#		[ 3 ] -> ITEM  			  
-
+	#		[ 3 ] -> ITEM  	(originalmente era para ter uma segunda opção - DEFESA)	  
+	
 	addi sp, sp, -4		# cria espaço para 1 word na pilha
 	sw ra, (sp)		# empilha ra
 	
@@ -2243,9 +2242,11 @@ RENDERIZAR_MENU_DE_COMBATE:
 		j OPCAO_TROCADA_COMBATE
 		
 		OPCAO_S_COMBATE:
-		# se a opção atual for 2 então não é possivel descer mais no menu
+		# se a opção atual for 2 ou 1 então não é possivel descer mais no menu
 		li t0, 2
-		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE		
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE
+		li t0, 1
+		beq t4, t0, LOOP_SELECIONAR_OPCAO_COMBATE	
 		addi t4, t4, 2			# passa t4 para a opção abaixo 
 		j OPCAO_TROCADA_COMBATE
 				
@@ -2723,18 +2724,19 @@ RENDERIZAR_ATAQUE_DANO:
 	mv a4, a5 		# a5 tem o numero indicando qual pokemon verificar
 	call VERIFICAR_VIDA_POKEMON
 	# do retorno a0 tem endereço final onde o restante da vida do pokemon está na barra de vida
+	# e a1 os pontos de vida
 	slli t0, a1, 1		# multiplica a vida do pokemon por 2 porque cada ponto de vida ocupa 2 pixels 
 	
 	mv a4, t3		# volta o valor de a4
 	
 	slli a4, a4, 1		# é necessario multiplicar o dano a ser aplicado por 2 porque 1 ponto de vida
 				# ocupa 2 pixels na barra de vida
-	# se a4 == 0 nada precisa ser feito
-	beq a4, zero, FIM_RENDERIZAR_ATAQUE_DANO
+	# se a4 <= 0 nada precisa ser feito
+	ble a4, zero, FIM_RENDERIZAR_ATAQUE_DANO
 	
 	sub t1, t0, a4		# t0 (vida atual) - a4 (dano feito) = vida restante
 	bge t1, zero, RENDERIZAR_DANO_PRINT_DANO
-	# se a vida restante for < 0 então no maximo o dano de a4 será a vida atual (t0)
+	# se a vida restante for <= 0 então no maximo o dano de a4 será a vida atual (t0)
 		mv a4, t0
 	
 	RENDERIZAR_DANO_PRINT_DANO:
@@ -2784,6 +2786,7 @@ ATUALIZAR_BARRA_DE_VIDA:
 	# a4 já tem o numero indicando qual pokemon verificar
 	call VERIFICAR_VIDA_POKEMON
 	# do retorno a0 tem endereço final onde o restante da vida do pokemon está na barra de vida
+	# e a1 a vida do pokemon
 	slli t4, a1, 1		# multiplica a vida do pokemon por 2 porque cada ponto de vida ocupa 2 pixels 
 	
 	mv t2, a0		# do loop acima a0 está no final da barra de vida restante do pokemon

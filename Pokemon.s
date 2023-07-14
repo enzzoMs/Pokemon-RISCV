@@ -21,7 +21,7 @@
 # Obs: mesmo com a opção 'FPGA_OU_RARS' selecionada o RARS provavelmente não vai conseguir executar a	 #
 # movimentação rápido o suficiente, por isso é melhor usar o FPGRARS					 #
 # ------------------------------------------------------------------------------------------------------ #
-	li s9, FPGA_OU_RARS
+	li s9, FPGRARS
 # ====================================================================================================== # 
 # 					Pokémon FireRed/LeafGreen				         #
 # ------------------------------------------------------------------------------------------------------ #

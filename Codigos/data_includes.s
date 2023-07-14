@@ -185,7 +185,7 @@
 
 	# Inicializando os itens do inventario
 	NUMERO_DE_POKEBOLAS: .byte 5
-	POKEMONS_DO_RED: .word 0,0,0,0,0
+	POKEMONS_DO_RED: .word 1089,0,0,0,0
 
 	# Pokemons do jogo			
 	.include "../Imagens/pokemons/pokemons.data"		
