@@ -61,43 +61,43 @@ Nos menus use também `w`, `a`, `s` e `d` para movimentar entre as opções e `E
 
 O projeto tenta ser o mais fiel possível ao original. Sendo assim, replica alguns dos momentos de história encontrados ao decorrer do jogo. 
 
-<h1 align="center">
+<p align="center">
     <img alt="História escolha de pokémon inicial parte 1" src="./readme_assets/historia_escolha_pokemon_01.gif" />
-</h1>
+</p>
 
-<h1 align="center">
+<p align="center">
     <img alt="História escolha de pokémon inicial parte 2" src="./readme_assets/historia_escolha_pokemon_02.gif" />
-</h1>
+</p>
 
 ### Inventário e Pokémons
 
 O jogo conta com um pequeno inventário para organizar os Pokémons do jogador e as suas Pokébolas. A lista pode naturalmente ser
 expandida usando as Pokébolas para capturar até cinco Pokémons durante as cenas de combate.
 
-<h1 align="center">
+<p align="center">
     <img alt="Inventário do jogo" src="./readme_assets/inventario.png" />
-</h1>
+</p>
 
 Existem cinco Pokémons no jogo cada um com um tipo diferente:
 
-<h1 align="center">
+<p align="center">
     <img alt="Todos os pokémons do jogo" src="./readme_assets/pokemons.png" />
-</h1>
+</p>
 
 Esquema de tipos dos Pokémons, com seta vermelha indicando que o tipo é fraco contra este, e com a seta verde indicando que é forte:
 
-<h1 align="center">
+<p align="center">
     <img alt="Esquema de tipos" src="./readme_assets/pokemons_tipos.png" />
-</h1>
+</p>
 
 
 ### Combate
 
 O combate do jogo é bem simples. Ao passar por um tile de grama o jogador tem a chance de ser levado para um combate. Na tela de um combate um de cinco Pokémons será escolhido para lutar contra o jogador, por fim o inventário será mostrado para que o jogador escolha um de seus Pokémons para o combate. Na luta existem 3 opções, ATACAR, FUGA, que permite uma chance do jogador terminar a luta, e ITEM, em que o jogador pode escolher do inventário a Pokébola para uma chance de capturar o Pokémon inimigo.
 
-<h1 align="center">
+<p align="center">
     <img alt="Exemplo de Combate" src="./readme_assets/combate.gif" />
-</h1>
+</p>
 
 ### Problemas
 
